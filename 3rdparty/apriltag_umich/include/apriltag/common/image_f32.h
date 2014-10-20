@@ -4,9 +4,6 @@ All rights reserved.
 This software may be available under alternative licensing
 terms. Contact Edwin Olson, ebolson@umich.edu, for more information.
 
-   An unlimited license is granted to use, adapt, modify, or embed the 2D
-barcodes into any medium.
-
    Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
 
@@ -32,18 +29,27 @@ of the authors and should not be interpreted as representing official policies,
 either expressed or implied, of the FreeBSD Project.
  */
 
-#ifndef _TAG36H11
-#define _TAG36H11
+#ifndef _IMAGE_F32
+#define _IMAGE_F32
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include <stdint.h>
 
-apriltag_family_t *tag36h11_create();
-void tag36h11_destroy(apriltag_family_t *tf);
+typedef struct image_f32 image_f32_t;
 
-#ifdef __cplusplus
-}
-#endif
+struct image_f32
+{
+    int width, height;
+    int stride; // in units of floats
+
+    float *buf; // indexed as buf[y*stride + x]
+};
+
+#include "image_u8.h"
+
+image_f32_t *image_f32_create(int width, int height);
+
+image_f32_t *image_f32_create_from_u8(image_u8_t *im);
+
+void image_f32_destroy(image_f32_t *im);
 
 #endif

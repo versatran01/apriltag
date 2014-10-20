@@ -32,15 +32,15 @@ of the authors and should not be interpreted as representing official policies,
 either expressed or implied, of the FreeBSD Project.
  */
 
-#ifndef _TAG36H11
-#define _TAG36H11
+#ifndef _TAG25H9
+#define _TAG25H9
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-apriltag_family_t *tag36h11_create();
-void tag36h11_destroy(apriltag_family_t *tf);
+apriltag_family_t *tag25h9_create();
+void tag25h9_destroy(apriltag_family_t *tf);
 
 #ifdef __cplusplus
 }

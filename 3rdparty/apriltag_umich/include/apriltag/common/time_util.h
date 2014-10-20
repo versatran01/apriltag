@@ -4,9 +4,6 @@ All rights reserved.
 This software may be available under alternative licensing
 terms. Contact Edwin Olson, ebolson@umich.edu, for more information.
 
-   An unlimited license is granted to use, adapt, modify, or embed the 2D
-barcodes into any medium.
-
    Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
 
@@ -32,15 +29,27 @@ of the authors and should not be interpreted as representing official policies,
 either expressed or implied, of the FreeBSD Project.
  */
 
-#ifndef _TAG36H11
-#define _TAG36H11
+#ifndef _TIME_UTIL_H
+#define _TIME_UTIL_H
+
+#include <stdint.h>
+#include <sys/time.h>
+#include <time.h>
+#include <unistd.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-apriltag_family_t *tag36h11_create();
-void tag36h11_destroy(apriltag_family_t *tf);
+int64_t utime_now(); // blacklist-ignore
+int64_t utime_get_seconds(int64_t v);
+int64_t utime_get_useconds(int64_t v);
+void    utime_to_timeval(int64_t v, struct timeval *tv);
+void    utime_to_timespec(int64_t v, struct timespec *ts);
+
+int32_t  timeutil_usleep(useconds_t useconds);
+uint32_t timeutil_sleep(unsigned int seconds);
+
 
 #ifdef __cplusplus
 }

@@ -4,9 +4,6 @@ All rights reserved.
 This software may be available under alternative licensing
 terms. Contact Edwin Olson, ebolson@umich.edu, for more information.
 
-   An unlimited license is granted to use, adapt, modify, or embed the 2D
-barcodes into any medium.
-
    Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
 
@@ -32,18 +29,30 @@ of the authors and should not be interpreted as representing official policies,
 either expressed or implied, of the FreeBSD Project.
  */
 
-#ifndef _TAG36H11
-#define _TAG36H11
+#ifndef _POSTSCRIPT_UTILS_H
+#define _POSTSCRIPT_UTILS_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+// write commands in postscript language to render an image in the current
+// graphics environment. The image will be rendered in one pixel per unit
+// with Y up coordinate axis (e.g. upside down).
+static void postscript_image(FILE *f, image_u8_t *im)
+{
+    fprintf(f, "/readstring {\n  currentfile exch readhexstring pop\n} bind def\n");
+    fprintf(f, "/picstr %d string def\n", im->width);
 
-apriltag_family_t *tag36h11_create();
-void tag36h11_destroy(apriltag_family_t *tf);
+    fprintf(f, "%d %d 8 [1 0 0 1 0 0]\n",
+            im->width, im->height);
 
-#ifdef __cplusplus
+    fprintf(f, "{ picstr readstring }\nimage\n");
+
+    for (int y = 0; y < im->height; y++) {
+        for (int x = 0; x < im->width; x++) {
+            uint8_t v = im->buf[y*im->stride + x];
+            fprintf(f, "%02x", v);
+            if ((x % 32)==31)
+                fprintf(f, "\n");
+        }
+    }
 }
-#endif
 
 #endif

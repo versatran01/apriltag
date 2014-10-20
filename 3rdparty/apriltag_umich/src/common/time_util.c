@@ -4,9 +4,6 @@ All rights reserved.
 This software may be available under alternative licensing
 terms. Contact Edwin Olson, ebolson@umich.edu, for more information.
 
-   An unlimited license is granted to use, adapt, modify, or embed the 2D
-barcodes into any medium.
-
    Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
 
@@ -32,18 +29,45 @@ of the authors and should not be interpreted as representing official policies,
 either expressed or implied, of the FreeBSD Project.
  */
 
-#ifndef _TAG36H11
-#define _TAG36H11
+#include "time_util.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-apriltag_family_t *tag36h11_create();
-void tag36h11_destroy(apriltag_family_t *tf);
-
-#ifdef __cplusplus
+int64_t utime_now() // blacklist-ignore
+{
+    struct timeval tv;
+    gettimeofday (&tv, NULL); // blacklist-ignore
+    return (int64_t) tv.tv_sec * 1000000 + tv.tv_usec;
 }
-#endif
 
-#endif
+int64_t utime_get_seconds(int64_t v)
+{
+    return v/1000000;
+}
+
+int64_t utime_get_useconds(int64_t v)
+{
+    return v%1000000;
+}
+
+void utime_to_timeval(int64_t v, struct timeval *tv)
+{
+    tv->tv_sec  = utime_get_seconds(v);
+    tv->tv_usec = utime_get_useconds(v);
+}
+
+void utime_to_timespec(int64_t v, struct timespec *ts)
+{
+    ts->tv_sec  = utime_get_seconds(v);
+    ts->tv_nsec = utime_get_useconds(v)*1000;
+}
+
+int32_t timeutil_usleep(useconds_t useconds)
+{
+    // unistd.h function
+    return usleep(useconds);
+}
+
+uint32_t timeutil_sleep(unsigned int seconds)
+{
+    // unistd.h function
+    return sleep(seconds);
+}

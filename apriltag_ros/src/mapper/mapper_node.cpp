@@ -54,7 +54,10 @@ void MapperNode::TagsCb(const apriltag_ros::ApriltagsConstPtr& tags_c_msg) {
     mapper_.Initialize(map_.first_tag());
   }
   // Publish updated pose and map
-  pose_viz_.PublishPose(pose, frame_id_, tags_c_msg->header.stamp);
+  std_msgs::Header header;
+  header.frame_id = frame_id_;
+  header.stamp = tags_c_msg->header.stamp;
+  pose_viz_.PublishPose(pose, header);
   tag_viz_.PublishApriltagsMarker(map_.tags_w(), frame_id_,
                                   tags_c_msg->header.stamp);
 }

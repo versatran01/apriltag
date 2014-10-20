@@ -4,9 +4,6 @@ All rights reserved.
 This software may be available under alternative licensing
 terms. Contact Edwin Olson, ebolson@umich.edu, for more information.
 
-   An unlimited license is granted to use, adapt, modify, or embed the 2D
-barcodes into any medium.
-
    Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
 
@@ -32,18 +29,24 @@ of the authors and should not be interpreted as representing official policies,
 either expressed or implied, of the FreeBSD Project.
  */
 
-#ifndef _TAG36H11
-#define _TAG36H11
+#include "unionfind.h"
+#include <stdlib.h>
+#include <assert.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-apriltag_family_t *tag36h11_create();
-void tag36h11_destroy(apriltag_family_t *tf);
-
-#ifdef __cplusplus
+unionfind_t *unionfind_create(uint32_t maxid)
+{
+    unionfind_t *uf = (unionfind_t*) calloc(1, sizeof(unionfind_t));
+    uf->maxid = maxid;
+    uf->data = (struct ufrec*) malloc((maxid+1) * sizeof(struct ufrec));
+    for (int i = 0; i <= maxid; i++) {
+        uf->data[i].size = 1;
+        uf->data[i].parent = i;
+    }
+    return uf;
 }
-#endif
 
-#endif
+void unionfind_destroy(unionfind_t *uf)
+{
+    free(uf->data);
+    free(uf);
+}

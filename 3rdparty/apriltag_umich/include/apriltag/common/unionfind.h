@@ -4,9 +4,6 @@ All rights reserved.
 This software may be available under alternative licensing
 terms. Contact Edwin Olson, ebolson@umich.edu, for more information.
 
-   An unlimited license is granted to use, adapt, modify, or embed the 2D
-barcodes into any medium.
-
    Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
 
@@ -32,18 +29,68 @@ of the authors and should not be interpreted as representing official policies,
 either expressed or implied, of the FreeBSD Project.
  */
 
-#ifndef _TAG36H11
-#define _TAG36H11
+#ifndef _UNIONFIND_H
+#define _UNIONFIND_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include <stdint.h>
 
-apriltag_family_t *tag36h11_create();
-void tag36h11_destroy(apriltag_family_t *tf);
+typedef struct unionfind unionfind_t;
 
-#ifdef __cplusplus
+struct unionfind
+{
+    uint32_t maxid;
+    struct ufrec *data;
+};
+
+struct ufrec
+{
+    uint32_t parent;
+    uint32_t size;
+};
+
+unionfind_t *unionfind_create(uint32_t maxid);
+void unionfind_destroy(unionfind_t *uf);
+
+static inline uint32_t unionfind_get_representative(unionfind_t *uf, uint32_t id)
+{
+    // base case: a node is its own parent
+    if (uf->data[id].parent == id)
+        return id;
+
+    // otherwise, recurse
+    uint32_t root = unionfind_get_representative(uf, uf->data[id].parent);
+
+    // short circuit the path
+    uf->data[id].parent = root;
+
+    return root;
 }
-#endif
 
+static inline uint32_t unionfind_get_set_size(unionfind_t *uf, uint32_t id)
+{
+    uint32_t repid = unionfind_get_representative(uf, id);
+    return uf->data[repid].size;
+}
+
+static inline uint32_t unionfind_connect(unionfind_t *uf, uint32_t aid, uint32_t bid)
+{
+    uint32_t aroot = unionfind_get_representative(uf, aid);
+    uint32_t broot = unionfind_get_representative(uf, bid);
+
+    if (aroot == broot)
+        return aroot;
+
+    uint32_t asize = uf->data[aroot].size;
+    uint32_t bsize = uf->data[broot].size;
+
+    if (asize > bsize) {
+        uf->data[broot].parent = aroot;
+        uf->data[aroot].size += bsize;
+        return aroot;
+    } else {
+        uf->data[aroot].parent = broot;
+        uf->data[broot].size += asize;
+        return broot;
+    }
+}
 #endif

@@ -34,7 +34,7 @@ DetectorNode::DetectorNode(const ros::NodeHandle &nh,
   if (!pnh.getParam("size", tag_size_)) {
     throw std::runtime_error("No tag size specified");
   }
-  tag_viz_.set_color(kr::rviz_helper::colors::RED);
+  tag_viz_.set_color(kr::viz::colors::RED);
   tag_viz_.set_alpha(0.75);
 }
 

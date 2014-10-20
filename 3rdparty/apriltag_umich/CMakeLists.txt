@@ -24,18 +24,23 @@ else(USE_ROS)
 endif(USE_ROS)
 
 find_package(OpenCV REQUIRED)
-include_directories(${OpenCV_INCLUDE_DIRS})
+include_directories(include/apriltag
+    include/apriltag/common
+    ${OpenCV_INCLUDE_DIRS}
+    )
 
-file(GLOB C_FILES ${PROJECT_SOURCE_DIR}/src/*.c)
-list(REMOVE_ITEM C_FILES ${PROJECT_SOURCE_DIR}/src/tagtest.c)
+file(GLOB C_FILES
+    ${PROJECT_SOURCE_DIR}/src/*.c
+    ${PROJECT_SOURCE_DIR}/src/common/*.c)
+list(REMOVE_ITEM C_FILES ${PROJECT_SOURCE_DIR}/src/apriltag_demo.c)
 add_library(${PROJECT_NAME} SHARED ${C_FILES})
 target_link_libraries(${PROJECT_NAME}
     ${CMAKE_THREAD_LIBS_INIT}
     )
 
 #apriltag umich
-add_executable(test_apriltag_umich src/test/test_apriltag_umich.cpp)
-target_link_libraries(test_apriltag_umich
-    ${PROJECT_NAME}
-    ${OpenCV_LIBRARIES}
-    )
+#add_executable(test_apriltag_umich src/test/test_apriltag_umich.cpp)
+#target_link_libraries(test_apriltag_umich
+#    ${PROJECT_NAME}
+#    ${OpenCV_LIBRARIES}
+#    )

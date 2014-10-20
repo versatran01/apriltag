@@ -5,7 +5,7 @@
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
 #include <rviz/helpers/color.h>
-#include <rviz_helper/colors.h>
+#include <rviz_helper/colors.hpp>
 #include <apriltag_ros/Apriltag.h>
 #include <apriltag_ros/Apriltags.h>
 

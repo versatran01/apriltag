@@ -4,9 +4,6 @@ All rights reserved.
 This software may be available under alternative licensing
 terms. Contact Edwin Olson, ebolson@umich.edu, for more information.
 
-   An unlimited license is granted to use, adapt, modify, or embed the 2D
-barcodes into any medium.
-
    Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
 
@@ -32,18 +29,26 @@ of the authors and should not be interpreted as representing official policies,
 either expressed or implied, of the FreeBSD Project.
  */
 
-#ifndef _TAG36H11
-#define _TAG36H11
+#ifndef _WORKERPOOL_H
+#define _WORKERPOOL_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include "zarray.h"
 
-apriltag_family_t *tag36h11_create();
-void tag36h11_destroy(apriltag_family_t *tf);
+typedef struct workerpool workerpool_t;
 
-#ifdef __cplusplus
-}
-#endif
+// as a special case, if nthreads==1, no additional threads are
+// created, and workerpool_run will run synchronously.
+workerpool_t *workerpool_create(int nthreads);
+void workerpool_destroy(workerpool_t *wp);
+
+void workerpool_add_task(workerpool_t *wp, void (*f)(void *p), void *p);
+
+// runs all added tasks, waits for them to complete.
+void workerpool_run(workerpool_t *wp);
+
+// same as workerpool_run, except always single threaded. (mostly for debugging).
+void workerpool_run_single(workerpool_t *wp);
+
+int workerpool_get_nthreads(workerpool_t *wp);
 
 #endif
