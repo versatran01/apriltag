@@ -1,13 +1,12 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(apriltag_ros)
 
-add_definitions(-std=c++11 -Wall)
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake)
+set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-std=c++11 -Wall")
 
 find_package(catkin REQUIRED COMPONENTS
     roscpp image_transport cv_bridge image_geometry
     sensor_msgs geometry_msgs message_generation
-    apriltag_mit std_msgs rviz_helper
+    apriltag_mit std_msgs rviz_helper kr_cmake_modules
     )
 find_package(gtsam)
 
