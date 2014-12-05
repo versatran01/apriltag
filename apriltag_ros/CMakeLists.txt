@@ -8,7 +8,7 @@ find_package(catkin REQUIRED COMPONENTS
     sensor_msgs geometry_msgs message_generation
     apriltag_mit std_msgs rviz_helper kr_cmake_modules
     )
-find_package(gtsam)
+find_package(Gtsam)
 
 add_message_files(DIRECTORY msg FILES Apriltag.msg Apriltags.msg)
 generate_messages(DEPENDENCIES std_msgs geometry_msgs)
@@ -18,7 +18,7 @@ catkin_package()
 include_directories(
     include
     ${catkin_INCLUDE_DIRS}
-    ${GTSAM_INCLUDE_DIRS}
+    ${Gtsam_INCLUDE_DIRS}
     )
 
 # apriltag_ros library
@@ -32,7 +32,7 @@ add_library(${PROJECT_NAME}
     )
 target_link_libraries(${PROJECT_NAME}
     ${catkin_LIBRARIES}
-    ${GTSAM_LIBRARIES}
+    ${Gtsam_LIBRARIES}
     )
 
 # detector node
