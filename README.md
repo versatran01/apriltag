@@ -2,8 +2,8 @@
 
 This package depends on the following external packages
 
-[kr_cmake_modules](https://github.com/versatran01/kr_utils) - For `find_package(gtsam)`  
-[rviz_helper](https://github.com/versatran01/kr_utils) - For some tag visualization
+[kr_cmake_modules](https://github.com/KumarRobotics/kr_utils) - For `find_package(gtsam)`  
+[rviz_helper](https://github.com/KumarRobotics/kr_utils) - For some tag visualization
 
 A Collection of existing apriltag library
 
