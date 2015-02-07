@@ -37,4 +37,4 @@ class Gaussian {
 
 }  // namespace AprilTags
 
-#endif // APRILTAGS_GAUSSIAN_H_
+#endif  // APRILTAGS_GAUSSIAN_H_
