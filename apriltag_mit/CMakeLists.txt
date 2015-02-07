@@ -18,7 +18,7 @@ include_directories(include
     )
 
 if(USE_ROS)
-    find_package(catkin REQUIRED)
+    find_package(catkin REQUIRED COMPONENTS roslib)
     catkin_package(
         DEPENDS Eigen OpenCV
         CATKIN_DEPENDS
@@ -37,5 +37,9 @@ file(GLOB CC_FILES ${PROJECT_SOURCE_DIR}/src/*.cc)
 add_library(${PROJECT_NAME} SHARED ${CC_FILES})
 target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBRARIES})
 
-add_executable(test_apriltag_mit src/test/test_apriltag_mit.cpp)
-target_link_libraries(test_apriltag_mit ${PROJECT_NAME})
+if(USE_ROS)
+    include_directories(${catkin_INCLUDE_DIRS})
+    add_executable(test_apriltag_mit src/test/test_apriltag_mit.cpp)
+    target_link_libraries(test_apriltag_mit
+        ${PROJECT_NAME} ${catkin_LIBRARIES})
+endif()
