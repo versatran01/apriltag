@@ -1,4 +1,4 @@
-<package>
+<package format="2">
     <name>apriltag_ros</name>
     <version>0.0.1</version>
     <description>The apriltag ros package</description>
@@ -8,25 +8,11 @@
 
     <buildtool_depend>catkin</buildtool_depend>
 
-    <build_depend>roscpp</build_depend>
-    <build_depend>image_transport</build_depend>
-    <build_depend>cv_bridge</build_depend>
-    <build_depend>std_msgs</build_depend>
-    <build_depend>sensor_msgs</build_depend>
-    <build_depend>geometry_msgs</build_depend>
-    <build_depend>message_generation</build_depend>
-    <build_depend>apriltag_mit</build_depend>
-    <build_depend>rviz_helper</build_depend>
-    <build_depend>kr_cmake_modules</build_depend>
-
-    <run_depend>roscpp</run_depend>
-    <run_depend>image_transport</run_depend>
-    <run_depend>cv_bridge</run_depend>
-    <run_depend>std_msgs</run_depend>
-    <run_depend>sensor_msgs</run_depend>
-    <run_depend>geometry_msgs</run_depend>
-    <run_depend>message_runtime</run_depend>
-    <run_depend>apriltag_mit</run_depend>
-    <run_depend>rviz_helper</run_depend>
-    <run_depend>kr_cmake_modules</run_depend>
+    <depend>roscpp</depend>
+    <depend>image_transport</depend>
+    <depend>cv_bridge</depend>
+    <depend>std_msgs</depend>
+    <depend>sensor_msgs</depend>
+    <depend>geometry_msgs</depend>
+    <depend>message_generation</depend>
 </package>

@@ -2,8 +2,11 @@ cmake_minimum_required(VERSION 2.8)
 project(apriltag_umich)
 
 set(USE_ROS TRUE)
-
 add_definitions(-std=gnu99 -fPIC)
+
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE RelWithDebInfo)
+endif()
 
 find_package (Threads)
 include_directories(include)
@@ -26,7 +29,6 @@ endif()
 include_directories(
     include/apriltag
     include/apriltag/common
-    #${OpenCV_INCLUDE_DIRS}
     )
 
 file(GLOB C_FILES
@@ -38,10 +40,3 @@ add_library(${PROJECT_NAME} SHARED ${C_FILES})
 target_link_libraries(${PROJECT_NAME}
     ${CMAKE_THREAD_LIBS_INIT}
     )
-
-#apriltag umich
-#add_executable(test_apriltag_umich src/test/test_apriltag_umich.cpp)
-#target_link_libraries(test_apriltag_umich
-#    ${PROJECT_NAME}
-#    ${OpenCV_LIBRARIES}
-#    )
