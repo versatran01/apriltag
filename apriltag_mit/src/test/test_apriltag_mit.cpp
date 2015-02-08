@@ -11,7 +11,6 @@
 
 #include <ros/package.h>
 
-// AprilTags::TagDetector tag_detector(AprilTags::tagCodes36h11);
 using namespace AprilTags;
 
 int main(int argc, char** argv) {
