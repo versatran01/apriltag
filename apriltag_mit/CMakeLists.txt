@@ -21,7 +21,7 @@ if(USE_ROS)
     find_package(catkin REQUIRED COMPONENTS roslib)
     catkin_package(
         DEPENDS Eigen OpenCV
-        CATKIN_DEPENDS
+        CATKIN_DEPENDS roslib
         INCLUDE_DIRS include
         LIBRARIES ${PROJECT_NAME}
         )
