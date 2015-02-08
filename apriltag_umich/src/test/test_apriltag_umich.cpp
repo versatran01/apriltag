@@ -1,16 +1,14 @@
 #include <iostream>
 
+#include "apriltag_umich/apriltag_umich.h"
+
 #include "opencv2/core/core.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/highgui/highgui.hpp"
 
 #include <ros/package.h>
 
-#include "apriltag_umich/apriltag_umich.h"
 
-// Detect April tags
-// april_tag_family_t *tf = tag36h11_create();
-// april_tag_detector_t *td = april_tag_detector_create(tf);
 using namespace apriltag_umich;
 
 int main(int argc, char** argv) {
@@ -40,9 +38,11 @@ int main(int argc, char** argv) {
     ZarrayPtr detections(apriltag_detector_detect(td.get(), im.get()));
     const auto num_detections = zarray_size(detections.get());
     std::cout << "Number of detections: " << num_detections << std::endl;
+
     for (int i = 0; i < num_detections; ++i) {
       apriltag_detection_t* det;
       zarray_get(detections.get(), i, &det);
+      std::cout << det->p[0][0] << " " << det->p[0][1] << std::endl;
       cv::line(image, cv::Point2f(det->p[0][0], det->p[0][1]),
                cv::Point2f(det->p[1][0], det->p[1][1]),
                cv::Scalar(255, 0, 0, 0));

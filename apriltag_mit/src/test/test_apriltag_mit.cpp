@@ -34,6 +34,7 @@ int main(int argc, char** argv) {
         tag_detector.extractTags(image_gray);
     std::cout << "Number of detections: " << tag_detection.size() << std::endl;
     for (const TagDetection& tag : tag_detection) {
+      std::cout << tag.p[0].first << " " << tag.p[0].second << std::endl;
       tag.draw(image);
     }
   }
