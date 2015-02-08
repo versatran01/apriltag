@@ -1,36 +1,44 @@
 #include <iostream>
+
 #include "opencv2/core/core.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/highgui/highgui.hpp"
-#include "opencv2/calib3d/calib3d.hpp"
+
 #include "AprilTags/TagDetector.h"
 #include "AprilTags/Tag36h11.h"
+#include "AprilTags/Tag25h9.h"
+#include "AprilTags/Tag16h5.h"
 
-AprilTags::TagDetector tag_detector(AprilTags::tagCodes36h11);
+#include <ros/package.h>
+
+// AprilTags::TagDetector tag_detector(AprilTags::tagCodes36h11);
+using namespace AprilTags;
 
 int main(int argc, char** argv) {
-  cv::VideoCapture cap(0);  // open the default camera
-  // cap.set(CV_CAP_PROP_FRAME_WIDTH, 320);
-  // cap.set(CV_CAP_PROP_FRAME_HEIGHT, 240);
-  if (!cap.isOpened())  // check if we succeeded
-    return -1;
+  const std::string package_name = "apriltag_mit";
+  const std::string package_path(ros::package::getPath(package_name));
+  const std::string image_path(package_path + "/image/tag_sampler.png");
 
-  cv::namedWindow("camera", 1);
-  for (;;) {
-    cv::Mat image;
-    cv::Mat image_gray;
-    cap.read(image);  // get a new frame from camera
-    cv::cvtColor(image, image_gray, CV_BGR2GRAY);  // convert rgb to gray
+  // Load image
+  cv::Mat image = cv::imread(image_path, CV_LOAD_IMAGE_COLOR);
+  cv::imshow("original", image);
+  cv::Mat image_gray;
+  cv::cvtColor(image, image_gray, CV_BGR2GRAY);
 
-    // detect April tags
-    vector<AprilTags::TagDetection> detections =
+  // There are three tag families in this image
+  std::vector<TagCodes> all_tag_codes = {tagCodes36h11, tagCodes25h9,
+                                         tagCodes16h5};
+
+  for (const TagCodes& tag_codes : all_tag_codes) {
+    TagDetector tag_detector(tag_codes);
+    std::vector<TagDetection> tag_detection =
         tag_detector.extractTags(image_gray);
-
-    for (unsigned i = 0; i < detections.size(); ++i) detections[i].draw(image);
-    cv::imshow("camera", image);  // display frame
-
-    if (cv::waitKey(10) >= 0) break;
+    std::cout << "Number of detections: " << tag_detection.size() << std::endl;
+    for (const TagDetection& tag : tag_detection) {
+      tag.draw(image);
+    }
   }
 
-  return 0;
+  cv::imshow("detected", image);
+  cv::waitKey(-1);
 }
