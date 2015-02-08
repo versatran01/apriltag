@@ -1,13 +1,17 @@
 extern "C" {
 #include "apriltag/apriltag.h"
-#include "apriltag/image_u8.h"
 #include "apriltag/tag36h11.h"
-#include "apriltag/zarray.h"
+#include "apriltag/tag25h9.h"
+#include "apriltag/tag16h5.h"
+#include "apriltag/common/image_u8.h"
+#include "apriltag/common/zarray.h"
 }
+
 #include <sstream>
 #include <iostream>
 #include <unistd.h>
 #include <stdio.h>
+
 #include "opencv2/core/core.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/highgui/highgui.hpp"

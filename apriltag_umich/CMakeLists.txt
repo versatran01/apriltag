@@ -9,7 +9,6 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 find_package (Threads)
-include_directories(include)
 
 if(USE_ROS)
     find_package(catkin REQUIRED)
@@ -27,6 +26,7 @@ endif()
 
 #find_package(OpenCV REQUIRED)
 include_directories(
+    include
     include/apriltag
     include/apriltag/common
     )
@@ -37,6 +37,4 @@ file(GLOB C_FILES
 list(REMOVE_ITEM C_FILES ${PROJECT_SOURCE_DIR}/src/apriltag_demo.c)
 
 add_library(${PROJECT_NAME} SHARED ${C_FILES})
-target_link_libraries(${PROJECT_NAME}
-    ${CMAKE_THREAD_LIBS_INIT}
-    )
+target_link_libraries(${PROJECT_NAME} ${CMAKE_THREAD_LIBS_INIT})
