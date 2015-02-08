@@ -228,22 +228,21 @@ void TagDetection::draw(cv::Mat &image) const {
 
   // plot outline
   cv::line(image, cv::Point2f(p1.first, p1.second),
-           cv::Point2f(p2.first, p2.second), cv::Scalar(255, 0, 0, 0));
+           cv::Point2f(p2.first, p2.second), cv::Scalar(255, 0, 0));
   cv::line(image, cv::Point2f(p2.first, p2.second),
-           cv::Point2f(p3.first, p3.second), cv::Scalar(0, 255, 0, 0));
+           cv::Point2f(p3.first, p3.second), cv::Scalar(0, 255, 0));
   cv::line(image, cv::Point2f(p3.first, p3.second),
-           cv::Point2f(p4.first, p4.second), cv::Scalar(0, 0, 255, 0));
+           cv::Point2f(p4.first, p4.second), cv::Scalar(0, 0, 255));
   cv::line(image, cv::Point2f(p4.first, p4.second),
-           cv::Point2f(p1.first, p1.second), cv::Scalar(255, 0, 255, 0));
+           cv::Point2f(p1.first, p1.second), cv::Scalar(255, 0, 255));
 
   // mark center
   // cv::circle(image, cv::Point2f(cxy.first, cxy.second), 8,
   // cv::Scalar(0,0,255,0), 2);
 
   // print ID
-  std::ostringstream strSt;
-  strSt << id;
-  cv::putText(image, strSt.str(), cv::Point2f(cxy.first - 5, cxy.second + 5),
+  cv::putText(image, std::to_string(id),
+              cv::Point2f(cxy.first - 5, cxy.second + 5),
               cv::FONT_HERSHEY_PLAIN, 1, cv::Scalar(0, 0, 255), 2);
 }
 
