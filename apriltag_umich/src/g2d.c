@@ -1,4 +1,4 @@
-/* (C) 2013-2014, The Regents of The University of Michigan
+/* (C) 2013-2015, The Regents of The University of Michigan
 All rights reserved.
 
 This software may be available under alternative licensing
@@ -48,6 +48,18 @@ zarray_t *g2d_polygon_create_data(double v[][2], int sz)
 
     for (int i = 0; i < sz; i++)
         zarray_add(points, v[i]);
+
+    return points;
+}
+
+zarray_t *g2d_polygon_create_zeros(int sz)
+{
+    zarray_t *points = zarray_create(sizeof(double[2]));
+
+    double z[2] = { 0, 0 };
+
+    for (int i = 0; i < sz; i++)
+        zarray_add(points, z);
 
     return points;
 }
@@ -173,6 +185,9 @@ zarray_t *g2d_convex_hull(const zarray_t *points)
     // step 1: find left most point.
     int insz = zarray_size(points);
 
+    // must have at least 2 points. (XXX need 3?)
+    assert(insz >= 2);
+
     double *pleft = NULL;
     for (int i = 0; i < insz; i++) {
         double *p;
@@ -181,6 +196,9 @@ zarray_t *g2d_convex_hull(const zarray_t *points)
         if (pleft == NULL || p[0] < pleft[0])
             pleft = p;
     }
+
+    // cannot be NULL since there must be at least one point.
+    assert(pleft != NULL);
 
     zarray_add(hull, pleft);
 
@@ -192,6 +210,8 @@ zarray_t *g2d_convex_hull(const zarray_t *points)
     double *p = pleft;
 
     while (1) {
+        assert(p != NULL);
+
         double *q = NULL;
         double n0 = 0, n1 = 0; // the normal to the line (p, q) (not
                        // necessarily unit length).
@@ -207,23 +227,29 @@ zarray_t *g2d_convex_hull(const zarray_t *points)
             if (thisq == p)
                 continue;
 
+            // the first time we find another point, we initialize our
+            // value of q, forming the line (p,q)
             if (q == NULL) {
                 q = thisq;
                 n0 = q[1] - p[1];
                 n1 = -q[0] + p[0];
             } else {
-                // is point thisq RIGHT OF line (p, q)?
-
+                // we already have a line (p,q). is point thisq RIGHT OF line (p, q)?
                 double e0 = thisq[0] - p[0], e1 = thisq[1] - p[1];
                 double dot = e0*n0 + e1*n1;
 
                 if (dot > 0) {
+                    // it is. change our line.
                     q = thisq;
                     n0 = q[1] - p[1];
                     n1 = -q[0] + p[0];
                 }
             }
         }
+
+        // we must have elected *some* line, so long as there are at
+        // least 2 points in the polygon.
+        assert(q != NULL);
 
         // loop completed?
         if (q == pleft)
@@ -259,7 +285,7 @@ zarray_t *g2d_convex_hull(const zarray_t *points)
 void g2d_polygon_closest_boundary_point(const zarray_t *poly, const double q[2], double *p)
 {
     int psz = zarray_size(poly);
-    double min_dist = HUGE;
+    double min_dist = HUGE_VALF;
 
     for (int i = 0; i < psz; i++) {
         double *p0, *p1;
@@ -287,6 +313,7 @@ int g2d_polygon_contains_point(const zarray_t *poly, double q[2])
     // around it (accumulating 6.28 radians). If we're outside the
     // polygon, we'll accumulate zero.
     int psz = zarray_size(poly);
+    assert(psz > 0);
 
     int last_quadrant;
     int quad_acc = 0;

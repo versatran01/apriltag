@@ -1,4 +1,4 @@
-/* (C) 2013-2014, The Regents of The University of Michigan
+/* (C) 2013-2015, The Regents of The University of Michigan
 All rights reserved.
 
 This software may be available under alternative licensing
@@ -636,6 +636,7 @@ apriltag_family_t *tag36h11_create()
 
 void tag36h11_destroy(apriltag_family_t *tf)
 {
+   free(tf->name);
    free(tf->codes);
    free(tf);
 }

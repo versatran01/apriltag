@@ -1,4 +1,4 @@
-/* (C) 2013-2014, The Regents of The University of Michigan
+/* (C) 2013-2015, The Regents of The University of Michigan
 All rights reserved.
 
 This software may be available under alternative licensing
@@ -252,11 +252,16 @@ void apriltag_detector_clear_families(apriltag_detector_t *td);
 void apriltag_detector_destroy(apriltag_detector_t *td);
 
 // Detect tags from an image and return an array of
-// apriltag_detection_t*.
+// apriltag_detection_t*. You can use apriltag_detections_destroy to
+// free the array and the detections it contains, or call
+// _detection_destroy and zarray_destroy yourself.
 zarray_t *apriltag_detector_detect(apriltag_detector_t *td, image_u8_t *im_orig);
 
 // Call this method on each of the tags returned by apriltag_detector_detect
 void apriltag_detection_destroy(apriltag_detection_t *det);
+
+// destroys the array AND the detections within it.
+void apriltag_detections_destroy(zarray_t *detections);
 
 #ifdef __cplusplus
 }

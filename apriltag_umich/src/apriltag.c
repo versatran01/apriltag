@@ -1,4 +1,4 @@
-/* (C) 2013-2014, The Regents of The University of Michigan
+/* (C) 2013-2015, The Regents of The University of Michigan
 All rights reserved.
 
 This software may be available under alternative licensing
@@ -51,8 +51,8 @@ either expressed or implied, of the FreeBSD Project.
 
 #include "common/postscript_utils.h"
 
-#ifndef PI
-#define PI 3.1415926535897932384626
+#ifndef M_PI
+# define M_PI 3.141592653589793238462643383279502884196
 #endif
 
 extern zarray_t *apriltag_quad_gradient(apriltag_detector_t *td, image_u8_t *im);
@@ -318,7 +318,8 @@ apriltag_detector_t *apriltag_detector_create()
     td->nthreads = 1;
 
     td->qtp.max_nmaxima = 10;
-    td->qtp.min_cluster_pixels = 10;
+    td->qtp.min_cluster_pixels = 5;
+
     td->qtp.max_line_fit_mse = 1.0;
     td->qtp.critical_rad = 10 * M_PI / 180;
     td->qtp.deglitch = 0;
@@ -477,7 +478,7 @@ double quad_goodness(apriltag_family_t *family, image_u8_t *im, struct quad *qua
             Hy += MATD_EL(Hinv, 1, 0);
             Hh += MATD_EL(Hinv, 2, 0);
 
-            float txa = fabsf(tx), tya = fabsf(ty);
+            float txa = fabsf((float) tx), tya = fabsf((float) ty);
             float xymax = fmaxf(txa, tya);
 
 //            if (txa >= 1 + wsz || tya >= 1 + wsz)
@@ -800,7 +801,7 @@ static void quad_decode_task(void *_u)
                 det->goodness = goodness;
                 det->decision_margin = decision_margin;
 
-                double theta = -entry.rotation * PI / 2.0;
+                double theta = -entry.rotation * M_PI / 2.0;
                 double c = cos(theta), s = sin(theta);
 
                 matd_t *R = matd_create(3,3);
@@ -885,7 +886,7 @@ zarray_t *apriltag_detector_detect(apriltag_detector_t *td, image_u8_t *im_orig)
         // 1.499              5
         // 1.999              7
 
-        float sigma = fabsf(td->quad_sigma);
+        float sigma = fabsf((float) td->quad_sigma);
 
         int ksz = 4 * sigma; // 2 std devs in each direction
         if ((ksz & 1) == 0)
@@ -1047,8 +1048,8 @@ zarray_t *apriltag_detector_detect(apriltag_detector_t *td, image_u8_t *im_orig)
     // Step 3. Reconcile detections--- don't report the same tag more
     // than once. (Allow non-overlapping duplicate detections.)
     if (1) {
-        zarray_t *poly0 = g2d_polygon_create_data((double[4][2]) {}, 4);
-        zarray_t *poly1 = g2d_polygon_create_data((double[4][2]) {}, 4);
+        zarray_t *poly0 = g2d_polygon_create_zeros(4);
+        zarray_t *poly1 = g2d_polygon_create_zeros(4);
 
         for (int i0 = 0; i0 < zarray_size(detections); i0++) {
 
@@ -1212,4 +1213,18 @@ zarray_t *apriltag_detector_detect(apriltag_detector_t *td, image_u8_t *im_orig)
     timeprofile_stamp(td->tp, "cleanup");
 
     return detections;
+}
+
+
+// Call this method on each of the tags returned by apriltag_detector_detect
+void apriltag_detections_destroy(zarray_t *detections)
+{
+    for (int i = 0; i < zarray_size(detections); i++) {
+        apriltag_detection_t *det;
+        zarray_get(detections, i, &det);
+
+        apriltag_detection_destroy(det);
+    }
+
+    zarray_destroy(detections);
 }
