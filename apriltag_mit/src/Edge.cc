@@ -69,9 +69,12 @@ void Edge::calcEdges(float theta0, int x, int y, const FloatImage &theta,
 
 void Edge::mergeEdges(std::vector<Edge> &edges, UnionFindSimple &uf,
                       float tmin[], float tmax[], float mmin[], float mmax[]) {
-  for (size_t i = 0; i < edges.size(); i++) {
-    int ida = edges[i].pixelIdxA;
-    int idb = edges[i].pixelIdxB;
+  //  for (size_t i = 0; i < edges.size(); i++) {
+  //    int ida = edges[i].pixelIdxA;
+  //    int idb = edges[i].pixelIdxB;
+  for (const Edge &e : edges) {
+    int ida = e.pixelIdxA;
+    int idb = e.pixelIdxB;
 
     ida = uf.getRepresentative(ida);
     idb = uf.getRepresentative(idb);
@@ -108,7 +111,6 @@ void Edge::mergeEdges(std::vector<Edge> &edges, UnionFindSimple &uf,
     if (costab <= (min(costa, costb) + Edge::thetaThresh / (sza + szb)) &&
         (mmaxab - mminab) <= min(mmax[ida] - mmin[ida], mmax[idb] - mmin[idb]) +
                                  Edge::magThresh / (sza + szb)) {
-
       int idab = uf.connectNodes(ida, idb);
 
       tmin[idab] = tminab;

@@ -14,8 +14,15 @@ GLineSegment2D GLineSegment2D::lsqFitXYW(
   float mincoord = std::numeric_limits<float>::infinity();
   ;
 
-  for (unsigned int i = 0; i < xyweight.size(); i++) {
-    std::pair<float, float> p(xyweight[i].x, xyweight[i].y);
+  //  for (unsigned int i = 0; i < xyweight.size(); i++) {
+  //    std::pair<float, float> p(xyweight[i].x, xyweight[i].y);
+  //    float coord = gline.getLineCoordinate(p);
+  //    maxcoord = std::max(maxcoord, coord);
+  //    mincoord = std::min(mincoord, coord);
+  //  }
+
+  for (const XYWeight &w : xyweight) {
+    std::pair<float, float> p(w.x, w.y);
     float coord = gline.getLineCoordinate(p);
     maxcoord = std::max(maxcoord, coord);
     mincoord = std::min(mincoord, coord);
