@@ -2,12 +2,12 @@
 #define APRILTAG_UMICH_H_
 
 extern "C" {
-#include "apriltag/apriltag.h"
-#include "apriltag/tag36h11.h"
-#include "apriltag/tag25h9.h"
-#include "apriltag/tag16h5.h"
-#include "apriltag/common/image_u8.h"
-#include "apriltag/common/zarray.h"
+#include "apriltag.h"
+#include "tag36h11.h"
+#include "tag25h9.h"
+#include "tag16h5.h"
+#include "image_u8_ext.h"
+#include "zarray.h"
 }
 
 #include <memory>
@@ -47,6 +47,6 @@ using TagDetectionPtr = std::unique_ptr<apriltag_detection_t, FreeTagDetection>;
 using Imageu8Ptr = std::unique_ptr<image_u8_t, FreeImageu8>;
 using ZarrayPtr = std::unique_ptr<zarray_t, FreeZarray>;
 
-}
+}  // namespace apriltag_umich
 
 #endif  // APRILTAG_UMICH_H_

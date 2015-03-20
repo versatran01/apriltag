@@ -83,7 +83,7 @@ static inline uint32_t unionfind_get_representative(unionfind_t *uf, uint32_t id
     // otherwise, recurse
     uint32_t root = unionfind_get_representative(uf, uf->data[id].parent);
 
-    // short circuit the path. [XXX This write prevents tail recursion?]
+    // short circuit the path. [XXX This write prevents tail recursion]
     uf->data[id].parent = root;
 
     return root;
@@ -102,7 +102,10 @@ static inline uint32_t unionfind_get_representative(unionfind_t *uf, uint32_t id
     }
 
     // go back and collapse the tree.
-// WTF, faster with this commented out?
+    //
+    // XXX: on some of our workloads that have very shallow trees
+    // (e.g. image segmentation), we are actually faster not doing
+    // this...
     while (uf->data[id].parent != root) {
         uint32_t tmp = uf->data[id].parent;
         uf->data[id].parent = root;

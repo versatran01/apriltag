@@ -63,6 +63,7 @@ int main(int argc, char *argv[])
     getopt_add_int(getopt, 't', "threads", "4", "Use this many CPU threads");
     getopt_add_double(getopt, 'x', "decimate", "1.0", "Decimate input image by this factor");
     getopt_add_double(getopt, 'b', "blur", "0.0", "Apply low-pass blur to input");
+    getopt_add_bool(getopt, '0', "refine-edges", 1, "Spend more time trying to align edges of tags");
     getopt_add_bool(getopt, '1', "refine-decode", 0, "Spend more time trying to decode tags");
     getopt_add_bool(getopt, '2', "refine-pose", 0, "Spend more time trying to precisely localize tags");
 
@@ -99,6 +100,7 @@ int main(int argc, char *argv[])
     td->quad_sigma = getopt_get_double(getopt, "blur");
     td->nthreads = getopt_get_int(getopt, "threads");
     td->debug = getopt_get_bool(getopt, "debug");
+    td->refine_edges = getopt_get_bool(getopt, "refine-edges");
     td->refine_decode = getopt_get_bool(getopt, "refine-decode");
     td->refine_pose = getopt_get_bool(getopt, "refine-pose");
 

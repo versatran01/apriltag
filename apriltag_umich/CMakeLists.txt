@@ -16,9 +16,7 @@ if(USE_ROS)
     find_package(catkin REQUIRED COMPONENTS roslib)
     find_package(OpenCV)
     catkin_package(
-        DEPENDS OpenCV
-        CATKIN_DEPENDS roslib
-        INCLUDE_DIRS include
+        INCLUDE_DIRS include src src/common
         LIBRARIES ${PROJECT_NAME}
         )
 else()
@@ -31,8 +29,8 @@ endif()
 
 include_directories(
     include
-    include/apriltag
-    include/apriltag/common
+    src
+    src/common
     )
 
 file(GLOB C_FILES

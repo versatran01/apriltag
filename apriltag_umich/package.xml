@@ -8,5 +8,4 @@
 
   <buildtool_depend>catkin</buildtool_depend>
 
-  <depend>roslib</depend>
 </package>

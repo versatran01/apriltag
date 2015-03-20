@@ -142,6 +142,15 @@ struct apriltag_detector
     // (e.g. 0.8).
     float quad_sigma;
 
+    // When non-zero, the edges of the each quad are adjusted to "snap
+    // to" strong gradients nearby. This is useful when decimation is
+    // employed, as it can increase the quality of the initial quad
+    // estimate substantially. Generally recommended to be on (1).
+    //
+    // Very computationally inexpensive. Option is ignored if
+    // quad_decimate = 1.
+    int refine_edges;
+
     // when non-zero, detections are refined in a way intended to
     // increase the number of detected tags. Especially effective for
     // very small tags near the resolution threshold (e.g. 10px on a

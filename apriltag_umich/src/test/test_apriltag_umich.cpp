@@ -8,7 +8,6 @@
 
 #include <ros/package.h>
 
-
 using namespace apriltag_umich;
 
 int main(int argc, char** argv) {
