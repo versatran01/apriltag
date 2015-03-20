@@ -1,10 +1,5 @@
 # Apriltag
 
-This package depends on the following external packages
-
-[kr_cmake_modules](https://github.com/KumarRobotics/kr_utils) - For `find_package(gtsam)`  
-[rviz_helper](https://github.com/KumarRobotics/kr_utils) - For some tag visualization
-
 A Collection of existing apriltag library
 
 apriltag_mit - a c++ library from http://people.csail.mit.edu/kaess/apriltags/
