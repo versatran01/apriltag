@@ -4,7 +4,8 @@ project(apriltag_rviz)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake)
 find_package(Qt4 COMPONENTS QtCore QtGui REQUIRED)
 include(${QT_USE_FILE})
-find_package(Ogre)
+find_package(Ogre REQUIRED)
+find_package(catkin REQUIRED COMPONENTS rviz)
 
 include_directories(${Ogre_INCLUDE_DIRS})
 
