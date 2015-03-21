@@ -14,4 +14,5 @@ int main() {
     std::cout << "Min:    " << timer.Min() << std::endl;
     std::cout << "Sum:    " << timer.Sum() << std::endl;
   }
+  timer.Reset();
 }

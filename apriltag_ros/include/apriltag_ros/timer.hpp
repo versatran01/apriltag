@@ -93,6 +93,15 @@ class Timer {
   }
 
   /**
+   * @brief Reset
+   */
+  void Reset() {
+    timing_ = false;
+    elapsed_ = DurationT(0);
+    acc_ = bac::accumulator_set<double, AccumulatorFeatures>();
+  }
+
+  /**
    * @brief Sleep
    * @param tick
    */
@@ -175,7 +184,7 @@ class Timer {
                                             bac::tag::max, bac::tag::mean>;
   std::string name_{"timer"};
   bool timing_{false};
-  DurationT elapsed_;
+  DurationT elapsed_{0};
   std::chrono::high_resolution_clock::time_point start_;
   bac::accumulator_set<double, AccumulatorFeatures> acc_;
 };
