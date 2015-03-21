@@ -26,16 +26,15 @@ class TagCodesTest : public SampleImageTest,
  public:
   TagCodesTest() : tag_detector_(GetParam()) {}
 
-  virtual void SetUp() {
-    tag_detection_ = tag_detector_.extractTags(test_image_);
-  }
-
  protected:
   TagDetector tag_detector_;
-  std::vector<TagDetection> tag_detection_;
 };
 
-TEST_P(TagCodesTest, Detection) { EXPECT_EQ(4, tag_detection_.size()); }
+TEST_P(TagCodesTest, Detection) {
+  std::vector<TagDetection> tag_detection =
+      tag_detector_.extractTags(test_image_);
+  EXPECT_EQ(4, tag_detection.size());
+}
 
 INSTANTIATE_TEST_CASE_P(ThreeTagCodes, TagCodesTest,
                         Values(tagCodes36h11, tagCodes25h9, tagCodes16h5));
