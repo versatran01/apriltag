@@ -9,211 +9,204 @@
 #include <iostream>
 #include <thread>
 
-namespace kr {
+#include <boost/accumulators/accumulators.hpp>
+#include <boost/accumulators/statistics.hpp>
 
-typedef std::chrono::seconds sec;
-typedef std::chrono::milliseconds ms;
-typedef std::chrono::microseconds us;
-typedef std::chrono::nanoseconds ns;
+namespace apriltag_ros {
 
-/**
- * @brief The is_duration struct
- */
+// Useful typedefs
+using sec = std::chrono::seconds;
+using ms = std::chrono::milliseconds;
+using us = std::chrono::microseconds;
+using ns = std::chrono::nanoseconds;
+
+// SIFANE!
 template <typename>
 struct is_duration : std::false_type {};
 
 template <typename T, typename U>
 struct is_duration<std::chrono::duration<T, U>> : std::true_type {};
 
-/**
- * @brief Unit
- * @return unit as a string
- */
+// Units
 template <typename T>
 std::string DurationUnit() {
   return "unknown unit";
 }
 
-template <>
-std::string DurationUnit<sec>() {
-  return "sec";
-}
+#define TIMER_UNIT(time)             \
+  template <>                        \
+  std::string DurationUnit<time>() { \
+    return #time;                    \
+  }
 
-template <>
-std::string DurationUnit<ms>() {
-  return "ms";
-}
+TIMER_UNIT(sec)
+TIMER_UNIT(ms)
+TIMER_UNIT(us)
+TIMER_UNIT(ns)
 
-template <>
-std::string DurationUnit<us>() {
-  return "us";
-}
+#undef TIMER_UNIT
 
-template <>
-std::string DurationUnit<ns>() {
-  return "ns";
-}
-
-/**
- * @brief Ratio
- * @return ratio of type NumType and DenType
- */
-template <typename NumType, typename DenType>
+template <typename NumT, typename DenT>
 double Ratio() {
-  typedef typename NumType::period NumPeriod;
-  typedef typename DenType::period DenPeriod;
+  typedef typename NumT::period NumPeriod;
+  typedef typename DenT::period DenPeriod;
   typedef typename std::ratio_divide<NumPeriod, DenPeriod>::type RatioType;
   return static_cast<double>(RatioType::num) / RatioType::den;
 }
 
+namespace bac = boost::accumulators;
+
 /**
- * @brief The Timer class
+ * @brief The Timer class, a minimum timer class
  */
-template <typename DurationType>
+///@todo: Replace high_resolution_clock with ClockType
+template <typename DurationT,
+          typename ClockT = std::chrono::high_resolution_clock>
 class Timer {
-  static_assert(is_duration<DurationType>::value, "Not a valid duration type");
+  static_assert(is_duration<DurationT>::value, "Not a valid duration type");
 
  public:
-  explicit Timer(const std::string& name, int report_every_n_iter = 0)
-      : name_(name), report_every_n_iter_(report_every_n_iter) {}
+  explicit Timer(const std::string& name, bool start = true) : name_(name) {
+    if (start) Start();
+  }
 
-  int iteration() const { return iteration_; }
   const std::string& name() const { return name_; }
 
   /**
-   * @brief Start, start timing
+   * @brief Start, start timer
    */
   void Start() {
-    assert(!running_);
-    running_ = true;
+    assert(!timing_);
+    timing_ = true;
     start_ = std::chrono::high_resolution_clock::now();
   }
 
   /**
-   * @brief Stop, stop timing
+   * @brief Stop, stop timer
    */
   void Stop() {
-    elapsed_ = std::chrono::duration_cast<DurationType>(
+    elapsed_ = std::chrono::duration_cast<DurationT>(
         std::chrono::high_resolution_clock::now() - start_);
-    assert(running_);
-    total_ += elapsed_;
-    ++iteration_;
-    min_ = std::min(elapsed_, min_);
-    max_ = std::max(elapsed_, max_);
-    running_ = false;
-    if (report_every_n_iter_ == 0) return;
-    if (!(iteration_ % report_every_n_iter_)) Report();
+    assert(timing_);
+    timing_ = false;
+    acc_(Elapsed());  // Update accumulator
   }
 
   /**
-   * @brief Elapsed, last elapsed time duration
+   * @brief Sleep
+   * @param tick
    */
-  template <typename T = DurationType>
-  double Elapsed() const {
-    return elapsed_.count() * Ratio<DurationType, T>();
-  }
-
-  /**
-   * @brief Min, shortest time duration recorded
-   */
-  template <typename T = DurationType>
-  double Min() const {
-    return min_.count() * Ratio<DurationType, T>();
-  }
-
-  /**
-   * @brief Max, longest time duration recorded
-   */
-  template <typename T = DurationType>
-  double Max() const {
-    return max_.count() * Ratio<DurationType, T>();
-  }
-
-  /**
-   * @brief Average, average time duration
-   */
-  template <typename T = DurationType>
-  double Average() const {
-    return total_.count() * Ratio<DurationType, T>() / iteration_;
-  }
-
-  /**
-   * @brief Reset timer
-   */
-  void Reset() {
-    iteration_ = 0;
-    running_ = false;
-  }
-
-  template <typename T = DurationType>
+  template <typename T = DurationT>
   void Sleep(int tick) {
-    T duration(tick);
-    std::this_thread::sleep_for(duration);
+    std::this_thread::sleep_for(T(tick));
   }
 
   /**
-   * @brief BaseUnit
-   * @return base unit of the timer when it's instantiated
+   * @brief Elapsed
+   * @return
    */
-  std::string BaseUnit() { return DurationUnit<DurationType>(); }
+  template <typename T = DurationT>
+  double Elapsed() const {
+    return elapsed_.count() * Ratio<DurationT, T>();
+  }
 
   /**
-   * @brief Unit
-   * @return unit of the timer with duration type T
+   * @brief ElapsedDuration
+   * @return
    */
-  template <typename T = DurationType>
-  std::string Unit() {
+  template <typename T = DurationT>
+  T ElapsedDuration() const {
+    return std::chrono::duration_cast<T>(elapsed_);
+  }
+
+  /**
+   * @brief UnitStr
+   * @return
+   */
+  template <typename T = DurationT>
+  std::string UnitStr() {
     return DurationUnit<T>();
   }
 
   /**
-   * @brief Report
-   * @param unit_name A string representing the unit
+   * @brief BaseUnitStr
+   * @return
    */
-  template <typename T = DurationType>
-  void Report(std::ostream& os = std::cout) const {
-    os << name_ << " - iterations: " << iteration_
-       << ", unit: " << DurationUnit<T>() << ", average: " << Average<T>()
-       << " "
-       << ", min: " << Min<T>() << ", max: " << Max<T>() << std::endl;
+  std::string BaseUnitStr() { return UnitStr(); }
+
+  /**
+   * @brief Mean
+   * @return
+   */
+  template <typename T = DurationT>
+  double Mean() const {
+    return bac::extract_result<bac::tag::mean>(acc_) * Ratio<DurationT, T>();
+  }
+
+  /**
+   * @brief Max
+   * @return
+   */
+  template <typename T = DurationT>
+  double Max() const {
+    return bac::extract_result<bac::tag::max>(acc_) * Ratio<DurationT, T>();
+  }
+
+  /**
+   * @brief Min
+   * @return
+   */
+  template <typename T = DurationT>
+  double Min() const {
+    return bac::extract_result<bac::tag::min>(acc_) * Ratio<DurationT, T>();
+  }
+
+  /**
+   * @brief Sum
+   * @return
+   */
+  template <typename T = DurationT>
+  double Sum() const {
+    return bac::extract_result<bac::tag::sum>(acc_) * Ratio<DurationT, T>();
   }
 
  private:
+  using AccumulatorFeatures = bac::features<bac::tag::sum, bac::tag::min,
+                                            bac::tag::max, bac::tag::mean>;
   std::string name_{"timer"};
-  int iteration_{0};
-  int report_every_n_iter_{0};
-  bool running_{false};
+  bool timing_{false};
+  DurationT elapsed_;
   std::chrono::high_resolution_clock::time_point start_;
-  DurationType min_{DurationType::max()};
-  DurationType max_{DurationType::min()};
-  DurationType elapsed_{0};
-  DurationType total_{0};
+  bac::accumulator_set<double, AccumulatorFeatures> acc_;
 };
 
-typedef Timer<sec> TimerSec;
-typedef Timer<ms> TimerMs;
-typedef Timer<us> TimerUs;
-typedef Timer<ns> TimerNs;
+// More useful typedefs
+using TimerSec = Timer<sec>;
+using TimerMs = Timer<ms>;
+using TimerUs = Timer<us>;
+using TimerNs = Timer<ns>;
 
+/// Helper function
 template <typename ClockType>
 void PrintClockData() {
   std::cout << "- precision: ";
-  // if time unit is less or equal one millisecond
-  typedef typename ClockType::period RatioType;  // type of time unit
+  // If time unit is less or equal one millisecond
+  typedef typename ClockType::period RatioType;
   if (std::ratio_less_equal<RatioType, std::milli>::value) {
-    // convert to and print as milliseconds
+    // Convert to and print as milliseconds
     typedef typename std::ratio_multiply<RatioType, std::kilo>::type TT;
     std::cout << std::fixed << static_cast<double>(TT::num) / TT::den << " ms"
               << std::endl;
   } else {
-    // print as seconds
-    std::cout << std::fixed << static_cast<double>(RatioType::num) /
-                                   RatioType::den << " sec" << std::endl;
+    // Print as seconds
+    std::cout << std::fixed
+              << static_cast<double>(RatioType::num) / RatioType::den << " sec"
+              << std::endl;
   }
   std::cout << "- is_steady: " << std::boolalpha << ClockType::is_steady
             << std::endl;
 }
 
-}  // namespace kr
+}  // namespace apriltag_ros
 
-#endif  // KR_COMMON_TIMER_HPP_
+#endif  // APRILTAG_ROS_TIMER_HPP_

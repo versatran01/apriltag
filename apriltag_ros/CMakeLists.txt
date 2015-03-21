@@ -4,6 +4,7 @@ project(apriltag_ros)
 set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-std=c++11 -Wall")
 
 find_package(OpenCV REQUIRED)
+find_package(Boost REQUIRED)
 find_package(catkin REQUIRED COMPONENTS
     roscpp
     image_transport cv_bridge image_geometry
@@ -15,7 +16,10 @@ catkin_package()
 include_directories(
     include
     ${catkin_INCLUDE_DIRS}
+    ${Boost_INCLUDE_DIRS}
     )
+
+add_executable(test_timer_with_acc src/test_timer_with_acc)
 
 if(CATKIN_ENABLE_TESTING)
     catkin_add_gtest(gtest_apriltag_ros
