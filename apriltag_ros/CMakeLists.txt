@@ -19,8 +19,6 @@ include_directories(
     ${Boost_INCLUDE_DIRS}
     )
 
-add_executable(test_timer_with_acc src/test_timer_with_acc)
-
 if(CATKIN_ENABLE_TESTING)
     catkin_add_gtest(gtest_apriltag_ros
         test/gtest_apriltag_ros.cpp
