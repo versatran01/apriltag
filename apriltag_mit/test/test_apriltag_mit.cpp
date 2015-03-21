@@ -31,8 +31,7 @@ class TagCodesTest : public SampleImageTest,
 };
 
 TEST_P(TagCodesTest, Detection) {
-  std::vector<TagDetection> tag_detection =
-      tag_detector_.extractTags(test_image_);
+  const auto tag_detection = tag_detector_.extractTags(test_image_);
   EXPECT_EQ(4, tag_detection.size());
 }
 
