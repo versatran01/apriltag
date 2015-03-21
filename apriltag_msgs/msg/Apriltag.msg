@@ -1,3 +1,4 @@
+# Apriltag
 # This message contains a detected Apriltag
 uint32 id                      # id of the apriltag in its tag family
 string family                  # Header should be the same is the detection image

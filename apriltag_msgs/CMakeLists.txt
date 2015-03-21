@@ -7,6 +7,8 @@ find_package(catkin REQUIRED
 add_message_files(
     DIRECTORY msg
     FILES Apriltag.msg
+    ApriltagStamped.msg
+    ApriltagArrayStamped.msg
     )
 
 generate_messages(DEPENDENCIES geometry_msgs std_msgs)
