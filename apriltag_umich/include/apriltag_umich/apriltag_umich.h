@@ -33,7 +33,7 @@ struct FreeTagDetection {
   }
 };
 
-struct FreeImageu8 {
+struct FreeImageU8 {
   void operator()(image_u8_t *im) const { image_u8_destroy(im); }
 };
 
@@ -44,7 +44,7 @@ struct FreeZarray {
 using TagFamilyPtr = std::unique_ptr<apriltag_family_t, FreeTagFamily>;
 using TagDetectorPtr = std::unique_ptr<apriltag_detector_t, FreeTagDetector>;
 using TagDetectionPtr = std::unique_ptr<apriltag_detection_t, FreeTagDetection>;
-using Imageu8Ptr = std::unique_ptr<image_u8_t, FreeImageu8>;
+using ImageU8Ptr = std::unique_ptr<image_u8_t, FreeImageU8>;
 using ZarrayPtr = std::unique_ptr<zarray_t, FreeZarray>;
 
 }  // namespace apriltag_umich

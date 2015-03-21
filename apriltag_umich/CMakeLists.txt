@@ -2,8 +2,7 @@ cmake_minimum_required(VERSION 2.8)
 project(apriltag_umich)
 
 set(USE_ROS TRUE)
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+include(cmake/apriltag_umich-extras.cmake)
 add_definitions(-fPIC -Wall)
 
 if(NOT CMAKE_BUILD_TYPE)
@@ -14,10 +13,11 @@ find_package (Threads)
 
 if(USE_ROS)
     find_package(catkin REQUIRED COMPONENTS roslib)
-    find_package(OpenCV)
+    find_package(OpenCV REQUIRED)
     catkin_package(
         INCLUDE_DIRS include src src/common
         LIBRARIES ${PROJECT_NAME}
+        CFG_EXTRAS apriltag_umich-extras.cmake
         )
 else()
     message(STATUS "Source: " ${PROJECT_SOURCE_DIR})
@@ -41,11 +41,12 @@ list(REMOVE_ITEM C_FILES ${PROJECT_SOURCE_DIR}/src/apriltag_demo.c)
 add_library(${PROJECT_NAME} SHARED ${C_FILES})
 target_link_libraries(${PROJECT_NAME} ${CMAKE_THREAD_LIBS_INIT})
 
-if(USE_ROS)
+if(CATKIN_ENABLE_TESTING)
     include_directories(${catkin_INCLUDE_DIRS})
-    add_executable(test_apriltag_umich src/test/test_apriltag_umich.cpp)
+    catkin_add_gtest(test_apriltag_umich test/test_apriltag_umich.cpp)
     target_link_libraries(test_apriltag_umich
         ${PROJECT_NAME}
+        ${catkin_LIBRARIES}
         ${OpenCV_LIBRARIES}
-        ${catkin_LIBRARIES})
+        )
 endif()

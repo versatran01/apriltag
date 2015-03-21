@@ -1,6 +1,5 @@
 #include "apriltag_mit/apriltag_mit.h"
 
-#include <iostream>
 #include <ros/package.h>
 #include <gtest/gtest.h>
 
@@ -21,21 +20,21 @@ class SampleImageTest : public Test {
   cv::Mat test_image_;
 };
 
-class TagCodesTest : public SampleImageTest,
-                     public WithParamInterface<TagCodes> {
+class TagFamilyTest : public SampleImageTest,
+                      public WithParamInterface<TagCodes> {
  public:
-  TagCodesTest() : tag_detector_(GetParam()) {}
+  TagFamilyTest() : tag_detector_(GetParam()) {}
 
  protected:
   TagDetector tag_detector_;
 };
 
-TEST_P(TagCodesTest, Detection) {
+TEST_P(TagFamilyTest, Detection) {
   const auto tag_detection = tag_detector_.extractTags(test_image_);
   EXPECT_EQ(4, tag_detection.size());
 }
 
-INSTANTIATE_TEST_CASE_P(ThreeTagCodes, TagCodesTest,
+INSTANTIATE_TEST_CASE_P(ThreeTagFamilies, TagFamilyTest,
                         Values(tagCodes36h11, tagCodes25h9, tagCodes16h5));
 
 int main(int argc, char **argv) {
