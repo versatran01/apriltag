@@ -5,8 +5,11 @@
 #include <gtest/gtest.h>
 
 using namespace apriltag_mit;
+using ::testing::Test;
+using ::testing::WithParamInterface;
+using ::testing::Values;
 
-class SampleImageTest : public testing::Test {
+class SampleImageTest : public Test {
  protected:
   SampleImageTest()
       : package_name_("apriltag_mit"),
@@ -19,18 +22,23 @@ class SampleImageTest : public testing::Test {
 };
 
 class TagCodesTest : public SampleImageTest,
-                     public ::testing::WithParamInterface<TagCodes> {};
+                     public WithParamInterface<TagCodes> {
+ public:
+  TagCodesTest() : tag_detector_(GetParam()) {}
 
-TEST_P(TagCodesTest, Detection) {
-  TagDetector tag_detector(GetParam());
-  std::vector<TagDetection> tag_detection =
-      tag_detector.extractTags(test_image_);
-  EXPECT_EQ(4, tag_detection.size());
-}
+  virtual void SetUp() {
+    tag_detection_ = tag_detector_.extractTags(test_image_);
+  }
+
+ protected:
+  TagDetector tag_detector_;
+  std::vector<TagDetection> tag_detection_;
+};
+
+TEST_P(TagCodesTest, Detection) { EXPECT_EQ(4, tag_detection_.size()); }
 
 INSTANTIATE_TEST_CASE_P(ThreeTagCodes, TagCodesTest,
-                        ::testing::Values(tagCodes36h11, tagCodes25h9,
-                                          tagCodes16h5));
+                        Values(tagCodes36h11, tagCodes25h9, tagCodes16h5));
 
 int main(int argc, char **argv) {
   testing::InitGoogleTest(&argc, argv);
