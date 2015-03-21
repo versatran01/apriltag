@@ -12,7 +12,10 @@
     <depend>image_transport</depend>
     <depend>cv_bridge</depend>
     <depend>std_msgs</depend>
-    <depend>sensor_msgs</depend>
-    <depend>geometry_msgs</depend>
-    <depend>message_generation</depend>
+
+    <depend>apriltag_mit</depend>
+    <depend>apriltag_umich</depend>
+    <depend>apriltag_msgs</depend>
+
+    <test_depend>rosunit</test_depend>
 </package>

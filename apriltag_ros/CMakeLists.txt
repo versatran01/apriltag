@@ -3,23 +3,26 @@ project(apriltag_ros)
 
 set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-std=c++11 -Wall")
 
+find_package(OpenCV REQUIRED)
 find_package(catkin REQUIRED COMPONENTS
-    roscpp image_transport cv_bridge image_geometry
-    sensor_msgs geometry_msgs message_generation
-    std_msgs
+    roscpp
+    image_transport cv_bridge image_geometry
+    apriltag_mit apriltag_umich apriltag_msgs
     )
-#find_package(Gtsam)
-
-add_message_files(DIRECTORY msg FILES Apriltag.msg Apriltags.msg)
-generate_messages(DEPENDENCIES std_msgs geometry_msgs)
 
 catkin_package()
 
 include_directories(
     include
     ${catkin_INCLUDE_DIRS}
-    ${Gtsam_INCLUDE_DIRS}
     )
+
+if(CATKIN_ENABLE_TESTING)
+    catkin_add_gtest(gtest_apriltag_ros
+        test/gtest_apriltag_ros.cpp
+        test/test_timer.cpp)
+    target_link_libraries(gtest_apriltag_ros ${catkin_LIBRARIES})
+endif()
 
 # apriltag_ros library
 #add_library(${PROJECT_NAME}

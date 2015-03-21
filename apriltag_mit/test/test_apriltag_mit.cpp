@@ -4,9 +4,9 @@
 #include <gtest/gtest.h>
 
 using namespace apriltag_mit;
-using ::testing::Test;
-using ::testing::WithParamInterface;
-using ::testing::Values;
+using testing::Test;
+using testing::WithParamInterface;
+using testing::Values;
 
 class SampleImageTest : public Test {
  protected:
