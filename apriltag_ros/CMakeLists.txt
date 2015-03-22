@@ -6,10 +6,12 @@ set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-std=c++11 -Wall")
 find_package(OpenCV REQUIRED)
 find_package(Boost REQUIRED)
 find_package(catkin REQUIRED COMPONENTS
-    roscpp
+    roscpp dynamic_reconfigure message_generation
     image_transport cv_bridge image_geometry
     apriltag_mit apriltag_umich apriltag_msgs
     )
+
+generate_dynamic_reconfigure_options(cfg/ApriltagDyn.cfg)
 
 catkin_package()
 
