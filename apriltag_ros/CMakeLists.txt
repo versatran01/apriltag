@@ -21,6 +21,16 @@ include_directories(
     ${Boost_INCLUDE_DIRS}
     )
 
+add_library(${PROJECT_NAME} src/apriltag_detector_node.cpp)
+target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
+
+add_dependencies(${PROJECT_NAME}
+    ${catkin_EXPORTED_TARGETS}
+    ${PROJECT_NAME}_gencfg
+    ${PROJECT_NAME}_gencpp
+    ${${PROJECT_NAME}_EXPORTED_TARGETS}
+    )
+
 if(CATKIN_ENABLE_TESTING)
     catkin_add_gtest(gtest_apriltag_ros
         test/gtest_apriltag_ros.cpp

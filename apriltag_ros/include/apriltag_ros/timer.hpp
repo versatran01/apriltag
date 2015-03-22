@@ -59,7 +59,6 @@ namespace bac = boost::accumulators;
 /**
  * @brief The Timer class, a minimum timer class
  */
-///@todo: Replace high_resolution_clock with ClockType
 template <typename DurationT,
           typename ClockT = std::chrono::high_resolution_clock>
 class Timer {
@@ -78,15 +77,14 @@ class Timer {
   void Start() {
     assert(!timing_);
     timing_ = true;
-    start_ = std::chrono::high_resolution_clock::now();
+    start_ = ClockT::now();
   }
 
   /**
    * @brief Stop, stop timer
    */
   void Stop() {
-    elapsed_ = std::chrono::duration_cast<DurationT>(
-        std::chrono::high_resolution_clock::now() - start_);
+    elapsed_ = std::chrono::duration_cast<DurationT>(ClockT::now() - start_);
     assert(timing_);
     timing_ = false;
     acc_(Elapsed());  // Update accumulator
@@ -185,7 +183,7 @@ class Timer {
   std::string name_{"timer"};
   bool timing_{false};
   DurationT elapsed_{0};
-  std::chrono::high_resolution_clock::time_point start_;
+  typename ClockT::time_point start_;
   bac::accumulator_set<double, AccumulatorFeatures> acc_;
 };
 
