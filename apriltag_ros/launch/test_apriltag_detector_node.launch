@@ -1,0 +1,14 @@
+<launch>
+  <arg name="output" default="screen"/>
+  <arg name="bagfile" default="/home/chao/KuaiPan/apriltag1.bag"/>
+  <arg name="camera" default="/mv_25000851"/>
+
+  <!--Rosbag-->
+  <node pkg="rosbag" type="play" name="player" output="log" args="$(arg bagfile)">
+  </node>
+
+  <!--Detector Node-->
+  <include file="$(find apriltag_ros)/launch/apriltag_detector_node.launch">
+    <arg name="camera" value="$(arg camera)"/>
+  </include>
+</launch>

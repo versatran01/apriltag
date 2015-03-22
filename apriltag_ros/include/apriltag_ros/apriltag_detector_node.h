@@ -26,7 +26,7 @@ class ApriltagDetectorNode {
   ros::NodeHandle pnh_, tag_nh_;
   ros::Publisher pub_apriltags_;
   image_transport::ImageTransport it_;
-  image_transport::CameraPublisher sub_camera_;
+  image_transport::CameraSubscriber sub_camera_;
   dynamic_reconfigure::Server<ConfigT> cfg_server_;
   ConfigT config_;
 };

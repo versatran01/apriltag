@@ -21,10 +21,10 @@ include_directories(
     ${Boost_INCLUDE_DIRS}
     )
 
-add_library(${PROJECT_NAME} src/apriltag_detector_node.cpp)
-target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
+add_executable(apriltag_detector_node src/apriltag_detector_node.cpp)
+target_link_libraries(apriltag_detector_node ${catkin_LIBRARIES})
 
-add_dependencies(${PROJECT_NAME}
+add_dependencies(apriltag_detector_node
     ${catkin_EXPORTED_TARGETS}
     ${PROJECT_NAME}_gencfg
     ${PROJECT_NAME}_gencpp
