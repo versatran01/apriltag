@@ -2,6 +2,7 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <ros/package.h>
 
+// TODO: change this to proper unittest
 using namespace apriltag_ros;
 int main(int argc, char** argv) {
   const std::string package_name("apriltag_ros");
@@ -12,7 +13,7 @@ int main(int argc, char** argv) {
   cv::Mat gray;
   cv::cvtColor(image, gray, CV_BGR2GRAY);
 
-  ApriltagDetectorPtr detector = ApriltagDetector::Create("mit", "36h11");
+  ApriltagDetectorPtr detector = ApriltagDetector::Create("umich", "36h11");
   ApriltagVec apriltags = detector->Detect(gray);
   std::cout << "Detection: " << apriltags.size() << std::endl;
   detector->Draw(image);

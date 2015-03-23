@@ -6,6 +6,7 @@
 
 #include <opencv2/core/core.hpp>
 #include <apriltag_mit/apriltag_mit.h>
+#include <apriltag_umich/apriltag_umich.h>
 #include <apriltag_msgs/Apriltag.h>
 
 namespace apriltag_ros {
@@ -49,11 +50,17 @@ class ApriltagDetector {
    */
   void Draw(cv::Mat& image) const;
 
+  /**
+   * @brief Create creates an instance of ApriltagDetector
+   * @param type mit or umich
+   * @param tag_family 36h11, 25h9, 16h5
+   */
   static Ptr Create(const std::string& type, const std::string& tag_family);
 
  protected:
   virtual ApriltagVec DetectImpl(const cv::Mat& image) = 0;
   virtual void DrawImpl(cv::Mat& image) const = 0;
+  virtual ApriltagVec TagDetectionsToApriltagMsg() const = 0;
 
   double decimate_{1.0};
   bool refine_{true};
@@ -73,17 +80,13 @@ class ApriltagDetectorMit : public ApriltagDetector {
 
   virtual ApriltagVec DetectImpl(const cv::Mat& image) override;
   virtual void DrawImpl(cv::Mat& image) const override;
+  virtual ApriltagVec TagDetectionsToApriltagMsg() const override;
 
  private:
   /**
    * @brief RefineDetections Refine corners using opencv cornerSubPix
    */
   void RefineDetections(const cv::Mat& image);
-
-  /**
-   * @brief TagDetectionsToApriltagMsg Convert TagDetections to Apriltag
-   */
-  ApriltagVec TagDetectionsToApriltagMsg() const;
 
   apriltag_mit::TagDetectorPtr tag_detector_;
   std::vector<apriltag_mit::TagDetection> tag_detections_;
@@ -94,6 +97,16 @@ class ApriltagDetectorMit : public ApriltagDetector {
  */
 class ApriltagDetectorUmich : public ApriltagDetector {
  public:
+  explicit ApriltagDetectorUmich(const std::string& tag_family);
+
+  virtual ApriltagVec DetectImpl(const cv::Mat& image) override;
+  virtual void DrawImpl(cv::Mat& image) const override;
+  virtual ApriltagVec TagDetectionsToApriltagMsg() const override;
+
+ private:
+  apriltag_umich::TagFamilyPtr tag_family_;
+  apriltag_umich::TagDetectorPtr tag_detector_;
+  apriltag_umich::ZarrayPtr tag_detections_;
 };
 
 }  // apriltag_ros
