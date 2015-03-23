@@ -23,16 +23,21 @@ class ApriltagDetector {
   virtual ~ApriltagDetector() = default;
 
   void set_decimate(double decimate) {
-    assert(decimate >= 1);  // Decimation less than 1 doesn't make sense
-    decimate_ = decimate;
+    decimate_ = (decimate >= 1) ? decimate : 1;
   }
+  const double decimate() const { return decimate_; }
 
   void set_refine(bool refine) { refine_ = refine; }
+  const bool refine() { return refine_; }
+
+  void set_tag_size(double tag_size) { tag_size_ = tag_size; }
+  const double tag_size() const { return tag_size_; }
 
   /**
    * @brief Detect detects apriltags in given image
    * @param image A grayscale image
    * @return detected tags without poses
+   * @note corner starts from lower-left and goes counter-clockwise
    */
   ApriltagVec Detect(const cv::Mat& image);
 
@@ -40,7 +45,7 @@ class ApriltagDetector {
    * @brief Draw draws detected tags on given image
    * @param image A grayscale/color image
    */
-  //  virtual void Draw(cv::Mat& image) = 0;
+  void Draw(cv::Mat& image) const;
 
   const std::string& type() const { return type_; }
 
@@ -48,10 +53,13 @@ class ApriltagDetector {
 
  protected:
   virtual ApriltagVec DetectImpl(const cv::Mat& image) = 0;
+  virtual void DrawImpl(cv::Mat& image) const = 0;
 
   double decimate_{1.0};
   bool refine_{true};
+  double tag_size_{0};
   std::string type_;
+  std::string tag_family_;
 };
 
 using ApriltagDetectorPtr = ApriltagDetector::Ptr;
@@ -64,9 +72,18 @@ class ApriltagDetectorMit : public ApriltagDetector {
   explicit ApriltagDetectorMit(const apriltag_mit::TagCodes& tag_codes);
 
   virtual ApriltagVec DetectImpl(const cv::Mat& image) override;
+  virtual void DrawImpl(cv::Mat& image) const override;
 
  private:
+  /**
+   * @brief RefineDetections Refine corners using opencv cornerSubPix
+   */
   void RefineDetections(const cv::Mat& image);
+
+  /**
+   * @brief TagDetectionsToApriltagMsg Convert TagDetections to Apriltag
+   */
+  ApriltagVec TagDetectionsToApriltagMsg() const;
 
   apriltag_mit::TagDetector tag_detector_;
   std::vector<apriltag_mit::TagDetection> tag_detections_;

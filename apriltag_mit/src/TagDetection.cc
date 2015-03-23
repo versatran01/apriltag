@@ -219,31 +219,21 @@ void TagDetection::getRelativeTranslationRotation(double tag_size, double fx,
 }
 
 // draw one April tag detection on actual image
-void TagDetection::draw(cv::Mat &image) const {
-  // use corner points detected by line intersection
-  std::pair<float, float> p1 = p[0];
-  std::pair<float, float> p2 = p[1];
-  std::pair<float, float> p3 = p[2];
-  std::pair<float, float> p4 = p[3];
-
+void TagDetection::draw(cv::Mat &image, int thickness) const {
   // plot outline
-  cv::line(image, cv::Point2f(p1.first, p1.second),
-           cv::Point2f(p2.first, p2.second), cv::Scalar(255, 0, 0));
-  cv::line(image, cv::Point2f(p2.first, p2.second),
-           cv::Point2f(p3.first, p3.second), cv::Scalar(0, 255, 0));
-  cv::line(image, cv::Point2f(p3.first, p3.second),
-           cv::Point2f(p4.first, p4.second), cv::Scalar(0, 0, 255));
-  cv::line(image, cv::Point2f(p4.first, p4.second),
-           cv::Point2f(p1.first, p1.second), cv::Scalar(255, 0, 255));
-
-  // mark center
-  // cv::circle(image, cv::Point2f(cxy.first, cxy.second), 8,
-  // cv::Scalar(0,0,255,0), 2);
+  cv::line(image, cv::Point2f(p[0].first, p[0].second),
+           cv::Point2f(p[1].first, p[1].second), CV_RGB(255, 0, 0), thickness);
+  cv::line(image, cv::Point2f(p[0].first, p[0].second),
+           cv::Point2f(p[3].first, p[3].second), CV_RGB(0, 255, 0), thickness);
+  cv::line(image, cv::Point2f(p[1].first, p[1].second),
+           cv::Point2f(p[2].first, p[2].second), CV_RGB(0, 0, 255), thickness);
+  cv::line(image, cv::Point2f(p[2].first, p[2].second),
+           cv::Point2f(p[3].first, p[3].second), CV_RGB(0, 0, 255), thickness);
 
   // print ID
   cv::putText(image, std::to_string(id),
               cv::Point2f(cxy.first - 5, cxy.second + 5),
-              cv::FONT_HERSHEY_PLAIN, 1, cv::Scalar(0, 0, 255), 2);
+              cv::FONT_HERSHEY_SIMPLEX, 1, CV_RGB(255, 0, 255), 2);
 }
 
 }  // namespace

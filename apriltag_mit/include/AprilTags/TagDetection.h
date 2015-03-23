@@ -99,7 +99,7 @@ struct TagDetection {
 
   //! Draw the detection within the supplied image, including boarders and tag
   // ID.
-  void draw(cv::Mat& image) const;
+  void draw(cv::Mat& image, int thickness = 1) const;
 
   //! Better version
   Eigen::Matrix4d getRelativeH(double tag_size, const cv::Matx33d& K,

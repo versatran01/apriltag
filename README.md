@@ -1,17 +1,14 @@
 # Apriltag
 
-A Collection of existing apriltag library
+A collection of apriltag libraries and a ros node.
 
-apriltag_mit - a c++ library from http://people.csail.mit.edu/kaess/apriltags/
+`apriltag_mit` - a c++ library from http://people.csail.mit.edu/kaess/apriltags/
 
-apriltag_umich - a c library from http://april.eecs.umich.edu/wiki/index.php/AprilTags
+`apriltag_umich` - a c library from http://april.eecs.umich.edu/wiki/index.php/AprilTags
 
-apriltag_ros - a ros node for detecting apriltag. Requires Ubuntu 14 and ROS Indigo or higher.
+`apriltag_ros` - a ros node for detecting apriltag.
 
-All of them are catkin pacakges, simply do
-```
-catkin_make
-```
+`apriltag_msgs` - apriltag ros messages
 
 ## Videos
 
