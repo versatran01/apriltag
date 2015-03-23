@@ -6,6 +6,7 @@
 #include <dynamic_reconfigure/server.h>
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/CameraInfo.h>
+#include <image_geometry/pinhole_camera_model.h>
 
 #include <apriltag_ros/ApriltagDynConfig.h>
 
@@ -28,7 +29,9 @@ class ApriltagDetectorNode {
   image_transport::ImageTransport it_;
   image_transport::CameraSubscriber sub_camera_;
   dynamic_reconfigure::Server<ConfigT> cfg_server_;
+  image_geometry::PinholeCameraModel model_;
   ConfigT config_;
+  bool camera_calibrated_;
 };
 
 }  // namespace apriltag_ros

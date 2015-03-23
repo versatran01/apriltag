@@ -13,7 +13,6 @@ namespace AprilTags {
 using Pointf = std::pair<float, float>;
 
 struct TagDetection {
-
   //! Constructor
   TagDetection();
 
@@ -111,6 +110,19 @@ struct TagDetection {
   void getRelativeRT(double tag_size, const cv::Matx33d& K,
                      const cv::Mat_<double>& D, cv::Mat& rvec,
                      cv::Mat& tvec) const;
+
+  //! Scale this tag
+
+  //TODO: Also need to scale homography?
+  template <typename T>
+  void Scale(T scale) {
+    cxy.first *= scale;
+    cxy.second *= scale;
+    for (auto& c : p) {
+      c.first *= scale;
+      c.second *= scale;
+    }
+  }
 };
 
 }  // namespace AprilTags
