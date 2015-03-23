@@ -21,8 +21,15 @@ include_directories(
     ${Boost_INCLUDE_DIRS}
     )
 
+add_library(${PROJECT_NAME} src/apriltag_detector.cpp)
+target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
+
 add_executable(apriltag_detector_node src/apriltag_detector_node.cpp)
 target_link_libraries(apriltag_detector_node ${catkin_LIBRARIES})
+
+# Hacky test
+add_executable(test_apriltag_detector test/test_apriltag_detector.cpp)
+target_link_libraries(test_apriltag_detector ${PROJECT_NAME})
 
 add_dependencies(apriltag_detector_node
     ${catkin_EXPORTED_TARGETS}
