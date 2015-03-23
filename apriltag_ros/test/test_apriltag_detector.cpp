@@ -1,6 +1,5 @@
 #include "apriltag_ros/apriltag_detector.h"
-#include <opencv2/highgui/highgui.hpp>
-#include <ros/package.h>
+#include <gtest/gtest.h>
 
 // TODO: change this to proper unittest
 using namespace apriltag_ros;
