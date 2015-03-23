@@ -7,7 +7,9 @@ namespace apriltag_ros {
 namespace mit = apriltag_mit;
 
 /// ApriltagDetector
-ApriltagDetector::ApriltagDetector(const string& type) : type_(type) {}
+ApriltagDetector::ApriltagDetector(const std::string& type,
+                                   const std::string& tag_family)
+    : type_(type), tag_family_(tag_family) {}
 
 ApriltagVec ApriltagDetector::Detect(const cv::Mat& image) {
   if (image.empty()) return {};
@@ -16,11 +18,22 @@ ApriltagVec ApriltagDetector::Detect(const cv::Mat& image) {
 
 void ApriltagDetector::Draw(cv::Mat& image) const { DrawImpl(image); }
 
-static ApriltagDetector::Ptr create(const std::string& type) {}
+static ApriltagDetector::Ptr create(const std::string& type,
+                                    const std::string& tag_family) {}
 
 /// ApriltagDetectorMit
-ApriltagDetectorMit::ApriltagDetectorMit(const mit::TagCodes& tag_codes)
-    : ApriltagDetector("mit"), tag_detector_(tag_codes) {}
+ApriltagDetectorMit::ApriltagDetectorMit(const string& tag_family)
+    : ApriltagDetector("mit", tag_family) {
+  if (tag_family == "36h11") {
+    tag_detector_.reset(new mit::TagDetector(mit::tagCodes36h11));
+  } else if (tag_family == "25h9") {
+    tag_detector_.reset(new mit::TagDetector(mit::tagCodes25h9));
+  } else if (tag_family == "16h5") {
+    tag_detector_.reset(new mit::TagDetector(mit::tagCodes16h5));
+  } else {
+    throw std::invalid_argument("Invalid tag family");
+  }
+}
 
 ApriltagVec ApriltagDetectorMit::DetectImpl(const cv::Mat& image) {
   // Decimate image
@@ -32,7 +45,7 @@ ApriltagVec ApriltagDetectorMit::DetectImpl(const cv::Mat& image) {
   }
 
   // Detection
-  tag_detections_ = tag_detector_.extractTags(gray);
+  tag_detections_ = tag_detector_->extractTags(gray);
   // Handle empty detection
   if (tag_detections_.empty()) return {};
 
@@ -49,7 +62,7 @@ ApriltagVec ApriltagDetectorMit::DetectImpl(const cv::Mat& image) {
   return TagDetectionsToApriltagMsg();
 }
 
-void ApriltagDetectorMit::DrawImpl(cv::Mat &image) const {
+void ApriltagDetectorMit::DrawImpl(cv::Mat& image) const {
   if (tag_detections_.empty()) return;
   for (const mit::TagDetection& td : tag_detections_) {
     td.draw(image);

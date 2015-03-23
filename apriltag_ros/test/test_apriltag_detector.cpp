@@ -12,7 +12,7 @@ int main(int argc, char** argv) {
   cv::Mat gray;
   cv::cvtColor(image, gray, CV_BGR2GRAY);
 
-  ApriltagDetectorMit detector(apriltag_mit::tagCodes36h11);
+  ApriltagDetectorMit detector("36h11");
   ApriltagVec apriltags = detector.Detect(gray);
   std::cout << "Detection: " << apriltags.size() << std::endl;
   detector.Draw(image);

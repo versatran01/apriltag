@@ -18,8 +18,7 @@ class ApriltagDetector {
  public:
   using Ptr = std::unique_ptr<ApriltagDetector>;
 
-  ApriltagDetector() = default;
-  explicit ApriltagDetector(const std::string& type);
+  ApriltagDetector(const std::string& type, const std::string& tag_family);
   virtual ~ApriltagDetector() = default;
 
   void set_decimate(double decimate) {
@@ -32,6 +31,9 @@ class ApriltagDetector {
 
   void set_tag_size(double tag_size) { tag_size_ = tag_size; }
   const double tag_size() const { return tag_size_; }
+
+  const std::string& tag_family() const { return tag_family_; }
+  const std::string& type() const { return type_; }
 
   /**
    * @brief Detect detects apriltags in given image
@@ -47,9 +49,7 @@ class ApriltagDetector {
    */
   void Draw(cv::Mat& image) const;
 
-  const std::string& type() const { return type_; }
-
-  static Ptr create(const std::string& type);
+  static Ptr create(const std::string& type, const std::string& tag_family);
 
  protected:
   virtual ApriltagVec DetectImpl(const cv::Mat& image) = 0;
@@ -69,7 +69,7 @@ using ApriltagDetectorPtr = ApriltagDetector::Ptr;
  */
 class ApriltagDetectorMit : public ApriltagDetector {
  public:
-  explicit ApriltagDetectorMit(const apriltag_mit::TagCodes& tag_codes);
+  explicit ApriltagDetectorMit(const std::string& tag_family);
 
   virtual ApriltagVec DetectImpl(const cv::Mat& image) override;
   virtual void DrawImpl(cv::Mat& image) const override;
@@ -85,7 +85,7 @@ class ApriltagDetectorMit : public ApriltagDetector {
    */
   ApriltagVec TagDetectionsToApriltagMsg() const;
 
-  apriltag_mit::TagDetector tag_detector_;
+  apriltag_mit::TagDetectorPtr tag_detector_;
   std::vector<apriltag_mit::TagDetection> tag_detections_;
 };
 
