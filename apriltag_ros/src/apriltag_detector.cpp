@@ -18,8 +18,17 @@ ApriltagVec ApriltagDetector::Detect(const cv::Mat& image) {
 
 void ApriltagDetector::Draw(cv::Mat& image) const { DrawImpl(image); }
 
-static ApriltagDetector::Ptr create(const std::string& type,
-                                    const std::string& tag_family) {}
+ApriltagDetectorPtr ApriltagDetector::Create(const std::string& type,
+                                             const std::string& tag_family) {
+  if (type == "mit") {
+    return ApriltagDetectorPtr(new ApriltagDetectorMit(tag_family));
+  } else if (type == "umich") {
+    std::cout << "Currently not implemented" << std::endl;
+    return ApriltagDetectorPtr();
+  } else {
+    throw std::invalid_argument("Invalid apriltag detector type.");
+  }
+}
 
 /// ApriltagDetectorMit
 ApriltagDetectorMit::ApriltagDetectorMit(const string& tag_family)
@@ -79,7 +88,7 @@ ApriltagVec ApriltagDetectorMit::TagDetectionsToApriltagMsg() const {
     apriltag.hamming = td.hammingDistance;
     apriltag.family = tag_family_;
     apriltag.size = tag_size_;
-    for (const auto& p : td.p) {
+    for (const mit::FloatPair& p : td.p) {
       geometry_msgs::Point corner;
       corner.x = p.first;
       corner.y = p.second;
@@ -95,7 +104,7 @@ void ApriltagDetectorMit::RefineDetections(const cv::Mat& image) {
   std::vector<cv::Point2f> corners;
   assert(!tag_detections_.empty());
   for (const mit::TagDetection& td : tag_detections_) {
-    for (const auto& p : td.p) {
+    for (const mit::FloatPair& p : td.p) {
       corners.push_back(cv::Point2f(p.first, p.second));
     }
   }
@@ -106,7 +115,7 @@ void ApriltagDetectorMit::RefineDetections(const cv::Mat& image) {
   decltype(corners.size()) i = 0;
   for (mit::TagDetection& td : tag_detections_) {
     decltype(td.cxy.first) sum_x{0.0}, sum_y{0.0};
-    for (auto& p : td.p) {
+    for (mit::FloatPair& p : td.p) {
       p.first = corners[i].x;
       p.second = corners[i].y;
       sum_x += p.first;

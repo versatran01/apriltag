@@ -12,6 +12,7 @@ namespace apriltag_mit = AprilTags;
 namespace AprilTags {
 
 using TagDetectorPtr = std::unique_ptr<TagDetector>;
+using FloatPair = std::pair<float, float>;
 
 }  // namespace apriltag_mit
 

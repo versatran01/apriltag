@@ -16,7 +16,7 @@ using ApriltagVec = std::vector<apriltag_msgs::Apriltag>;
  */
 class ApriltagDetector {
  public:
-  using Ptr = std::unique_ptr<ApriltagDetector>;
+  using Ptr = boost::shared_ptr<ApriltagDetector>;
 
   ApriltagDetector(const std::string& type, const std::string& tag_family);
   virtual ~ApriltagDetector() = default;
@@ -49,7 +49,7 @@ class ApriltagDetector {
    */
   void Draw(cv::Mat& image) const;
 
-  static Ptr create(const std::string& type, const std::string& tag_family);
+  static Ptr Create(const std::string& type, const std::string& tag_family);
 
  protected:
   virtual ApriltagVec DetectImpl(const cv::Mat& image) = 0;
