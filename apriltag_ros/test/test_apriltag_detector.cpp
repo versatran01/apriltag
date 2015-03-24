@@ -1,23 +1,57 @@
 #include "apriltag_ros/apriltag_detector.h"
 #include <gtest/gtest.h>
+#include <ros/package.h>
+#include <opencv2/highgui/highgui.hpp>
 
-// TODO: change this to proper unittest
+using testing::Test;
+using testing::Values;
+using testing::WithParamInterface;
 using namespace apriltag_ros;
-int main(int argc, char** argv) {
-  const std::string package_name("apriltag_ros");
-  const std::string package_path(ros::package::getPath(package_name));
-  const std::string image_path(package_path + "/image/tag36_11_00000.png");
 
-  auto image = cv::imread(image_path, CV_LOAD_IMAGE_COLOR);
-  cv::Mat gray;
-  cv::cvtColor(image, gray, CV_BGR2GRAY);
+class SampleImageTest : public Test {
+ protected:
+  SampleImageTest()
+      : package_name_("apriltag_mit"),
+        package_path_(ros::package::getPath(package_name_)),
+        image_path_(package_path_ + "/image/tag_sampler.png"),
+        test_image_(cv::imread(image_path_, CV_LOAD_IMAGE_GRAYSCALE)) {}
 
-  ApriltagDetectorPtr detector = ApriltagDetector::Create("umich", "36h11");
-  ApriltagVec apriltags = detector->Detect(gray);
-  std::cout << "Detection: " << apriltags.size() << std::endl;
-  detector->Draw(image);
+  std::string package_name_, package_path_, image_path_;
+  cv::Mat test_image_;
+};
 
-  cv::namedWindow("image", CV_WINDOW_KEEPRATIO | CV_WINDOW_NORMAL);
-  cv::imshow("image", image);
-  cv::waitKey(-1);
+class ApriltagDetectorMitTest : public SampleImageTest,
+                                public WithParamInterface<std::string> {
+ public:
+  ApriltagDetectorMitTest()
+      : tag_detector_(ApriltagDetector::Create("mit", GetParam())) {}
+
+ protected:
+  ApriltagDetectorPtr tag_detector_;
+};
+
+class ApriltagDetectorUmichTest : public SampleImageTest,
+                                  public WithParamInterface<std::string> {
+ public:
+  ApriltagDetectorUmichTest()
+      : tag_detector_(ApriltagDetector::Create("umich", GetParam())) {}
+
+ protected:
+  ApriltagDetectorPtr tag_detector_;
+};
+
+TEST_P(ApriltagDetectorMitTest, Detection) {
+  const auto apriltags = tag_detector_->Detect(test_image_);
+  EXPECT_EQ(4, apriltags.size());
 }
+
+INSTANTIATE_TEST_CASE_P(ThreeTagFamilies, ApriltagDetectorMitTest,
+                        Values("36h11", "25h9", "16h5"));
+
+TEST_P(ApriltagDetectorUmichTest, Detection) {
+  const auto apriltags = tag_detector_->Detect(test_image_);
+  EXPECT_EQ(4, apriltags.size());
+}
+
+INSTANTIATE_TEST_CASE_P(ThreeTagFamilies, ApriltagDetectorUmichTest,
+                        Values("36h11", "25h9"));
