@@ -42,6 +42,16 @@ ApriltagDetection::operator apriltag_msgs::Apriltag() const {
     point.y = p[i][1];
     point.z = 1;
     apriltag.corners.push_back(point);
+    if (estimate) {
+      apriltag.estimate = estimate;
+      apriltag.pose.position.x = t(0);
+      apriltag.pose.position.y = t(0);
+      apriltag.pose.position.z = t(0);
+      apriltag.pose.orientation.w = q.w();
+      apriltag.pose.orientation.x = q.x();
+      apriltag.pose.orientation.y = q.y();
+      apriltag.pose.orientation.z = q.z();
+    }
   }
 
   return apriltag;
@@ -69,12 +79,12 @@ void ApriltagDetection::Estimate(const cv::Matx33d& K,
   Eigen::Vector3d r(rvec(0), rvec(1), rvec(2));
 
   // Convert r to quat
-  const auto rn = r.norm();
-  Eigen::Vector3d rnorm(0.0, 0.0, 0.0);
-  if (rn > std::numeric_limits<double>::epsilon() * 10) {
-    rnorm = r / rn;
+  const auto angle = r.norm();
+  Eigen::Vector3d axis;
+  if (angle > std::numeric_limits<double>::epsilon() * 10) {
+    axis = r / angle;
   }
-  q = Eigen::AngleAxis<double>(rn, rnorm);
+  q = Eigen::AngleAxis<double>(angle, axis);
 
   estimate = true;
 }

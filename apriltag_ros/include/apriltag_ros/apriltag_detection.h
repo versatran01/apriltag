@@ -17,7 +17,7 @@ class ApriltagDetection {
   ApriltagDetection() = default;
   explicit ApriltagDetection(const apriltag_mit::TagDetection& td);
   explicit ApriltagDetection(const apriltag_detection_t* td);
-  operator apriltag_msgs::Apriltag() const;
+  explicit operator apriltag_msgs::Apriltag() const;
 
   void Draw(cv::Mat& image, int thickness = 1) const;
   void DrawLine(cv::Mat& image, int b, int e, const cv::Scalar& color,

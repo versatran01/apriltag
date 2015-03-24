@@ -44,13 +44,10 @@ void ApriltagDetector::Draw(cv::Mat& image) const {
 ApriltagVec ApriltagDetector::ToApriltagMsg() const {
   ApriltagVec apriltags;
   for (const ApriltagDetection& td : tag_detections_) {
-    apriltag_msgs::Apriltag apriltag = td;
+    apriltag_msgs::Apriltag apriltag = static_cast<apriltag_msgs::Apriltag>(td);
     apriltag.size = tag_size();
     apriltag.family = tag_family();
     apriltags.push_back(apriltag);
-    if (tag_size() != 0) {
-      // TODO: copy pose information
-    }
   }
   return apriltags;
 }
@@ -105,7 +102,7 @@ void ApriltagDetectorMit::DetectImpl(const cv::Mat& image) {
   }
 
   // Refine corners
-  // Disable for now
+  // Disable for now, maybe add black squares at corner
   //  if (refine_) {
   //    for (mit::TagDetection& td : detections) {
   //      td.refineTag(im_scaled);
