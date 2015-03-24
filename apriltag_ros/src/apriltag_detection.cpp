@@ -45,8 +45,8 @@ ApriltagDetection::operator apriltag_msgs::Apriltag() const {
     if (estimate) {
       apriltag.estimate = estimate;
       apriltag.pose.position.x = t(0);
-      apriltag.pose.position.y = t(0);
-      apriltag.pose.position.z = t(0);
+      apriltag.pose.position.y = t(1);
+      apriltag.pose.position.z = t(2);
       apriltag.pose.orientation.w = q.w();
       apriltag.pose.orientation.x = q.x();
       apriltag.pose.orientation.y = q.y();
@@ -73,10 +73,12 @@ void ApriltagDetection::Estimate(const cv::Matx33d& K,
                                     {p[3][0], p[3][1]}};
 
   // Estimate r and t
-  cv::Matx13d rvec, tvec;
+  // TODO: can not use Matx type here?
+  cv::Mat rvec, tvec;
   cv::solvePnP(p_tag, p_img, K, D, rvec, tvec);
-  t = Eigen::Vector3d(tvec(0), tvec(1), tvec(2));
-  Eigen::Vector3d r(rvec(0), rvec(1), rvec(2));
+  t = Eigen::Vector3d(tvec.at<double>(0), tvec.at<double>(1),
+                      tvec.at<double>(2));
+  Eigen::Vector3d r(rvec.at<double>(0), rvec.at<double>(1), rvec.at<double>(2));
 
   // Convert r to quat
   const auto angle = r.norm();

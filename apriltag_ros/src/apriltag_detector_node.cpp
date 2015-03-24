@@ -40,8 +40,14 @@ void ApriltagDetectorNode::CameraCb(
     model_.fromCameraInfo(cinfo_msg);
     if (image_rectified_) {
       // Call estimate with projection matrix
+      const auto P = model_.projectionMatrix();
+      cv::Matx33d K(P(0), P(1), P(2), P(4), P(5), P(6), P(8), P(9), P(10));
+      auto a = cv::Mat_<double>(1, 5, 0.0);
+      detector_->Estimate(K, a);
     } else {
       // Call estimate with K and D
+      detector_->Estimate(model_.fullIntrinsicMatrix(),
+                          model_.distortionCoeffs());
     }
   }
 

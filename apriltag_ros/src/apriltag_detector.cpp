@@ -30,9 +30,13 @@ void ApriltagDetector::Detect(const cv::Mat& image) {
   DetectImpl(gray);
 }
 
-void ApriltagDetector::Estimate(/* K, D */) {
+void ApriltagDetector::Estimate(const cv::Matx33d& K,
+                                const cv::Mat_<double>& D) {
   // TODO: just call ApriltagDetection::Estimate()
   if (tag_size() == 0) return;
+  for (ApriltagDetection& td : tag_detections_) {
+    td.Estimate(K, D, tag_size());
+  }
 }
 
 void ApriltagDetector::Draw(cv::Mat& image) const {

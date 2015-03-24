@@ -53,7 +53,7 @@ class ApriltagDetector {
    * @brief Estimate estimates poses in camera frame
    */
   // TODO: implement this
-  void Estimate();
+  void Estimate(const cv::Matx33d& K, const cv::Mat_<double>& D);
 
   /**
    * @brief Draw draws detected tags on given image
