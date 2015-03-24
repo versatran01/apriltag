@@ -47,6 +47,38 @@ ApriltagDetection::operator apriltag_msgs::Apriltag() const {
   return apriltag;
 }
 
+void ApriltagDetection::Estimate(const cv::Matx33d& K,
+                                 const cv::Mat_<double>& D, double tag_size) {
+  assert(tag_size > 0);
+  const auto s = tag_size / 2.0;
+
+  // tag corners in tag frame
+  std::vector<cv::Point3d> p_tag = {
+      {-s, -s, 0}, {s, -s, 0}, {s, s, 0}, {-s, s, 0}};
+
+  // pixels coordinates in image frame
+  std::vector<cv::Point2d> p_img = {{p[0][0], p[0][1]},
+                                    {p[1][0], p[1][1]},
+                                    {p[2][0], p[2][1]},
+                                    {p[3][0], p[3][1]}};
+
+  // Estimate r and t
+  cv::Matx13d rvec, tvec;
+  cv::solvePnP(p_tag, p_img, K, D, rvec, tvec);
+  t = Eigen::Vector3d(tvec(0), tvec(1), tvec(2));
+  Eigen::Vector3d r(rvec(0), rvec(1), rvec(2));
+
+  // Convert r to quat
+  const auto rn = r.norm();
+  Eigen::Vector3d rnorm(0.0, 0.0, 0.0);
+  if (rn > std::numeric_limits<double>::epsilon() * 10) {
+    rnorm = r / rn;
+  }
+  q = Eigen::AngleAxis<double>(rn, rnorm);
+
+  estimate = true;
+}
+
 void ApriltagDetection::Draw(cv::Mat& image, int thickness) const {
   DrawLine(image, 0, 1, CV_RED, thickness);
   DrawLine(image, 0, 3, CV_GREEN, thickness);
