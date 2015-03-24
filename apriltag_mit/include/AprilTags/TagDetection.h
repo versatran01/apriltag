@@ -112,17 +112,19 @@ struct TagDetection {
                      cv::Mat& tvec) const;
 
   //! Scale this tag
-
-  //TODO: Also need to scale homography?
+  // TODO: Also need to scale homography?
   template <typename T>
-  void Scale(T scale) {
+  void scaleTag(T scale) {
     cxy.first *= scale;
     cxy.second *= scale;
-    for (auto& c : p) {
+    for (std::pair<float, float>& c : p) {
       c.first *= scale;
       c.second *= scale;
     }
   }
+
+  //! Refine this detection using cornerSubPix
+  void refineTag(const cv::Mat& image);
 };
 
 }  // namespace AprilTags

@@ -236,4 +236,24 @@ void TagDetection::draw(cv::Mat &image, int thickness) const {
               cv::FONT_HERSHEY_SIMPLEX, 1, CV_RGB(255, 0, 255), 2);
 }
 
+void TagDetection::refineTag(const cv::Mat &image) {
+  std::vector<cv::Point2f> corners;
+  for (const std::pair<float, float> &c : p) {
+    corners.push_back(cv::Point2f(c.first, c.second));
+  }
+  const auto criteria =
+      cv::TermCriteria(CV_TERMCRIT_EPS + CV_TERMCRIT_ITER, 20, 0.001);
+  cv::cornerSubPix(image, corners, cv::Size(3, 3), cv::Size(-1, -1), criteria);
+
+  decltype(cxy.first) sum_x{0.0}, sum_y{0.0};
+  for (size_t i = 0; i < 4; ++i) {
+    p[i].first = corners[i].x;
+    p[i].second = corners[i].y;
+    sum_x += p[i].first;
+    sum_y += p[i].second;
+  }
+  cxy.first = sum_x / 4;
+  cxy.second = sum_y / 4;
+}
+
 }  // namespace

@@ -3,11 +3,6 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
-#define CV_RED CV_RGB(255, 0, 0)
-#define CV_GREEN CV_RGB(0, 255, 0)
-#define CV_BLUE CV_RGB(0, 0, 255)
-#define CV_MAGENTA CV_RGB(255, 0, 255)
-
 namespace apriltag_ros {
 
 namespace mit = apriltag_mit;
@@ -20,12 +15,45 @@ ApriltagDetector::ApriltagDetector(const std::string& type,
                                    const std::string& tag_family)
     : type_(type), tag_family_(tag_family) {}
 
-ApriltagVec ApriltagDetector::Detect(const cv::Mat& image) {
-  if (image.empty()) return {};
-  return DetectImpl(image);
+void ApriltagDetector::Detect(const cv::Mat& image) {
+  if (image.empty()) return;
+  // Cleanup previous detections
+  tag_detections_.clear();
+  // Check image type
+  cv::Mat gray;
+  if (image.type() == CV_8UC1) {
+    gray = image;
+  } else if (image.type() == CV_8UC3) {
+    cv::cvtColor(image, gray, CV_BGR2GRAY);
+  }
+  // Detect
+  DetectImpl(gray);
 }
 
-void ApriltagDetector::Draw(cv::Mat& image) const { DrawImpl(image); }
+void ApriltagDetector::Estimate(/* K, D */) {
+  // TODO: just call ApriltagDetection::Estimate()
+  if (tag_size() == 0) return;
+}
+
+void ApriltagDetector::Draw(cv::Mat& image) const {
+  for (const ApriltagDetection& td : tag_detections_) {
+    td.Draw(image);
+  }
+}
+
+ApriltagVec ApriltagDetector::ToApriltagMsg() const {
+  ApriltagVec apriltags;
+  for (const ApriltagDetection& td : tag_detections_) {
+    apriltag_msgs::Apriltag apriltag = td;
+    apriltag.size = tag_size();
+    apriltag.family = tag_family();
+    apriltags.push_back(apriltag);
+    if (tag_size() != 0) {
+      // TODO: copy pose information
+    }
+  }
+  return apriltags;
+}
 
 ApriltagDetectorPtr ApriltagDetector::Create(const std::string& type,
                                              const std::string& tag_family) {
@@ -54,86 +82,39 @@ ApriltagDetectorMit::ApriltagDetectorMit(const string& tag_family)
   }
 }
 
-ApriltagVec ApriltagDetectorMit::DetectImpl(const cv::Mat& image) {
+void ApriltagDetectorMit::DetectImpl(const cv::Mat& image) {
   // Decimate image
-  cv::Mat gray;
+  cv::Mat im_scaled;
   if (decimate_ != 1.0) {
-    cv::resize(image, gray, cv::Size(0, 0), 1 / decimate_, 1 / decimate_);
+    cv::resize(image, im_scaled, cv::Size(0, 0), 1 / decimate_, 1 / decimate_);
   } else {
-    gray = image;
+    im_scaled = image;
   }
 
   // Detection
-  tag_detections_ = tag_detector_->extractTags(gray);
+  std::vector<mit::TagDetection> detections =
+      tag_detector_->extractTags(im_scaled);
   // Handle empty detection
-  if (tag_detections_.empty()) return {};
+  if (detections.empty()) return;
 
   // Handle decimation
   if (decimate_ != 1.0) {
-    for (mit::TagDetection& td : tag_detections_) {
-      td.Scale(decimate_);
+    for (mit::TagDetection& td : detections) {
+      td.scaleTag(decimate_);
     }
   }
 
   // Refine corners
-  if (refine_) RefineDetections(gray);
+  // Disable for now
+  //  if (refine_) {
+  //    for (mit::TagDetection& td : detections) {
+  //      td.refineTag(im_scaled);
+  //    }
+  //  }
 
-  return TagDetectionsToApriltagMsg();
-}
-
-void ApriltagDetectorMit::DrawImpl(cv::Mat& image) const {
-  if (tag_detections_.empty()) return;
-  for (const mit::TagDetection& td : tag_detections_) {
-    td.draw(image);
-  }
-}
-
-ApriltagVec ApriltagDetectorMit::TagDetectionsToApriltagMsg() const {
-  ApriltagVec apriltags;
-  for (const mit::TagDetection& det : tag_detections_) {
-    apriltag_msgs::Apriltag apriltag;
-    apriltag.id = det.id;
-    apriltag.center.x = det.cxy.first;
-    apriltag.center.y = det.cxy.second;
-    apriltag.hamming = det.hammingDistance;
-    apriltag.family = tag_family();
-    apriltag.size = tag_size();
-    for (const mit::FloatPair& p : det.p) {
-      geometry_msgs::Point corner;
-      corner.x = p.first;
-      corner.y = p.second;
-      corner.z = 1;
-      apriltag.corners.push_back(corner);
-    }
-    apriltags.push_back(apriltag);
-  }
-  return apriltags;
-}
-
-void ApriltagDetectorMit::RefineDetections(const cv::Mat& image) {
-  std::vector<cv::Point2f> corners;
-  assert(!tag_detections_.empty());
-  for (const mit::TagDetection& td : tag_detections_) {
-    for (const mit::FloatPair& p : td.p) {
-      corners.push_back(cv::Point2f(p.first, p.second));
-    }
-  }
-  const auto criteria =
-      cv::TermCriteria(CV_TERMCRIT_EPS + CV_TERMCRIT_ITER, 40, 0.001);
-  cv::cornerSubPix(image, corners, cv::Size(5, 5), cv::Size(-1, -1), criteria);
-
-  decltype(corners.size()) i{0};
-  for (mit::TagDetection& td : tag_detections_) {
-    decltype(td.cxy.first) sum_x{0.0}, sum_y{0.0};
-    for (mit::FloatPair& p : td.p) {
-      p.first = corners[i].x;
-      p.second = corners[i].y;
-      sum_x += p.first;
-      sum_y += p.second;
-      ++i;
-    }
-    td.cxy.first = sum_x / 4;
-    td.cxy.second = sum_y / 4;
+  // Convert to common ApriltagDetection type
+  for (const mit::TagDetection& td : detections) {
+    tag_detections_.push_back(ApriltagDetection(td));
   }
 }
 
@@ -155,7 +136,7 @@ ApriltagDetectorUmich::ApriltagDetectorUmich(const std::string& tag_family)
   apriltag_detector_add_family(tag_detector_.get(), tag_family_.get());
 }
 
-ApriltagVec ApriltagDetectorUmich::DetectImpl(const cv::Mat& image) {
+void ApriltagDetectorUmich::DetectImpl(const cv::Mat& image) {
   umich::ImageU8Ptr image_u8(
       image_u8_create_from_gray(image.cols, image.rows, image.data));
   // Handle options
@@ -163,61 +144,17 @@ ApriltagVec ApriltagDetectorUmich::DetectImpl(const cv::Mat& image) {
   tag_detector_->refine_edges = refine_;
 
   // Detection
-  tag_detections_.reset(
+  umich::ZarrayPtr detections(
       apriltag_detector_detect(tag_detector_.get(), image_u8.get()));
 
   // Handle empty detection
-  const auto num_detections = zarray_size(tag_detections_.get());
-  if (num_detections == 0) return {};
+  const auto num_detections = zarray_size(detections.get());
+  if (num_detections == 0) return;
 
-  return TagDetectionsToApriltagMsg();
-}
-
-ApriltagVec ApriltagDetectorUmich::TagDetectionsToApriltagMsg() const {
-  ApriltagVec apriltags;
-  for (int i = 0; i < zarray_size(tag_detections_.get()); ++i) {
-    apriltag_detection_t* det;
-    zarray_get(tag_detections_.get(), i, &det);
-
-    apriltag_msgs::Apriltag apriltag;
-    apriltag.id = det->id;
-    apriltag.family = tag_family();
-    apriltag.size = tag_size();
-    apriltag.center.x = det->c[0];
-    apriltag.center.y = det->c[1];
-    apriltag.hamming = det->hamming;
-    for (int i = 3; i >= 0; --i) {
-      geometry_msgs::Point corner;
-      corner.x = det->p[i][0];
-      corner.y = det->p[i][1];
-      corner.z = 1;
-      apriltag.corners.push_back(corner);
-    }
-    apriltags.push_back(apriltag);
-  }
-
-  return apriltags;
-}
-
-void ApriltagDetectorUmich::DrawImpl(cv::Mat& image) const {
-  if (!tag_detections_) return;
-  for (int i = 0; i < zarray_size(tag_detections_.get()); ++i) {
-    apriltag_detection_t* det;
-    zarray_get(tag_detections_.get(), i, &det);
-
-    int thickness = 1;
-    cv::line(image, cv::Point2f(det->p[3][0], det->p[3][1]),
-             cv::Point2f(det->p[2][0], det->p[2][1]), CV_RED, thickness);
-    cv::line(image, cv::Point2f(det->p[3][0], det->p[3][1]),
-             cv::Point2f(det->p[0][0], det->p[0][1]), CV_GREEN, thickness);
-    cv::line(image, cv::Point2f(det->p[1][0], det->p[1][1]),
-             cv::Point2f(det->p[2][0], det->p[2][1]), CV_BLUE, thickness);
-    cv::line(image, cv::Point2f(det->p[0][0], det->p[0][1]),
-             cv::Point2f(det->p[1][0], det->p[1][1]), CV_BLUE, thickness);
-
-    cv::putText(image, std::to_string(det->id),
-                cv::Point2f(det->c[0] - 5, det->c[1] + 5),
-                cv::FONT_HERSHEY_SIMPLEX, 1, CV_MAGENTA, 2);
+  for (int i = 0; i < num_detections; ++i) {
+    apriltag_detection_t* td;
+    zarray_get(detections.get(), i, &td);
+    tag_detections_.push_back(ApriltagDetection(td));
   }
 }
 

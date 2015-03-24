@@ -2,6 +2,7 @@
 #define APRILTAG_MIT_H_
 
 #include "AprilTags/TagDetector.h"
+#include "AprilTags/TagDetection.h"
 #include "AprilTags/Tag36h11.h"
 #include "AprilTags/Tag25h9.h"
 #include "AprilTags/Tag16h5.h"

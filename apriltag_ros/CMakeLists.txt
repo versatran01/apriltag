@@ -21,11 +21,23 @@ include_directories(
     ${Boost_INCLUDE_DIRS}
     )
 
-add_library(${PROJECT_NAME} src/apriltag_detector.cpp)
+add_library(${PROJECT_NAME}
+    src/apriltag_detector.cpp
+    src/apriltag_detection.cpp
+    )
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
 
 add_executable(apriltag_detector_node src/apriltag_detector_node.cpp)
-target_link_libraries(apriltag_detector_node ${catkin_LIBRARIES})
+target_link_libraries(apriltag_detector_node
+    ${PROJECT_NAME}
+    ${catkin_LIBRARIES}
+    )
+
+add_executable(playground test/playground.cpp)
+target_link_libraries(playground
+    ${PROJECT_NAME}
+    ${catkin_LIBRARIES}
+    )
 
 add_dependencies(apriltag_detector_node
     ${catkin_EXPORTED_TARGETS}
