@@ -42,8 +42,7 @@ class ApriltagDetectorUmichTest : public SampleImageTest,
 
 TEST_P(ApriltagDetectorMitTest, Detection) {
   tag_detector_->Detect(test_image_);
-  const auto apriltags = tag_detector_->ToApriltagMsg();
-  EXPECT_EQ(4, apriltags.size());
+  EXPECT_EQ(4, tag_detector_->tag_detections().size());
 }
 
 INSTANTIATE_TEST_CASE_P(ThreeTagFamilies, ApriltagDetectorMitTest,
@@ -51,8 +50,7 @@ INSTANTIATE_TEST_CASE_P(ThreeTagFamilies, ApriltagDetectorMitTest,
 
 TEST_P(ApriltagDetectorUmichTest, Detection) {
   tag_detector_->Detect(test_image_);
-  const auto apriltags = tag_detector_->ToApriltagMsg();
-  EXPECT_EQ(4, apriltags.size());
+  EXPECT_EQ(4, tag_detector_->tag_detections().size());
 }
 
 INSTANTIATE_TEST_CASE_P(ThreeTagFamilies, ApriltagDetectorUmichTest,

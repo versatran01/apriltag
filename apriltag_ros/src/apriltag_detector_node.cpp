@@ -5,6 +5,8 @@
 #include <cv_bridge/cv_bridge.h>
 #include <opencv2/highgui/highgui.hpp>
 
+#include <geometry_msgs/PoseArray.h>
+
 namespace apriltag_ros {
 
 ApriltagDetectorNode::ApriltagDetectorNode(const ros::NodeHandle& pnh)
@@ -42,8 +44,7 @@ void ApriltagDetectorNode::CameraCb(
       // Call estimate with projection matrix
       const auto P = model_.projectionMatrix();
       cv::Matx33d K(P(0), P(1), P(2), P(4), P(5), P(6), P(8), P(9), P(10));
-      auto a = cv::Mat_<double>(1, 5, 0.0);
-      detector_->Estimate(K, a);
+      detector_->Estimate(K, cv::Mat_<double>(1, 5, 0.0));
     } else {
       // Call estimate with K and D
       detector_->Estimate(model_.fullIntrinsicMatrix(),
