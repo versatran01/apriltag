@@ -19,17 +19,17 @@ class ApriltagDetection {
   explicit ApriltagDetection(const apriltag_detection_t* td);
   explicit operator apriltag_msgs::Apriltag() const;
 
-  void Draw(cv::Mat& image, int thickness = 1) const;
-  void DrawLine(cv::Mat& image, int b, int e, const cv::Scalar& color,
+  void draw(cv::Mat& image, int thickness = 1) const;
+  void drawLine(cv::Mat& image, int b, int e, const cv::Scalar& color,
                 int thickness = 1) const;
 
-  void Estimate(const cv::Matx33d& K, const cv::Mat_<double>& D,
+  void estimate(const cv::Matx33d& K, const cv::Mat_<double>& D,
                 double tag_size);
   int id;
   int hamming;
   double c[2];
   double p[4][2];
-  bool estimate{false};
+  bool estimated{false};
   Eigen::Quaterniond q;
   Eigen::Vector3d t;
 };

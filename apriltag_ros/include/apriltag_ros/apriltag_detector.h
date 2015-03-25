@@ -47,34 +47,34 @@ class ApriltagDetector {
    * @param image A grayscale image
    * @note corner starts from lower-left and goes counter-clockwise
    */
-  void Detect(const cv::Mat& image);
+  void detect(const cv::Mat& image);
 
   /**
    * @brief Estimate estimates poses in camera frame
    */
   // TODO: implement this
-  void Estimate(const cv::Matx33d& K, const cv::Mat_<double>& D);
+  void estimate(const cv::Matx33d& K, const cv::Mat_<double>& D);
 
   /**
    * @brief Draw draws detected tags on given image
    * @param image A grayscale/color image
    */
-  void Draw(cv::Mat& image) const;
+  void draw(cv::Mat& image) const;
 
   /**
    * @brief ToApriltagMsgs convert internal tag detection to ros message
    */
-  ApriltagVec ToApriltagMsg() const;
+  ApriltagVec toApriltagMsg() const;
 
   /**
    * @brief Create creates an instance of ApriltagDetector
    * @param type mit or umich
    * @param tag_family 36h11, 25h9, 16h5
    */
-  static Ptr Create(const std::string& type, const std::string& tag_family);
+  static Ptr create(const std::string& type, const std::string& tag_family);
 
  protected:
-  virtual void DetectImpl(const cv::Mat& image) = 0;
+  virtual void detectImpl(const cv::Mat& image) = 0;
 
   double decimate_{1.0};
   bool refine_{false};
@@ -93,13 +93,13 @@ class ApriltagDetectorMit : public ApriltagDetector {
  public:
   explicit ApriltagDetectorMit(const std::string& tag_family);
 
-  virtual void DetectImpl(const cv::Mat& image) override;
+  virtual void detectImpl(const cv::Mat& image) override;
 
  private:
   /**
    * @brief RefineDetections Refine corners using opencv cornerSubPix
    */
-  void RefineDetections(const cv::Mat& image);
+  void refineDetections(const cv::Mat& image);
 
   apriltag_mit::TagDetectorPtr tag_detector_;
 };
@@ -111,7 +111,7 @@ class ApriltagDetectorUmich : public ApriltagDetector {
  public:
   explicit ApriltagDetectorUmich(const std::string& tag_family);
 
-  virtual void DetectImpl(const cv::Mat& image) override;
+  virtual void detectImpl(const cv::Mat& image) override;
 
  private:
   apriltag_umich::TagFamilyPtr tag_family_;

@@ -24,7 +24,7 @@ class ApriltagDetectorMitTest : public SampleImageTest,
                                 public WithParamInterface<std::string> {
  public:
   ApriltagDetectorMitTest()
-      : tag_detector_(ApriltagDetector::Create("mit", GetParam())) {}
+      : tag_detector_(ApriltagDetector::create("mit", GetParam())) {}
 
  protected:
   ApriltagDetectorPtr tag_detector_;
@@ -34,14 +34,14 @@ class ApriltagDetectorUmichTest : public SampleImageTest,
                                   public WithParamInterface<std::string> {
  public:
   ApriltagDetectorUmichTest()
-      : tag_detector_(ApriltagDetector::Create("umich", GetParam())) {}
+      : tag_detector_(ApriltagDetector::create("umich", GetParam())) {}
 
  protected:
   ApriltagDetectorPtr tag_detector_;
 };
 
 TEST_P(ApriltagDetectorMitTest, Detection) {
-  tag_detector_->Detect(test_image_);
+  tag_detector_->detect(test_image_);
   EXPECT_EQ(4, tag_detector_->tag_detections().size());
 }
 
@@ -49,7 +49,7 @@ INSTANTIATE_TEST_CASE_P(ThreeTagFamilies, ApriltagDetectorMitTest,
                         Values("36h11", "25h9", "16h5"));
 
 TEST_P(ApriltagDetectorUmichTest, Detection) {
-  tag_detector_->Detect(test_image_);
+  tag_detector_->detect(test_image_);
   EXPECT_EQ(4, tag_detector_->tag_detections().size());
 }
 

@@ -42,8 +42,8 @@ ApriltagDetection::operator apriltag_msgs::Apriltag() const {
     point.y = p[i][1];
     point.z = 1;
     apriltag.corners.push_back(point);
-    if (estimate) {
-      apriltag.estimate = estimate;
+    if (estimated) {
+      apriltag.estimated = estimated;
       apriltag.pose.position.x = t(0);
       apriltag.pose.position.y = t(1);
       apriltag.pose.position.z = t(2);
@@ -57,7 +57,7 @@ ApriltagDetection::operator apriltag_msgs::Apriltag() const {
   return apriltag;
 }
 
-void ApriltagDetection::Estimate(const cv::Matx33d& K,
+void ApriltagDetection::estimate(const cv::Matx33d& K,
                                  const cv::Mat_<double>& D, double tag_size) {
   assert(tag_size > 0);
   const auto s = tag_size / 2.0;
@@ -88,20 +88,20 @@ void ApriltagDetection::Estimate(const cv::Matx33d& K,
   }
   q = Eigen::AngleAxis<double>(angle, axis);
 
-  estimate = true;
+  estimated = true;
 }
 
-void ApriltagDetection::Draw(cv::Mat& image, int thickness) const {
-  DrawLine(image, 0, 1, CV_RED, thickness);
-  DrawLine(image, 0, 3, CV_GREEN, thickness);
-  DrawLine(image, 2, 3, CV_BLUE, thickness);
-  DrawLine(image, 1, 2, CV_BLUE, thickness);
+void ApriltagDetection::draw(cv::Mat& image, int thickness) const {
+  drawLine(image, 0, 1, CV_RED, thickness);
+  drawLine(image, 0, 3, CV_GREEN, thickness);
+  drawLine(image, 2, 3, CV_BLUE, thickness);
+  drawLine(image, 1, 2, CV_BLUE, thickness);
 
   cv::putText(image, std::to_string(id), cv::Point2f(c[0] - 5, c[1] + 5),
               cv::FONT_HERSHEY_SIMPLEX, 1, CV_MAGENTA, 2);
 }
 
-void ApriltagDetection::DrawLine(cv::Mat& image, int b, int e,
+void ApriltagDetection::drawLine(cv::Mat& image, int b, int e,
                                  const cv::Scalar& color, int thickness) const {
   cv::line(image, cv::Point2f(p[b][0], p[b][1]), cv::Point2f(p[e][0], p[e][1]),
            color, thickness);

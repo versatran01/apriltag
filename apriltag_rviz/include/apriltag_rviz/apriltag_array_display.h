@@ -21,6 +21,9 @@ class ApriltagArrayDisplay
   ApriltagArrayDisplay();
   virtual ~ApriltagArrayDisplay();
 
+ private Q_SLOTS:
+  void updateColorAndAlpha();
+
  protected:
   virtual void onInitialize();
   virtual void reset();

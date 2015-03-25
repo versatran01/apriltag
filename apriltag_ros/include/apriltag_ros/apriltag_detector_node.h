@@ -18,11 +18,11 @@ class ApriltagDetectorNode {
   using ConfigT = ApriltagDynConfig;
   explicit ApriltagDetectorNode(const ros::NodeHandle& pnh);
 
-  void CameraCb(const sensor_msgs::ImageConstPtr& image_msg,
+  void cameraCb(const sensor_msgs::ImageConstPtr& image_msg,
                 const sensor_msgs::CameraInfoConstPtr& cinfo_msg);
-  void ConnectCb();
+  void connectCb();
 
-  void ConfigCb(ConfigT& config, int level);
+  void configCb(ConfigT& config, int level);
 
  private:
   ros::NodeHandle pnh_, tag_nh_;

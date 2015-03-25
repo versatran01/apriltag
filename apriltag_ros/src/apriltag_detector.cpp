@@ -15,7 +15,7 @@ ApriltagDetector::ApriltagDetector(const std::string& type,
                                    const std::string& tag_family)
     : type_(type), tag_family_(tag_family) {}
 
-void ApriltagDetector::Detect(const cv::Mat& image) {
+void ApriltagDetector::detect(const cv::Mat& image) {
   if (image.empty()) return;
   // Cleanup previous detections
   tag_detections_.clear();
@@ -27,25 +27,25 @@ void ApriltagDetector::Detect(const cv::Mat& image) {
     cv::cvtColor(image, gray, CV_BGR2GRAY);
   }
   // Detect
-  DetectImpl(gray);
+  detectImpl(gray);
 }
 
-void ApriltagDetector::Estimate(const cv::Matx33d& K,
+void ApriltagDetector::estimate(const cv::Matx33d& K,
                                 const cv::Mat_<double>& D) {
   // TODO: just call ApriltagDetection::Estimate()
   if (tag_size() == 0) return;
   for (ApriltagDetection& td : tag_detections_) {
-    td.Estimate(K, D, tag_size());
+    td.estimate(K, D, tag_size());
   }
 }
 
-void ApriltagDetector::Draw(cv::Mat& image) const {
+void ApriltagDetector::draw(cv::Mat& image) const {
   for (const ApriltagDetection& td : tag_detections_) {
-    td.Draw(image);
+    td.draw(image);
   }
 }
 
-ApriltagVec ApriltagDetector::ToApriltagMsg() const {
+ApriltagVec ApriltagDetector::toApriltagMsg() const {
   ApriltagVec apriltags;
   for (const ApriltagDetection& td : tag_detections_) {
     apriltag_msgs::Apriltag apriltag = static_cast<apriltag_msgs::Apriltag>(td);
@@ -56,7 +56,7 @@ ApriltagVec ApriltagDetector::ToApriltagMsg() const {
   return apriltags;
 }
 
-ApriltagDetectorPtr ApriltagDetector::Create(const std::string& type,
+ApriltagDetectorPtr ApriltagDetector::create(const std::string& type,
                                              const std::string& tag_family) {
   if (type == "mit") {
     return ApriltagDetectorPtr(new ApriltagDetectorMit(tag_family));
@@ -83,7 +83,7 @@ ApriltagDetectorMit::ApriltagDetectorMit(const string& tag_family)
   }
 }
 
-void ApriltagDetectorMit::DetectImpl(const cv::Mat& image) {
+void ApriltagDetectorMit::detectImpl(const cv::Mat& image) {
   // Decimate image
   cv::Mat im_scaled;
   if (decimate_ != 1.0) {
@@ -137,7 +137,7 @@ ApriltagDetectorUmich::ApriltagDetectorUmich(const std::string& tag_family)
   apriltag_detector_add_family(tag_detector_.get(), tag_family_.get());
 }
 
-void ApriltagDetectorUmich::DetectImpl(const cv::Mat& image) {
+void ApriltagDetectorUmich::detectImpl(const cv::Mat& image) {
   umich::ImageU8Ptr image_u8(
       image_u8_create_from_gray(image.cols, image.rows, image.data));
   // Handle options

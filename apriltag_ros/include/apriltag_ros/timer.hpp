@@ -47,7 +47,7 @@ TIMER_UNIT(ns)
 #undef TIMER_UNIT
 
 template <typename NumT, typename DenT>
-double Ratio() {
+double ratio() {
   typedef typename NumT::period NumPeriod;
   typedef typename DenT::period DenPeriod;
   typedef typename std::ratio_divide<NumPeriod, DenPeriod>::type RatioType;
@@ -65,8 +65,8 @@ class Timer {
   static_assert(is_duration<DurationT>::value, "Not a valid duration type");
 
  public:
-  explicit Timer(const std::string& name, bool start = true) : name_(name) {
-    if (start) Start();
+  explicit Timer(const std::string& name, bool start_now = true) : name_(name) {
+    if (start_now) start();
   }
 
   const std::string& name() const { return name_; }
@@ -74,7 +74,7 @@ class Timer {
   /**
    * @brief Start, start timer
    */
-  void Start() {
+  void start() {
     assert(!timing_);
     timing_ = true;
     start_ = ClockT::now();
@@ -83,17 +83,17 @@ class Timer {
   /**
    * @brief Stop, stop timer
    */
-  void Stop() {
+  void stop() {
     elapsed_ = std::chrono::duration_cast<DurationT>(ClockT::now() - start_);
     assert(timing_);
     timing_ = false;
-    acc_(Elapsed());  // Update accumulator
+    acc_(elapsed());  // Update accumulator
   }
 
   /**
    * @brief Reset
    */
-  void Reset() {
+  void reset() {
     timing_ = false;
     elapsed_ = DurationT(0);
     acc_ = bac::accumulator_set<double, AccumulatorFeatures>();
@@ -104,7 +104,7 @@ class Timer {
    * @param tick
    */
   template <typename T = DurationT>
-  void Sleep(int tick) {
+  void sleep(int tick) {
     std::this_thread::sleep_for(T(tick));
   }
 
@@ -113,8 +113,8 @@ class Timer {
    * @return
    */
   template <typename T = DurationT>
-  double Elapsed() const {
-    return elapsed_.count() * Ratio<DurationT, T>();
+  double elapsed() const {
+    return elapsed_.count() * ratio<DurationT, T>();
   }
 
   /**
@@ -122,7 +122,7 @@ class Timer {
    * @return
    */
   template <typename T = DurationT>
-  T ElapsedDuration() const {
+  T elapsedDuration() const {
     return std::chrono::duration_cast<T>(elapsed_);
   }
 
@@ -131,7 +131,7 @@ class Timer {
    * @return
    */
   template <typename T = DurationT>
-  std::string UnitStr() {
+  std::string unitStr() {
     return DurationUnit<T>();
   }
 
@@ -139,15 +139,15 @@ class Timer {
    * @brief BaseUnitStr
    * @return
    */
-  std::string BaseUnitStr() { return UnitStr(); }
+  std::string baseUnitStr() { return unitStr(); }
 
   /**
    * @brief Mean
    * @return
    */
   template <typename T = DurationT>
-  double Mean() const {
-    return bac::extract_result<bac::tag::mean>(acc_) * Ratio<DurationT, T>();
+  double mean() const {
+    return bac::extract_result<bac::tag::mean>(acc_) * ratio<DurationT, T>();
   }
 
   /**
@@ -155,8 +155,8 @@ class Timer {
    * @return
    */
   template <typename T = DurationT>
-  double Max() const {
-    return bac::extract_result<bac::tag::max>(acc_) * Ratio<DurationT, T>();
+  double max() const {
+    return bac::extract_result<bac::tag::max>(acc_) * ratio<DurationT, T>();
   }
 
   /**
@@ -164,8 +164,8 @@ class Timer {
    * @return
    */
   template <typename T = DurationT>
-  double Min() const {
-    return bac::extract_result<bac::tag::min>(acc_) * Ratio<DurationT, T>();
+  double min() const {
+    return bac::extract_result<bac::tag::min>(acc_) * ratio<DurationT, T>();
   }
 
   /**
@@ -173,8 +173,8 @@ class Timer {
    * @return
    */
   template <typename T = DurationT>
-  double Sum() const {
-    return bac::extract_result<bac::tag::sum>(acc_) * Ratio<DurationT, T>();
+  double sum() const {
+    return bac::extract_result<bac::tag::sum>(acc_) * ratio<DurationT, T>();
   }
 
  private:
@@ -195,7 +195,7 @@ using TimerNs = Timer<ns>;
 
 /// Helper function
 template <typename ClockType>
-void PrintClockData() {
+void printClockData() {
   std::cout << "- precision: ";
   // If time unit is less or equal one millisecond
   typedef typename ClockType::period RatioType;

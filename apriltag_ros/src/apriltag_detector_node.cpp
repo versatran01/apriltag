@@ -17,25 +17,25 @@ ApriltagDetectorNode::ApriltagDetectorNode(const ros::NodeHandle& pnh)
   tag_nh_.param("size", tag_size_, 0.0);
 
   sub_camera_ =
-      it_.subscribeCamera("image", 1, &ApriltagDetectorNode::CameraCb, this);
+      it_.subscribeCamera("image", 1, &ApriltagDetectorNode::cameraCb, this);
   pub_apriltags_ =
       pnh_.advertise<apriltag_msgs::ApriltagArrayStamped>("apriltags", 1);
   pub_image_ = it_.advertise("image_detection", 1);
   cfg_server_.setCallback(
-      boost::bind(&ApriltagDetectorNode::ConfigCb, this, _1, _2));
+      boost::bind(&ApriltagDetectorNode::configCb, this, _1, _2));
 }
 
-void ApriltagDetectorNode::CameraCb(
+void ApriltagDetectorNode::cameraCb(
     const sensor_msgs::ImageConstPtr& image_msg,
     const sensor_msgs::CameraInfoConstPtr& cinfo_msg) {
   const auto gray = cv_bridge::toCvShare(
                         image_msg, sensor_msgs::image_encodings::MONO8)->image;
 
-  detector_->Detect(gray);
+  detector_->detect(gray);
 
   cv::Mat disp;
   cv::cvtColor(gray, disp, CV_GRAY2BGR);
-  detector_->Draw(disp);
+  detector_->draw(disp);
 
   // Only estimate if camera info is valid
   if (cinfo_msg->K[0] != 0 && cinfo_msg->height != 0) {
@@ -44,10 +44,10 @@ void ApriltagDetectorNode::CameraCb(
       // Call estimate with projection matrix
       const auto P = model_.projectionMatrix();
       cv::Matx33d K(P(0), P(1), P(2), P(4), P(5), P(6), P(8), P(9), P(10));
-      detector_->Estimate(K, cv::Mat_<double>(1, 5, 0.0));
+      detector_->estimate(K, cv::Mat_<double>(1, 5, 0.0));
     } else {
       // Call estimate with K and D
-      detector_->Estimate(model_.fullIntrinsicMatrix(),
+      detector_->estimate(model_.fullIntrinsicMatrix(),
                           model_.distortionCoeffs());
     }
   }
@@ -55,7 +55,7 @@ void ApriltagDetectorNode::CameraCb(
   apriltag_msgs::ApriltagArrayStampedPtr apriltag_array_msg =
       boost::make_shared<apriltag_msgs::ApriltagArrayStamped>();
   apriltag_array_msg->header = image_msg->header;
-  apriltag_array_msg->apriltags = detector_->ToApriltagMsg();
+  apriltag_array_msg->apriltags = detector_->toApriltagMsg();
   pub_apriltags_.publish(apriltag_array_msg);
 
   if (pub_image_.getNumSubscribers() > 0) {
@@ -68,7 +68,7 @@ void ApriltagDetectorNode::CameraCb(
   cv::waitKey(1);
 }
 
-void ApriltagDetectorNode::ConfigCb(ConfigT& config, int level) {
+void ApriltagDetectorNode::configCb(ConfigT& config, int level) {
   if (level < 0) {
     ROS_INFO("%s: %s", pnh_.getNamespace().c_str(),
              "Initializing reconfigure server");
@@ -90,7 +90,7 @@ void ApriltagDetectorNode::ConfigCb(ConfigT& config, int level) {
       detector_type = "umich";
     }
 
-    detector_ = ApriltagDetector::Create(detector_type, tag_family);
+    detector_ = ApriltagDetector::create(detector_type, tag_family);
     detector_->set_tag_size(tag_size_);
     ROS_INFO("Tag size: %f", tag_size_);
   }
