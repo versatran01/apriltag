@@ -10,7 +10,7 @@
 #include "apriltag_rviz/apriltag_array_display.h"
 #include "apriltag_rviz/apriltag_visual.h"
 
-#include <qt4/Qt/qcolor.h>
+#include <QtGui/QColor>
 
 namespace apriltag_rviz {
 
@@ -22,6 +22,20 @@ ApriltagArrayDisplay::ApriltagArrayDisplay() {
   alpha_property_ = new rviz::FloatProperty(
       "Alpha", 1.0, "0 is fully transparent, 1.0 is fully opaque.", this,
       SLOT(updateColorAndAlpha()));
+}
+
+void ApriltagArrayDisplay::onInitialize() { MFDClass::onInitialize(); }
+
+void ApriltagArrayDisplay::reset() {
+  MFDClass::reset();
+  visuals_.clear();
+}
+
+void ApriltagArrayDisplay::updateColorAndAlpha() {
+  float alpha = alpha_property_->getFloat();
+  Ogre::ColourValue color = color_property_->getOgreColor();
+
+  // TODO: a for loop that update color of each visuals
 }
 
 }  // namespace apriltag_rviz
