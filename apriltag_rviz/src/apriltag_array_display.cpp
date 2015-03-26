@@ -78,12 +78,24 @@ void ApriltagArrayDisplay::reset() {
 void ApriltagArrayDisplay::updateDisplayChoice() {
   int display_option = display_property_->getOptionInt();
   if (display_option == Display::SHAPE_ONLY) {
+    // Show shape, hide texture, show color and alpha if shape is arrow
     shape_property_->setHidden(false);
     texture_property_->setHidden(true);
-    // Hide color and alpha if shape is axes
     hideColorAndAlpha(!useArrow());
   } else if (display_option == Display::TEXTURE_ONLY) {
+    // Hide shape, show texture, show alpha, hide color if texture is tag
+    shape_property_->setHidden(true);
+    texture_property_->setHidden(false);
+    alpha_property_->setHidden(false);
+    // Hide color if we choose to use tag as texture
+    bool use_tag = (texture_property_->getOptionInt() == Texture::TAG);
+    color_property_->setHidden(use_tag);
   } else {
+    // Show all
+    shape_property_->setHidden(false);
+    texture_property_->setHidden(false);
+    alpha_property_->setHidden(false);
+    color_property_->setHidden(false);
   }
 }
 
@@ -128,6 +140,18 @@ void ApriltagArrayDisplay::processMessage(
   if (!validateFloats(*msg)) {
     setStatus(StatusProperty::Error, "Topic",
               "Message contained invalid floating point values (nans or infs)");
+    return;
+  }
+
+  /// Here we call the rviz::FrameManager to get the transform from the fixed
+  /// frame to the frame in the header of this ApriltagArray message.  If it
+  /// fails, we can't do anything else so we return.
+  Ogre::Quaternion orientation;
+  Ogre::Vector3 position;
+  if (!context_->getFrameManager()->getTransform(
+          msg->header.frame_id, msg->header.stamp, position, orientation)) {
+    ROS_DEBUG("Error transforming from frame '%s' to frame '%s'",
+              msg->header.frame_id.c_str(), qPrintable(fixed_frame_));
     return;
   }
 }
