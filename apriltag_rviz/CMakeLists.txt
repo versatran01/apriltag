@@ -11,14 +11,36 @@ find_package(catkin REQUIRED COMPONENTS
     rviz apriltag_msgs
     )
 
+
+message(STATUS ${${PROJECT_NAME}_HEADERS_MOC})
+
 include_directories(include
+    ${catkin_INCLUDE_DIRS}
     ${Ogre_INCLUDE_DIRS}
     ${QT_INCLUDE_DIR}
     )
 
-add_definitions(-DQT_NO_KEYWORDS)
+qt4_wrap_cpp(${PROJECT_NAME}_HEADERS_MOC
+    include/apriltag_rviz/apriltag_array_display.h
+    )
+
+add_definitions(-DQT_NO_KEYWORDS ${QT_DEFINITIONS})
+
 
 catkin_package()
 
-add_executable(test_pub_pose test/test_pub_pose.cpp)
-target_link_libraries(test_pub_pose ${catkin_LIBRARIES})
+add_library(${PROJECT_NAME}
+    src/apriltag_array_display.cpp
+    src/apriltag_visual.cpp
+    ${${PROJECT_NAME}_HEADERS_MOC}
+    )
+target_link_libraries(${PROJECT_NAME}
+    ${catkin_LIBRARIES}
+    ${Ogre_LIBRARIES}
+    ${QT_LIBRARIES}
+    )
+
+add_dependencies(${PROJECT_NAME}
+    ${catkin_EXPORTED_TARGETS}
+    ${${PROJECT_NAME}_EXPORTED_TARGETS}
+    )

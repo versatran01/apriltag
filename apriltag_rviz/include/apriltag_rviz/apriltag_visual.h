@@ -13,7 +13,7 @@ class ApriltagVisual {
   ApriltagVisual(Ogre::SceneManager* scene_manager,
                  Ogre::SceneNode* parent_node);
 
-  virtual ~ApriltagVisual() = default;
+  virtual ~ApriltagVisual();
 
   void setMessage(const apriltag_msgs::ApriltagArrayStampedConstPtr& msg);
 

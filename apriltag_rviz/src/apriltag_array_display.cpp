@@ -15,14 +15,15 @@
 
 namespace apriltag_rviz {
 
-inline bool validateFloats(const apriltag_msgs::Apriltag& msg) {
-  return rviz::validateFloats(msg.pose) && rviz::validateFloats(msg.corners) &&
-         rviz::validateFloats(msg.corners);
-}
+// inline bool validateFloats(const apriltag_msgs::Apriltag& msg) {
+//  return rviz::validateFloats(msg.pose) && rviz::validateFloats(msg.corners)
+//  &&
+//         rviz::validateFloats(msg.corners);
+//}
 
-inline bool validateFloats(const apriltag_msgs::ApriltagArrayStamped& msg) {
-  return rviz::validateFloats(msg.apriltags);
-}
+// inline bool validateFloats(const apriltag_msgs::ApriltagArrayStamped& msg) {
+//  return rviz::validateFloats(msg.apriltags);
+//}
 
 ApriltagArrayDisplay::ApriltagArrayDisplay() {
   // Shape property
@@ -34,9 +35,9 @@ ApriltagArrayDisplay::ApriltagArrayDisplay() {
 
   // Texture property
   texture_property_ =
-      new rviz::EnumProperty("Texture", "Color", "Texture of the tag.", this,
+      new rviz::EnumProperty("Texture", "Uniform", "Texture of the tag.", this,
                              SLOT(updateTextureChoice()));
-  texture_property_->addOption("Color", Texture::UNIFORM);
+  texture_property_->addOption("Uniform", Texture::UNIFORM);
   texture_property_->addOption("Tag", Texture::TAG);
 
   // Display property
@@ -127,21 +128,17 @@ void ApriltagArrayDisplay::updateShapeChoice() {
 }
 
 void ApriltagArrayDisplay::updateShapeVisibility() {
-  if (!saw_tags_) {
-    // TODO: do something to hide all both arrow and axes
-  } else {
-    bool use_arrow = useArrow();
-    // TODO: do something to see arrow or axes
-  }
+  // stuff
 }
 
 void ApriltagArrayDisplay::processMessage(
     const apriltag_msgs::ApriltagArrayStampedConstPtr& msg) {
-  if (!validateFloats(*msg)) {
-    setStatus(StatusProperty::Error, "Topic",
-              "Message contained invalid floating point values (nans or infs)");
-    return;
-  }
+  //  if (!validateFloats(*msg)) {
+  //    setStatus(rviz::StatusProperty::Error, "Topic",
+  //              "Message contained invalid floating point values (nans or
+  //              infs)");
+  //    return;
+  //  }
 
   /// Here we call the rviz::FrameManager to get the transform from the fixed
   /// frame to the frame in the header of this ApriltagArray message.  If it
@@ -154,12 +151,6 @@ void ApriltagArrayDisplay::processMessage(
               msg->header.frame_id.c_str(), qPrintable(fixed_frame_));
     return;
   }
-}
-
-void ApriltagArrayDisplay::reset() {
-  MFDClass::reset();
-  saw_tags_ = false;
-  updateShapeVisibility();
 }
 
 }  // namespace apriltag_rviz

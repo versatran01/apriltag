@@ -31,7 +31,7 @@ class ApriltagArrayDisplay
   enum Texture { UNIFORM, TAG };
   enum Display { SHAPE_ONLY, TEXTURE_ONLY, SHAPE_AND_TEXTURE };
 
-  ApriltagArrayDisplay() = default;
+  ApriltagArrayDisplay();
   virtual ~ApriltagArrayDisplay() = default;
 
   virtual void onInitialize();
@@ -66,7 +66,6 @@ class ApriltagArrayDisplay
   rviz::EnumProperty* display_property_;
 
   std::vector<ApriltagVisual> apriltag_visuals_;
-  bool saw_tags_{false};
 };
 
 }  // namespace apriltag_rviz

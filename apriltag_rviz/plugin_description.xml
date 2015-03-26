@@ -1,0 +1,10 @@
+<library path="lib/apriltag_rviz">
+	<class name="apriltag_rviz/ApriltagArray"
+				 type="apriltag_rviz::ApriltagArrayDisplay"
+				 base_class_type="rviz::Display">
+		<description>
+			An ApriltagArrayStamped message display
+		</description>
+		<message_type>apritlag_msgs/ApriltagArrayStamped</message_type>
+	</class>
+</library>
