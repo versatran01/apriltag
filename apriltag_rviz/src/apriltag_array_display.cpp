@@ -39,7 +39,7 @@ ApriltagArrayDisplay::ApriltagArrayDisplay() {
 
   // Shape property
   shape_property_ =
-      new rviz::EnumProperty("Shape", "Arrow", "Shape to display the tags as.",
+      new rviz::EnumProperty("Shape", "Axes", "Shape to display the tags as.",
                              this, SLOT(updateShapeChoice()));
   shape_property_->addOption("Arrow", Shape::ARROW);
   shape_property_->addOption("Axes", Shape::AXES);
@@ -67,6 +67,8 @@ void ApriltagArrayDisplay::onInitialize() {
   ROS_INFO("[ApriltagArrayDisplay] On initialize");
   MFDClass::onInitialize();
   updateDisplayChoice();
+  // Attach camera node to scene_node_
+  camera_node_ = scene_node_->createChildSceneNode();
 }
 
 void ApriltagArrayDisplay::onEnable() {
@@ -75,10 +77,13 @@ void ApriltagArrayDisplay::onEnable() {
   updateShapeVisibility();
 }
 
-void ApriltagArrayDisplay::reset() {
-  MFDClass::reset();
+void ApriltagArrayDisplay::onDisable() {
+  ROS_INFO("[ApriltagArrayDisplay] On disable");
+  MFDClass::onDisable();
   apriltag_visuals_.clear();
 }
+
+void ApriltagArrayDisplay::reset() { MFDClass::reset(); }
 
 void ApriltagArrayDisplay::updateDisplayChoice() {
   int display_option = display_property_->getOptionInt();
@@ -104,6 +109,8 @@ void ApriltagArrayDisplay::updateDisplayChoice() {
     alpha_property_->setHidden(false);
     color_property_->setHidden(false);
   }
+
+  context_->queueRender();
 }
 
 void ApriltagArrayDisplay::updateColorAndAlpha() {
@@ -168,9 +175,9 @@ void ApriltagArrayDisplay::processMessage(
     return;
   }
 
-  /// Here we call the rviz::FrameManager to get the transform from the fixed
-  /// frame to the frame in the header of this ApriltagArray message.  If it
-  /// fails, we can't do anything else so we return.
+  // Here we call the rviz::FrameManager to get the transform from the fixed
+  // frame to the frame in the header of this ApriltagArray message.  If it
+  // fails, we can't do anything else so we return.
   Ogre::Quaternion orientation;
   Ogre::Vector3 position;
   if (!context_->getFrameManager()->getTransform(
@@ -178,6 +185,23 @@ void ApriltagArrayDisplay::processMessage(
     ROS_DEBUG("Error transforming from frame '%s' to frame '%s'",
               msg->header.frame_id.c_str(), qPrintable(fixed_frame_));
     return;
+  }
+
+  // Move camera node accordingly
+  camera_node_->setPosition(position);
+  camera_node_->setOrientation(orientation);
+  //  ROS_INFO(
+  //      "Camera position: (%0.2f, %0.2f, %0.2f), "
+  //      "camera orientation: (%0.2f, %0.2f, %0.2f, %0.2f)",
+  //      position.x, position.y, position.z, orientation.w, orientation.x,
+  //      orientation.y, orientation.z);
+
+  apriltag_visuals_.clear();
+  for (const apriltag_msgs::Apriltag& apriltag : msg->apriltags) {
+    ApriltagVisualPtr apriltag_visual = boost::make_shared<ApriltagVisual>(
+        context_->getSceneManager(), camera_node_);
+    apriltag_visual->setMessage(apriltag);
+    apriltag_visuals_.push_back(apriltag_visual);
   }
 }
 

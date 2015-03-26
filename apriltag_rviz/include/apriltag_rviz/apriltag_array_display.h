@@ -16,7 +16,7 @@ namespace apriltag_rviz {
 class ApritlagVisual;
 class ApriltagArrayDisplaySelectionHandler;
 
-// Forward decleration
+// Forward decleration, which I don't like
 // namespace rviz {
 // class ColorProperty;
 // class FloatProperty;
@@ -45,6 +45,12 @@ class ApriltagArrayDisplay
    */
   virtual void onEnable();
 
+  /**
+   * @brief Overriden from MessageFilterDisplay to clear all visuals when
+   * disabled
+   */
+  virtual void onDisable();
+
  private Q_SLOTS:
   void updateColorAndAlpha();
 
@@ -71,7 +77,10 @@ class ApriltagArrayDisplay
   rviz::EnumProperty* texture_property_;
   rviz::EnumProperty* display_property_;
 
-  std::vector<ApriltagVisual> apriltag_visuals_;
+  Ogre::SceneNode* camera_node_;
+  std::vector<ApriltagVisualPtr> apriltag_visuals_;
+
+  //  std::vector<ApriltagVisual> apriltag_visuals_;
 };
 
 bool validateFloats(const apriltag_msgs::Apriltag& msg);
