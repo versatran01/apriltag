@@ -12,8 +12,12 @@ ApriltagVisual::ApriltagVisual(Ogre::SceneManager* scene_manager,
       axes_(new rviz::Axes(scene_manager, tag_node_)) {
   // The state is unconfigured
   // TODO: hide arrow for now
-  arrow_->getSceneNode()->setVisible(false);
 }
+
+ApriltagVisual::ApriltagVisual(Ogre::SceneManager* scene_manager,
+                               Ogre::SceneNode* camera_node,
+                               const apriltag_msgs::Apriltag& msg)
+    : ApriltagVisual(scene_manager, camera_node) {}
 
 ApriltagVisual::~ApriltagVisual() {
   scene_manager_->destroySceneNode(tag_node_);
@@ -41,9 +45,22 @@ void ApriltagVisual::setMessage(const Apriltag& msg) {
 }
 
 void ApriltagVisual::setColor(float r, float g, float b, float a) {
-  // Set color of arrow
-  arrow_->setColor(r, g, b, a);
-  // TODO: Set color of uniform texture
+  // TODO: set Color using static property
+}
+
+/// ========================
+/// ApriltagVisual::Property
+/// ========================
+ApriltagVisual::Property ApriltagVisual::property = ApriltagVisual::Property();
+
+void ApriltagVisual::Property::setColor(const Ogre::ColourValue& color) {
+  setColor(color.r, color.g, color.b);
+}
+
+void ApriltagVisual::Property::setColor(float r, float g, float b) {
+  color[0] = r;
+  color[1] = g;
+  color[2] = b;
 }
 
 }  // namespace apriltag_rviz

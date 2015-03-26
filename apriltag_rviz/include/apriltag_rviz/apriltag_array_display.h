@@ -28,7 +28,7 @@ class ApriltagArrayDisplay
   Q_OBJECT
  public:
   // TODO: wrap these enums in a namespace?
-  enum Shape { ARROW, AXES };
+  enum Shape { AXES, ARROW };
   enum Texture { UNIFORM, TAG };
   enum Display { SHAPE_ONLY, TEXTURE_ONLY, SHAPE_AND_TEXTURE };
 
@@ -66,8 +66,8 @@ class ApriltagArrayDisplay
   void processMessage(const apriltag_msgs::ApriltagArrayStamped::ConstPtr& msg);
 
   void clear();
-  bool useArrowShape() const;
-  bool useTagTexture() const;
+  bool useAxesShape() const;
+  bool useUniformTexture() const;
   void hideColorAndAlpha(bool use_arrow);
 
   // properties related to axes and arrow are disabled
