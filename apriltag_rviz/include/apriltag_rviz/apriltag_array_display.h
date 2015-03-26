@@ -27,6 +27,7 @@ class ApriltagArrayDisplay
     : public rviz::MessageFilterDisplay<apriltag_msgs::ApriltagArrayStamped> {
   Q_OBJECT
  public:
+  // TODO: wrap these enums in a namespace?
   enum Shape { ARROW, AXES };
   enum Texture { UNIFORM, TAG };
   enum Display { SHAPE_ONLY, TEXTURE_ONLY, SHAPE_AND_TEXTURE };
@@ -46,16 +47,21 @@ class ApriltagArrayDisplay
 
  private Q_SLOTS:
   void updateColorAndAlpha();
+
   void updateShapeVisibility();
   void updateShapeChoice();
+
   void updateTextureChoice();
+  void updateTextureVisibility();
+
   void updateDisplayChoice();
 
  private:
   void processMessage(const apriltag_msgs::ApriltagArrayStamped::ConstPtr& msg);
 
   void clear();
-  bool useArrow() const;
+  bool useArrowShape() const;
+  bool useTagTexture() const;
   void hideColorAndAlpha(bool use_arrow);
 
   // properties related to axes and arrow are disabled

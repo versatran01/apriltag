@@ -26,6 +26,14 @@ namespace apriltag_rviz {
 //}
 
 ApriltagArrayDisplay::ApriltagArrayDisplay() {
+  // Display property
+  display_property_ =
+      new rviz::EnumProperty("Display", "Shape", "Display type of the tag.",
+                             this, SLOT(updateDisplayChoice()));
+  display_property_->addOption("Shape", Display::SHAPE_ONLY);
+  display_property_->addOption("Texture", Display::TEXTURE_ONLY);
+  display_property_->addOption("Shape and texture", Display::SHAPE_AND_TEXTURE);
+
   // Shape property
   shape_property_ =
       new rviz::EnumProperty("Shape", "Arrow", "Shape to display the tags as.",
@@ -39,14 +47,6 @@ ApriltagArrayDisplay::ApriltagArrayDisplay() {
                              SLOT(updateTextureChoice()));
   texture_property_->addOption("Uniform", Texture::UNIFORM);
   texture_property_->addOption("Tag", Texture::TAG);
-
-  // Display property
-  display_property_ =
-      new rviz::EnumProperty("Display", "Shape", "Display type of the tag.",
-                             this, SLOT(updateDisplayChoice()));
-  display_property_->addOption("Shape", Display::SHAPE_ONLY);
-  display_property_->addOption("Texture", Display::TEXTURE_ONLY);
-  display_property_->addOption("Shape and texture", Display::SHAPE_AND_TEXTURE);
 
   // Color and alpha property
   color_property_ = new rviz::ColorProperty(
@@ -62,8 +62,8 @@ ApriltagArrayDisplay::ApriltagArrayDisplay() {
 
 void ApriltagArrayDisplay::onInitialize() {
   ROS_INFO("ApriltagArrayDisplay onInitialize");
-
   MFDClass::onInitialize();
+  updateDisplayChoice();
 }
 
 void ApriltagArrayDisplay::onEnable() {
@@ -79,19 +79,21 @@ void ApriltagArrayDisplay::reset() {
 void ApriltagArrayDisplay::updateDisplayChoice() {
   int display_option = display_property_->getOptionInt();
   if (display_option == Display::SHAPE_ONLY) {
+    ROS_INFO("Shape only");
     // Show shape, hide texture, show color and alpha if shape is arrow
     shape_property_->setHidden(false);
     texture_property_->setHidden(true);
-    hideColorAndAlpha(!useArrow());
+    hideColorAndAlpha(!useArrowShape());
   } else if (display_option == Display::TEXTURE_ONLY) {
+    ROS_INFO("Texture only");
     // Hide shape, show texture, show alpha, hide color if texture is tag
     shape_property_->setHidden(true);
     texture_property_->setHidden(false);
     alpha_property_->setHidden(false);
     // Hide color if we choose to use tag as texture
-    bool use_tag = (texture_property_->getOptionInt() == Texture::TAG);
-    color_property_->setHidden(use_tag);
+    color_property_->setHidden(useTagTexture());
   } else {
+    ROS_INFO("Texture and shape");
     // Show all
     shape_property_->setHidden(false);
     texture_property_->setHidden(false);
@@ -107,8 +109,12 @@ void ApriltagArrayDisplay::updateColorAndAlpha() {
   // TODO: a for loop that update color of each visuals
 }
 
-bool ApriltagArrayDisplay::useArrow() const {
-  return shape_property_->getOptionInt() == ARROW;
+bool ApriltagArrayDisplay::useArrowShape() const {
+  return shape_property_->getOptionInt() == Shape::ARROW;
+}
+
+bool ApriltagArrayDisplay::useTagTexture() const {
+  return texture_property_->getOptionInt() == Texture::TAG;
 }
 
 void ApriltagArrayDisplay::hideColorAndAlpha(bool use_arrow) {
@@ -117,7 +123,8 @@ void ApriltagArrayDisplay::hideColorAndAlpha(bool use_arrow) {
 }
 
 void ApriltagArrayDisplay::updateShapeChoice() {
-  bool use_arrow = useArrow();
+  ROS_INFO("Update shape choice");
+  bool use_arrow = useArrowShape();
 
   color_property_->setHidden(!use_arrow);
   alpha_property_->setHidden(!use_arrow);
@@ -127,7 +134,23 @@ void ApriltagArrayDisplay::updateShapeChoice() {
   context_->queueRender();
 }
 
+void ApriltagArrayDisplay::updateTextureChoice() {
+  ROS_INFO("Update texture choice");
+  bool use_tag = useTagTexture();
+
+  // Hide color, but keep alpha
+  color_property_->setHidden(use_tag);
+
+  updateTextureVisibility();
+
+  context_->queueRender();
+}
+
 void ApriltagArrayDisplay::updateShapeVisibility() {
+  // stuff
+}
+
+void ApriltagArrayDisplay::updateTextureVisibility() {
   // stuff
 }
 
