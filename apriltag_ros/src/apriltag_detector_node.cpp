@@ -21,6 +21,8 @@ ApriltagDetectorNode::ApriltagDetectorNode(const ros::NodeHandle& pnh)
   pub_apriltags_ =
       pnh_.advertise<apriltag_msgs::ApriltagArrayStamped>("apriltags", 1);
   pub_image_ = it_.advertise("image_detection", 1);
+  pub_pose_array_ =
+      pnh_.advertise<geometry_msgs::PoseArray>("apritlags_pose", 1);
   cfg_server_.setCallback(
       boost::bind(&ApriltagDetectorNode::configCb, this, _1, _2));
 }
@@ -63,6 +65,14 @@ void ApriltagDetectorNode::cameraCb(
                               sensor_msgs::image_encodings::BGR8, disp);
     pub_image_.publish(cv_img.toImageMsg());
   }
+
+  geometry_msgs::PoseArray pose_array;
+  for (const apriltag_msgs::Apriltag& apriltag :
+       apriltag_array_msg->apriltags) {
+    pose_array.header = apriltag_array_msg->header;
+    pose_array.poses.push_back(apriltag.pose);
+  }
+  pub_pose_array_.publish(pose_array);
 
   cv::imshow("image", disp);
   cv::waitKey(1);

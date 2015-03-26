@@ -36,6 +36,7 @@ class ApriltagDetectorNode {
   double tag_size_;
   bool image_rectified_{false};
   ApriltagDetectorPtr detector_;
+  ros::Publisher pub_pose_array_;
 };
 
 }  // namespace apriltag_ros

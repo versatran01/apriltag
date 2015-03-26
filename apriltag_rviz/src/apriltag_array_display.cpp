@@ -15,17 +15,20 @@
 
 namespace apriltag_rviz {
 
-// inline bool validateFloats(const apriltag_msgs::Apriltag& msg) {
-//  return rviz::validateFloats(msg.pose) && rviz::validateFloats(msg.corners)
-//  &&
-//         rviz::validateFloats(msg.corners);
-//}
+bool validateFloats(const apriltag_msgs::Apriltag& msg) {
+  return rviz::validateFloats(msg.pose) && rviz::validateFloats(msg.corners) &&
+         rviz::validateFloats(msg.corners);
+}
 
-// inline bool validateFloats(const apriltag_msgs::ApriltagArrayStamped& msg) {
-//  return rviz::validateFloats(msg.apriltags);
-//}
+bool validateFloats(const apriltag_msgs::ApriltagArrayStamped& msg) {
+  for (const apriltag_msgs::Apriltag& apriltag : msg.apriltags) {
+    if (!validateFloats(apriltag)) return false;
+  }
+  return true;
+}
 
 ApriltagArrayDisplay::ApriltagArrayDisplay() {
+  ROS_INFO("[ApriltagArrayDisplay] Constructor");
   // Display property
   display_property_ =
       new rviz::EnumProperty("Display", "Shape", "Display type of the tag.",
@@ -61,12 +64,13 @@ ApriltagArrayDisplay::ApriltagArrayDisplay() {
 }
 
 void ApriltagArrayDisplay::onInitialize() {
-  ROS_INFO("ApriltagArrayDisplay onInitialize");
+  ROS_INFO("[ApriltagArrayDisplay] On initialize");
   MFDClass::onInitialize();
   updateDisplayChoice();
 }
 
 void ApriltagArrayDisplay::onEnable() {
+  ROS_INFO("[ApriltagArrayDisplay] On enable");
   MFDClass::onEnable();
   updateShapeVisibility();
 }
@@ -156,12 +160,13 @@ void ApriltagArrayDisplay::updateTextureVisibility() {
 
 void ApriltagArrayDisplay::processMessage(
     const apriltag_msgs::ApriltagArrayStampedConstPtr& msg) {
-  //  if (!validateFloats(*msg)) {
-  //    setStatus(rviz::StatusProperty::Error, "Topic",
-  //              "Message contained invalid floating point values (nans or
-  //              infs)");
-  //    return;
-  //  }
+  ROS_INFO_THROTTLE(5, "Process message");
+
+  if (!validateFloats(*msg)) {
+    setStatus(rviz::StatusProperty::Error, "Topic",
+              "Message contained invalid floating point values (nans or infs)");
+    return;
+  }
 
   /// Here we call the rviz::FrameManager to get the transform from the fixed
   /// frame to the frame in the header of this ApriltagArray message.  If it

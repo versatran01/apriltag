@@ -15,5 +15,6 @@
     <remap if="$(arg rectify)" from="~image" to="image_rect"/>
     <remap unless="$(arg rectify)" from="~image" to="image_raw"/>
     <remap from="~apriltags" to="apriltags"/>
+    <remap from="~image_detection" to="image_detection"/>
   </node>
 </launch>

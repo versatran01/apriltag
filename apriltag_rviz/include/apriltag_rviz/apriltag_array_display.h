@@ -74,6 +74,8 @@ class ApriltagArrayDisplay
   std::vector<ApriltagVisual> apriltag_visuals_;
 };
 
+bool validateFloats(const apriltag_msgs::Apriltag& msg);
+bool validateFloats(const apriltag_msgs::ApriltagArrayStamped& msg);
 }  // namespace apriltag_rviz
 
 #endif  // APIRLTAG_RVIZ_APRILTAG_ARRAY_DISPLAY_H_
