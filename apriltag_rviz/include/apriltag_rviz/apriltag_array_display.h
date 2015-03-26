@@ -27,34 +27,46 @@ class ApriltagArrayDisplay
     : public rviz::MessageFilterDisplay<apriltag_msgs::ApriltagArrayStamped> {
   Q_OBJECT
  public:
-  enum class Shape { Arrow, Axes };
+  enum Shape { ARROW, AXES };
+  enum Texture { UNIFORM, TAG };
+  enum Display { SHAPE_ONLY, TEXTURE_ONLY, SHAPE_AND_TEXTURE };
 
   ApriltagArrayDisplay() = default;
   virtual ~ApriltagArrayDisplay() = default;
 
- protected:
   virtual void onInitialize();
   virtual void reset();
+
+ protected:
+  /**
+   * @brief Overriden from MessageFilterDisplay to get arrow/axes visibility
+   * correct.
+   */
   virtual void onEnable();
 
  private Q_SLOTS:
   void updateColorAndAlpha();
   void updateShapeVisibility();
   void updateShapeChoice();
-  void updateAxisGeometry();
-  void updateArrowGeometry();
   void updateTextureChoice();
+  void updateDisplayChoice();
 
  private:
   void processMessage(const apriltag_msgs::ApriltagArrayStamped::ConstPtr& msg);
+
+  void clear();
+  bool useArrow() const;
+  void hideColorAndAlpha(bool use_arrow);
 
   // properties related to axes and arrow are disabled
   rviz::ColorProperty* color_property_;
   rviz::FloatProperty* alpha_property_;
   rviz::EnumProperty* shape_property_;
   rviz::EnumProperty* texture_property_;
+  rviz::EnumProperty* display_property_;
 
-  std::vector<ApriltagVisual> visuals_;
+  std::vector<ApriltagVisual> apriltag_visuals_;
+  bool saw_tags_{false};
 };
 
 }  // namespace apriltag_rviz
