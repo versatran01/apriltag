@@ -78,9 +78,9 @@ Visualization Manager:
       Radius: 0.1
       Reference Frame: <Fixed Frame>
       Value: true
-    - Alpha: 1
+    - Alpha: 0.5
       Class: apriltag_rviz/ApriltagArray
-      Color: 255; 85; 255
+      Color: 255; 85; 0
       Display: Shape
       Enabled: true
       Name: ApriltagArray
@@ -124,7 +124,7 @@ Visualization Manager:
         Z: 0.0136902
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.890203
+      Pitch: 0.875203
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
       Yaw: 5.0804

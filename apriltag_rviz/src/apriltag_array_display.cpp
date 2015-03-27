@@ -1,3 +1,6 @@
+#include "apriltag_rviz/apriltag_array_display.h"
+#include "apriltag_rviz/apriltag_visual.h"
+
 #include <OGRE/OgreSceneNode.h>
 #include <OGRE/OgreSceneManager.h>
 
@@ -7,9 +10,6 @@
 #include <rviz/properties/int_property.h>
 #include <rviz/frame_manager.h>
 #include <rviz/validate_floats.h>
-
-#include "apriltag_rviz/apriltag_array_display.h"
-#include "apriltag_rviz/apriltag_visual.h"
 
 #include <QtGui/QColor>
 

@@ -4,6 +4,9 @@ namespace apriltag_rviz {
 
 using namespace apriltag_msgs;
 
+/// ==============
+/// ApriltagVisual
+/// ==============
 ApriltagVisual::ApriltagVisual(Ogre::SceneManager* scene_manager,
                                Ogre::SceneNode* camera_node)
     : scene_manager_(scene_manager),
