@@ -122,7 +122,9 @@ void ApriltagArrayDisplay::updateDisplayChoice() {
     // Show shape, hide texture, show color and alpha if shape is arrow
     shape_property_->setHidden(false);
     texture_property_->setHidden(true);
+
     hideColorAndAlpha(useAxesShape());
+
     ApriltagVisual::property.show_shape = true;
     ApriltagVisual::property.show_texture = false;
   } else if (display_option == Display::TEXTURE_ONLY) {
@@ -130,9 +132,9 @@ void ApriltagArrayDisplay::updateDisplayChoice() {
     // Hide shape, show texture, show alpha, hide color if texture is tag
     shape_property_->setHidden(true);
     texture_property_->setHidden(false);
-    alpha_property_->setHidden(false);
-    // Show color if we choose to use uniform texture
-    color_property_->setHidden(!useUniformTexture());
+
+    hideColorAndAlpha(!useUniformTexture());
+
     ApriltagVisual::property.show_shape = false;
     ApriltagVisual::property.show_texture = true;
   } else {
@@ -162,7 +164,7 @@ void ApriltagArrayDisplay::updateShapeChoice() {
 
 void ApriltagArrayDisplay::updateTextureChoice() {
   ROS_INFO("Update texture choice");
-  color_property_->setHidden(!useUniformTexture());
+  hideColorAndAlpha(!useUniformTexture());
 
   updateTextureVisibility();
 
@@ -203,7 +205,7 @@ bool ApriltagArrayDisplay::useAxesShape() const {
 }
 
 bool ApriltagArrayDisplay::useUniformTexture() const {
-  return texture_property_->getOptionInt() == Texture::TAG;
+  return texture_property_->getOptionInt() == Texture::UNIFORM;
 }
 
 void ApriltagArrayDisplay::hideColorAndAlpha(bool use_axes) {
