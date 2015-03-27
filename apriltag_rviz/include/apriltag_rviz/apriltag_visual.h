@@ -49,16 +49,20 @@ class ApriltagVisual {
   ApriltagVisual(Ogre::SceneManager* scene_manager,
                  Ogre::SceneNode* camera_node,
                  const apriltag_msgs::Apriltag& msg);
-
   virtual ~ApriltagVisual();
 
+  int id() const { return id_; }
+
+  /// setSomething will set the visual based on external input
   void setMessage(const apriltag_msgs::Apriltag& msg);
+  void setShapeGeometry(float tag_size);
+  void setTagPose(const geometry_msgs::Pose& pose);
+  void setTagPose(const Ogre::Vector3& position,
+                  const Ogre::Quaternion& orientation);
+  void setTagPosition(const Ogre::Vector3& position);
+  void setTagOrientation(const Ogre::Quaternion& orientation);
 
-  /**
-   * @brief updateProperty Update visual according to the current property
-   */
-  void updateProperty();
-
+  /// updateSomething will update the visual based on static property
   void updateColorAndAlpha();
   void updateShapeVisibility();
   void updateTextureVisibility();
@@ -66,6 +70,7 @@ class ApriltagVisual {
  private:
   Ogre::SceneManager* scene_manager_;
   Ogre::SceneNode* tag_node_;
+  int id_{0};
 
   boost::shared_ptr<rviz::Arrow> arrow_;
   boost::shared_ptr<rviz::Axes> axes_;

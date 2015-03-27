@@ -239,6 +239,7 @@ void ApriltagArrayDisplay::processMessage(
   //      position.x, position.y, position.z, orientation.w, orientation.x,
   //      orientation.y, orientation.z);
 
+  // TODO: search through visuals and update existing ones
   apriltag_visuals_.clear();
   for (const apriltag_msgs::Apriltag& apriltag : msg->apriltags) {
     apriltag_visuals_.emplace_back(boost::make_shared<ApriltagVisual>(
