@@ -82,6 +82,10 @@ ApriltagArrayDisplay::ApriltagArrayDisplay() {
   alpha_property_->setMax(1.0);
 }
 
+ApriltagArrayDisplay::~ApriltagArrayDisplay() {
+  scene_manager_->destroySceneNode(camera_node_);
+}
+
 void ApriltagArrayDisplay::onInitialize() {
   ROS_INFO("[ApriltagArrayDisplay] On initialize");
   MFDClass::onInitialize();

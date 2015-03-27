@@ -33,7 +33,7 @@ class ApriltagArrayDisplay
   enum Display { SHAPE_ONLY, TEXTURE_ONLY, SHAPE_AND_TEXTURE };
 
   ApriltagArrayDisplay();
-  virtual ~ApriltagArrayDisplay() = default;
+  virtual ~ApriltagArrayDisplay();
 
   virtual void onInitialize();
   virtual void reset();
