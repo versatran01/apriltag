@@ -43,7 +43,7 @@ class ApriltagArrayDisplay
    * @brief Overriden from MessageFilterDisplay to get arrow/axes visibility
    * correct.
    */
-  virtual void onEnable();
+  virtual void onEnable(); // TODO: do I need this here?
 
   /**
    * @brief Overriden from MessageFilterDisplay to clear all visuals when
@@ -61,6 +61,7 @@ class ApriltagArrayDisplay
   void updateTextureVisibility();
 
   void updateDisplayChoice();
+  void updateDisplayVisibility();
 
  private:
   void processMessage(const apriltag_msgs::ApriltagArrayStamped::ConstPtr& msg);
@@ -79,12 +80,14 @@ class ApriltagArrayDisplay
 
   Ogre::SceneNode* camera_node_;
   std::vector<ApriltagVisualPtr> apriltag_visuals_;
-
-  //  std::vector<ApriltagVisual> apriltag_visuals_;
 };
 
+/**
+ * @brief validateFloats
+ */
 bool validateFloats(const apriltag_msgs::Apriltag& msg);
 bool validateFloats(const apriltag_msgs::ApriltagArrayStamped& msg);
+
 }  // namespace apriltag_rviz
 
 #endif  // APIRLTAG_RVIZ_APRILTAG_ARRAY_DISPLAY_H_

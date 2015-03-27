@@ -9,9 +9,7 @@ ApriltagVisual::ApriltagVisual(Ogre::SceneManager* scene_manager,
     : scene_manager_(scene_manager),
       tag_node_(camera_node->createChildSceneNode()),
       arrow_(new rviz::Arrow(scene_manager, tag_node_)),
-      axes_(new rviz::Axes(scene_manager, tag_node_)) {
-  // The state is unconfigured
-}
+      axes_(new rviz::Axes(scene_manager, tag_node_)) {}
 
 ApriltagVisual::ApriltagVisual(Ogre::SceneManager* scene_manager,
                                Ogre::SceneNode* camera_node,

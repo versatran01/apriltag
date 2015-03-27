@@ -91,7 +91,7 @@ ApriltagArrayDisplay::~ApriltagArrayDisplay() {
 void ApriltagArrayDisplay::onInitialize() {
   ROS_INFO("[ApriltagArrayDisplay] On initialize");
   MFDClass::onInitialize();
-  updateDisplayChoice();
+  updateDisplayChoice();  // TODO: need this?
   // Attach camera node to scene_node_
   camera_node_ = scene_node_->createChildSceneNode();
 }
@@ -99,7 +99,7 @@ void ApriltagArrayDisplay::onInitialize() {
 void ApriltagArrayDisplay::onEnable() {
   ROS_INFO("[ApriltagArrayDisplay] On enable");
   MFDClass::onEnable();
-  updateShapeVisibility();
+  updateShapeVisibility();  // TODO: need this?
 }
 
 void ApriltagArrayDisplay::onDisable() {
@@ -123,6 +123,8 @@ void ApriltagArrayDisplay::updateDisplayChoice() {
     shape_property_->setHidden(false);
     texture_property_->setHidden(true);
     hideColorAndAlpha(useAxesShape());
+    ApriltagVisual::property.show_shape = true;
+    ApriltagVisual::property.show_texture = false;
   } else if (display_option == Display::TEXTURE_ONLY) {
     ROS_INFO("Texture only");
     // Hide shape, show texture, show alpha, hide color if texture is tag
@@ -131,6 +133,8 @@ void ApriltagArrayDisplay::updateDisplayChoice() {
     alpha_property_->setHidden(false);
     // Show color if we choose to use uniform texture
     color_property_->setHidden(!useUniformTexture());
+    ApriltagVisual::property.show_shape = false;
+    ApriltagVisual::property.show_texture = true;
   } else {
     ROS_INFO("Texture and shape");
     // Show all
@@ -138,7 +142,11 @@ void ApriltagArrayDisplay::updateDisplayChoice() {
     texture_property_->setHidden(false);
     alpha_property_->setHidden(false);
     color_property_->setHidden(false);
+    ApriltagVisual::property.show_shape = true;
+    ApriltagVisual::property.show_texture = true;
   }
+
+  updateDisplayVisibility();
 
   context_->queueRender();
 }
@@ -154,44 +162,40 @@ void ApriltagArrayDisplay::updateShapeChoice() {
 
 void ApriltagArrayDisplay::updateTextureChoice() {
   ROS_INFO("Update texture choice");
-  bool use_tag = useUniformTexture();
-
-  // Hide color, but keep alpha
-  color_property_->setHidden(use_tag);
+  color_property_->setHidden(!useUniformTexture());
 
   updateTextureVisibility();
 
   context_->queueRender();
 }
 
+void ApriltagArrayDisplay::updateDisplayVisibility() {
+  updateShapeVisibility();
+  updateTextureVisibility();
+}
+
 void ApriltagArrayDisplay::updateColorAndAlpha() {
   const float alpha = alpha_property_->getFloat();
   const Ogre::ColourValue color = color_property_->getOgreColor();
-  // Update static property
   ApriltagVisual::property.setColor(color);
   ApriltagVisual::property.setAlpha(alpha);
-  // Update existing visuals
   for (const ApriltagVisualPtr& apriltag_visual : apriltag_visuals_) {
     apriltag_visual->updateColorAndAlpha();
   }
-
-  ROS_INFO(
-      "[ApriltagArrayDisplay] Update color and alpha, "
-      "color: (%0.1f, %0.1f, %0.1f), alpha: %0.1f",
-      color.r, color.g, color.b, alpha);
 }
 
 void ApriltagArrayDisplay::updateShapeVisibility() {
-  // Update property
   ApriltagVisual::property.use_axes = useAxesShape();
-  // Update exisiting visuals
   for (const ApriltagVisualPtr& apriltag_visual : apriltag_visuals_) {
     apriltag_visual->updateShapeVisibility();
   }
 }
 
 void ApriltagArrayDisplay::updateTextureVisibility() {
-  // TODO: update the static property and update all visuals accordingly
+  ApriltagVisual::property.use_uniform = useUniformTexture();
+  for (const ApriltagVisualPtr& apriltag_visual : apriltag_visuals_) {
+    apriltag_visual->updateTextureVisibility();
+  }
 }
 
 bool ApriltagArrayDisplay::useAxesShape() const {
