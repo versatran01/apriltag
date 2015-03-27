@@ -78,7 +78,6 @@ class ApriltagArrayDisplay
   rviz::EnumProperty* texture_property_;
   rviz::EnumProperty* display_property_;
 
-  Ogre::SceneNode* camera_node_;
   std::vector<ApriltagVisualPtr> apriltag_visuals_;
 };
 

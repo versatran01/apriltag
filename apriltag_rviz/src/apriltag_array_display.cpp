@@ -83,17 +83,12 @@ ApriltagArrayDisplay::ApriltagArrayDisplay() {
   alpha_property_->setMax(1.0);
 }
 
-ApriltagArrayDisplay::~ApriltagArrayDisplay() {
-  // TODO: This is not recommended?
-  scene_manager_->destroySceneNode(camera_node_);
-}
+ApriltagArrayDisplay::~ApriltagArrayDisplay() {}
 
 void ApriltagArrayDisplay::onInitialize() {
   ROS_INFO("[ApriltagArrayDisplay] On initialize");
   MFDClass::onInitialize();
   updateDisplayChoice();  // TODO: need this?
-  // Attach camera node to scene_node_
-  camera_node_ = scene_node_->createChildSceneNode();
 }
 
 void ApriltagArrayDisplay::onEnable() {
@@ -236,8 +231,8 @@ void ApriltagArrayDisplay::processMessage(
   }
 
   // Move camera node accordingly
-  camera_node_->setPosition(position);
-  camera_node_->setOrientation(orientation);
+  scene_node_->setPosition(position);
+  scene_node_->setOrientation(orientation);
   //  ROS_INFO(
   //      "Camera position: (%0.2f, %0.2f, %0.2f), "
   //      "camera orientation: (%0.2f, %0.2f, %0.2f, %0.2f)",
@@ -247,7 +242,7 @@ void ApriltagArrayDisplay::processMessage(
   apriltag_visuals_.clear();
   for (const apriltag_msgs::Apriltag& apriltag : msg->apriltags) {
     apriltag_visuals_.emplace_back(boost::make_shared<ApriltagVisual>(
-        context_->getSceneManager(), camera_node_, apriltag));
+        context_->getSceneManager(), scene_node_, apriltag));
   }
 }
 
