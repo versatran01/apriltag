@@ -60,7 +60,8 @@ class ApriltagVisual {
   void updateProperty();
 
   void updateColorAndAlpha();
-  void updateVisibility();
+  void updateShapeVisibility();
+  void updateTextureVisibility();
 
  private:
   Ogre::SceneManager* scene_manager_;

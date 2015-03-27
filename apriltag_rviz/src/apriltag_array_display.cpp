@@ -143,36 +143,6 @@ void ApriltagArrayDisplay::updateDisplayChoice() {
   context_->queueRender();
 }
 
-void ApriltagArrayDisplay::updateColorAndAlpha() {
-  const float alpha = alpha_property_->getFloat();
-  const Ogre::ColourValue color = color_property_->getOgreColor();
-  // Update static property
-  ApriltagVisual::property.setColor(color);
-  ApriltagVisual::property.setAlpha(alpha);
-  // Update existing visuals
-  for (const ApriltagVisualPtr& apriltag_visual : apriltag_visuals_) {
-    apriltag_visual->updateColorAndAlpha();
-  }
-
-  ROS_INFO(
-      "[ApriltagArrayDisplay] Update color and alpha, "
-      "color: (%0.1f, %0.1f, %0.1f), alpha: %0.1f",
-      color.r, color.g, color.b, alpha);
-}
-
-bool ApriltagArrayDisplay::useAxesShape() const {
-  return shape_property_->getOptionInt() == Shape::AXES;
-}
-
-bool ApriltagArrayDisplay::useUniformTexture() const {
-  return texture_property_->getOptionInt() == Texture::TAG;
-}
-
-void ApriltagArrayDisplay::hideColorAndAlpha(bool use_axes) {
-  color_property_->setHidden(use_axes);
-  alpha_property_->setHidden(use_axes);
-}
-
 void ApriltagArrayDisplay::updateShapeChoice() {
   ROS_INFO("Update shape choice");
   hideColorAndAlpha(useAxesShape());
@@ -194,12 +164,47 @@ void ApriltagArrayDisplay::updateTextureChoice() {
   context_->queueRender();
 }
 
+void ApriltagArrayDisplay::updateColorAndAlpha() {
+  const float alpha = alpha_property_->getFloat();
+  const Ogre::ColourValue color = color_property_->getOgreColor();
+  // Update static property
+  ApriltagVisual::property.setColor(color);
+  ApriltagVisual::property.setAlpha(alpha);
+  // Update existing visuals
+  for (const ApriltagVisualPtr& apriltag_visual : apriltag_visuals_) {
+    apriltag_visual->updateColorAndAlpha();
+  }
+
+  ROS_INFO(
+      "[ApriltagArrayDisplay] Update color and alpha, "
+      "color: (%0.1f, %0.1f, %0.1f), alpha: %0.1f",
+      color.r, color.g, color.b, alpha);
+}
+
 void ApriltagArrayDisplay::updateShapeVisibility() {
-  // TODO: update the static property and update all visuals accordingly
+  // Update property
+  ApriltagVisual::property.use_axes = useAxesShape();
+  // Update exisiting visuals
+  for (const ApriltagVisualPtr& apriltag_visual : apriltag_visuals_) {
+    apriltag_visual->updateShapeVisibility();
+  }
 }
 
 void ApriltagArrayDisplay::updateTextureVisibility() {
   // TODO: update the static property and update all visuals accordingly
+}
+
+bool ApriltagArrayDisplay::useAxesShape() const {
+  return shape_property_->getOptionInt() == Shape::AXES;
+}
+
+bool ApriltagArrayDisplay::useUniformTexture() const {
+  return texture_property_->getOptionInt() == Texture::TAG;
+}
+
+void ApriltagArrayDisplay::hideColorAndAlpha(bool use_axes) {
+  color_property_->setHidden(use_axes);
+  alpha_property_->setHidden(use_axes);
 }
 
 void ApriltagArrayDisplay::processMessage(

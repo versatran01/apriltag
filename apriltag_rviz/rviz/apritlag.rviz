@@ -78,7 +78,7 @@ Visualization Manager:
       Radius: 0.1
       Reference Frame: <Fixed Frame>
       Value: true
-    - Alpha: 0.01
+    - Alpha: 1
       Class: apriltag_rviz/ApriltagArray
       Color: 255; 0; 127
       Display: Shape

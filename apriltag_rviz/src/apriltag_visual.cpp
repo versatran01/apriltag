@@ -19,7 +19,7 @@ ApriltagVisual::ApriltagVisual(Ogre::SceneManager* scene_manager,
     : ApriltagVisual(scene_manager, camera_node) {
   setMessage(msg);
   updateColorAndAlpha();
-  updateVisibility();
+  updateShapeVisibility();
 }
 
 ApriltagVisual::~ApriltagVisual() {
@@ -52,11 +52,14 @@ void ApriltagVisual::updateColorAndAlpha() {
   // Handle texture color
 }
 
-void ApriltagVisual::updateVisibility() {
+void ApriltagVisual::updateShapeVisibility() {
   // Handle shape visibility
   arrow_->getSceneNode()->setVisible(property.show_shape && !property.use_axes);
   axes_->getSceneNode()->setVisible(property.show_shape && property.use_axes);
-  // Handle texture visibiliy
+}
+
+void ApriltagVisual::updateTextureVisibility() {
+  // Stuff
 }
 
 /// ========================
