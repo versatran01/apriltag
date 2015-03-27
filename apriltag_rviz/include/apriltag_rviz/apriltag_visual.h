@@ -19,15 +19,15 @@ class ApriltagVisual {
    * @brief The Property struct, default property for creating a new visual
    */
   struct Property {
-    bool use_axes{true};
+    bool use_axes{false};
     bool use_uniform{true};
     bool show_shape{true};
     bool show_texture{false};
-    float color[4] = {1.0, 0.0, 0.0, 1.0};
+    float color[4] = {1.0, 0.0, 1.0, 1.0};
 
     void setColor(const Ogre::ColourValue& color);
     void setColor(float r, float g, float b);
-    void setAlpha(float a) { color[4] = a; }
+    void setAlpha(float a) { color[3] = a; }
 
     // Some ugly hacks here
     float r() const { return color[0]; }
@@ -54,7 +54,13 @@ class ApriltagVisual {
 
   void setMessage(const apriltag_msgs::Apriltag& msg);
 
-  void setColor(float r, float g, float b, float a);
+  /**
+   * @brief updateProperty Update visual according to the current property
+   */
+  void updateProperty();
+
+  void updateColorAndAlpha();
+  void updateVisibility();
 
  private:
   Ogre::SceneManager* scene_manager_;

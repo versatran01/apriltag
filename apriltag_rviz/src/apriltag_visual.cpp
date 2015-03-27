@@ -17,8 +17,9 @@ ApriltagVisual::ApriltagVisual(Ogre::SceneManager* scene_manager,
                                Ogre::SceneNode* camera_node,
                                const apriltag_msgs::Apriltag& msg)
     : ApriltagVisual(scene_manager, camera_node) {
-  // TODO: This constructor will construct arrow and axes according to msg and
-  // property
+  setMessage(msg);
+  updateColorAndAlpha();
+  updateVisibility();
 }
 
 ApriltagVisual::~ApriltagVisual() {
@@ -37,17 +38,25 @@ void ApriltagVisual::setMessage(const Apriltag& msg) {
   tag_node_->setPosition(position);
   tag_node_->setOrientation(orientation);
 
-  // TODO: the geometry of the axes and arrow will not change, maybe move this
-  // to the constructor?
   // Update geometry of the axes
   const float tag_size = msg.size;
   axes_->set(tag_size, tag_size / (tag_bit + 2));
   // Update geometry of the arrow
   arrow_->set(tag_size, tag_size / (tag_bit + 2), tag_size / 4, tag_size / 5);
+  // TODO: Update geometry of texture
 }
 
-void ApriltagVisual::setColor(float r, float g, float b, float a) {
-  // TODO: set Color using static property
+void ApriltagVisual::updateColorAndAlpha() {
+  // Handle shape color
+  arrow_->setColor(property.r(), property.g(), property.b(), property.a());
+  // Handle texture color
+}
+
+void ApriltagVisual::updateVisibility() {
+  // Handle shape visibility
+  arrow_->getSceneNode()->setVisible(property.show_shape && !property.use_axes);
+  axes_->getSceneNode()->setVisible(property.show_shape && property.use_axes);
+  // Handle texture visibiliy
 }
 
 /// ========================

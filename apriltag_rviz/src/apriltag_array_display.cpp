@@ -108,9 +108,14 @@ void ApriltagArrayDisplay::onDisable() {
   apriltag_visuals_.clear();
 }
 
-void ApriltagArrayDisplay::reset() { MFDClass::reset(); }
+void ApriltagArrayDisplay::reset() {
+  ROS_INFO("[ApriltagArrayDisplay] Reset");
+  MFDClass::reset();
+  apriltag_visuals_.clear();
+}
 
 void ApriltagArrayDisplay::updateDisplayChoice() {
+  // TODO: can this logic be simplified?
   const int display_option = display_property_->getOptionInt();
   if (display_option == Display::SHAPE_ONLY) {
     ROS_INFO("Shape only");
@@ -139,10 +144,20 @@ void ApriltagArrayDisplay::updateDisplayChoice() {
 }
 
 void ApriltagArrayDisplay::updateColorAndAlpha() {
-  float alpha = alpha_property_->getFloat();
-  Ogre::ColourValue color = color_property_->getOgreColor();
+  const float alpha = alpha_property_->getFloat();
+  const Ogre::ColourValue color = color_property_->getOgreColor();
+  // Update static property
+  ApriltagVisual::property.setColor(color);
+  ApriltagVisual::property.setAlpha(alpha);
+  // Update existing visuals
+  for (const ApriltagVisualPtr& apriltag_visual : apriltag_visuals_) {
+    apriltag_visual->updateColorAndAlpha();
+  }
 
-  // TODO: update the static property and update all visuals accordingly
+  ROS_INFO(
+      "[ApriltagArrayDisplay] Update color and alpha, "
+      "color: (%0.1f, %0.1f, %0.1f), alpha: %0.1f",
+      color.r, color.g, color.b, alpha);
 }
 
 bool ApriltagArrayDisplay::useAxesShape() const {
@@ -220,11 +235,8 @@ void ApriltagArrayDisplay::processMessage(
 
   apriltag_visuals_.clear();
   for (const apriltag_msgs::Apriltag& apriltag : msg->apriltags) {
-    // TODO: replace this thing with one constructor
-    ApriltagVisualPtr apriltag_visual = boost::make_shared<ApriltagVisual>(
-        context_->getSceneManager(), camera_node_);
-    apriltag_visual->setMessage(apriltag);
-    apriltag_visuals_.push_back(apriltag_visual);
+    apriltag_visuals_.emplace_back(boost::make_shared<ApriltagVisual>(
+        context_->getSceneManager(), camera_node_, apriltag));
   }
 }
 
