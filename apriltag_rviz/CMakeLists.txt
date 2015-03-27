@@ -11,7 +11,6 @@ find_package(catkin REQUIRED COMPONENTS
     rviz apriltag_msgs
     )
 
-
 message(STATUS ${${PROJECT_NAME}_HEADERS_MOC})
 
 include_directories(include
@@ -25,7 +24,6 @@ qt4_wrap_cpp(${PROJECT_NAME}_HEADERS_MOC
     )
 
 add_definitions(-DQT_NO_KEYWORDS ${QT_DEFINITIONS})
-
 
 catkin_package()
 

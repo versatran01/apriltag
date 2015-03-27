@@ -75,14 +75,16 @@ ApriltagArrayDisplay::ApriltagArrayDisplay() {
       "Color", default_color, "Color to draw the apriltag arrows.", this,
       SLOT(updateColorAndAlpha()));
 
+  const auto default_alpha = ApriltagVisual::property.a();
   alpha_property_ = new rviz::FloatProperty(
-      "Alpha", 1.0, "0 is fully transparent, 1.0 is fully opaque.", this,
-      SLOT(updateColorAndAlpha()));
+      "Alpha", default_alpha, "0 is fully transparent, 1.0 is fully opaque.",
+      this, SLOT(updateColorAndAlpha()));
   alpha_property_->setMax(0.0);
   alpha_property_->setMax(1.0);
 }
 
 ApriltagArrayDisplay::~ApriltagArrayDisplay() {
+  // TODO: This is not recommended?
   scene_manager_->destroySceneNode(camera_node_);
 }
 
