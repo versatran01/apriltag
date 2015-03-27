@@ -28,48 +28,51 @@ bool validateFloats(const apriltag_msgs::ApriltagArrayStamped& msg) {
 }
 
 ApriltagArrayDisplay::ApriltagArrayDisplay() {
-  ROS_INFO("[ApriltagArrayDisplay] Constructor");
   // Display property
-  //  std::string default_display;
-  //  if (ApriltagVisual::property.show_shape &&
-  //      ApriltagVisual::property.show_texture) {
-  //    default_display = "Shape and texture";
-  //  } else if (ApriltagVisual::property.show_shape) {
-  //    default_display = "Shape";
-  //  } else if (ApriltagVisual::property.show_texture) {
-  //    default_display = "Texture";
-  //  } else {
-  //    ApriltagVisual::property.show_shape = true;
-  //    default_display = "Shape";
-  //  }
+  std::string default_display;
+  if (ApriltagVisual::property.show_shape &&
+      ApriltagVisual::property.show_texture) {
+    default_display = "Shape and texture";
+  } else if (ApriltagVisual::property.show_shape) {
+    default_display = "Shape";
+  } else if (ApriltagVisual::property.show_texture) {
+    default_display = "Texture";
+  } else {
+    ApriltagVisual::property.show_shape = true;
+    default_display = "Shape";
+  }
 
-  display_property_ =
-      new rviz::EnumProperty("Display", "Shape", "Display type of the tag.",
-                             this, SLOT(updateDisplayChoice()));
+  display_property_ = new rviz::EnumProperty("Display", default_display.c_str(),
+                                             "Display type of the tag.", this,
+                                             SLOT(updateDisplayChoice()));
   display_property_->addOption("Shape", Display::SHAPE_ONLY);
   display_property_->addOption("Texture", Display::TEXTURE_ONLY);
   display_property_->addOption("Shape and texture", Display::SHAPE_AND_TEXTURE);
 
   // Shape property
-  shape_property_ =
-      new rviz::EnumProperty("Shape", "Axes", "Shape to display the tags as.",
-                             this, SLOT(updateShapeChoice()));
-  shape_property_->addOption("Arrow", Shape::ARROW);
+  const std::string default_shape =
+      (ApriltagVisual::property.use_axes) ? "Axes" : "Arrow";
+  shape_property_ = new rviz::EnumProperty("Shape", default_shape.c_str(),
+                                           "Shape to display the tags as.",
+                                           this, SLOT(updateShapeChoice()));
   shape_property_->addOption("Axes", Shape::AXES);
+  shape_property_->addOption("Arrow", Shape::ARROW);
 
   // Texture property
-  texture_property_ =
-      new rviz::EnumProperty("Texture", "Uniform", "Texture of the tag.", this,
-                             SLOT(updateTextureChoice()));
+  const std::string default_texture =
+      (ApriltagVisual::property.use_uniform) ? "Uniform" : "Tag";
+  texture_property_ = new rviz::EnumProperty("Texture", default_texture.c_str(),
+                                             "Texture of the tag.", this,
+                                             SLOT(updateTextureChoice()));
   texture_property_->addOption("Uniform", Texture::UNIFORM);
   texture_property_->addOption("Tag", Texture::TAG);
 
   // Color and alpha property
-  //  QColor default_color(ApriltagVisual::property.r(),
-  //                       ApriltagVisual::property.g(),
-  //                       ApriltagVisual::property.b());
+  const QColor default_color(ApriltagVisual::property.ri(),
+                             ApriltagVisual::property.gi(),
+                             ApriltagVisual::property.bi());
   color_property_ = new rviz::ColorProperty(
-      "Color", QColor(255, 0, 0), "Color to draw the apriltag arrows.", this,
+      "Color", default_color, "Color to draw the apriltag arrows.", this,
       SLOT(updateColorAndAlpha()));
 
   alpha_property_ = new rviz::FloatProperty(
@@ -133,7 +136,7 @@ void ApriltagArrayDisplay::updateColorAndAlpha() {
   float alpha = alpha_property_->getFloat();
   Ogre::ColourValue color = color_property_->getOgreColor();
 
-  // TODO: a for loop that update color of each visuals
+  // TODO: update the static property and update all visuals accordingly
 }
 
 bool ApriltagArrayDisplay::useAxesShape() const {
@@ -144,17 +147,14 @@ bool ApriltagArrayDisplay::useUniformTexture() const {
   return texture_property_->getOptionInt() == Texture::TAG;
 }
 
-void ApriltagArrayDisplay::hideColorAndAlpha(bool use_arrow) {
-  color_property_->setHidden(use_arrow);
-  alpha_property_->setHidden(use_arrow);
+void ApriltagArrayDisplay::hideColorAndAlpha(bool use_axes) {
+  color_property_->setHidden(use_axes);
+  alpha_property_->setHidden(use_axes);
 }
 
 void ApriltagArrayDisplay::updateShapeChoice() {
   ROS_INFO("Update shape choice");
-  bool use_arrow = useAxesShape();
-
-  color_property_->setHidden(!use_arrow);
-  alpha_property_->setHidden(!use_arrow);
+  hideColorAndAlpha(useAxesShape());
 
   updateShapeVisibility();
 
@@ -174,11 +174,11 @@ void ApriltagArrayDisplay::updateTextureChoice() {
 }
 
 void ApriltagArrayDisplay::updateShapeVisibility() {
-  // stuff
+  // TODO: update the static property and update all visuals accordingly
 }
 
 void ApriltagArrayDisplay::updateTextureVisibility() {
-  // stuff
+  // TODO: update the static property and update all visuals accordingly
 }
 
 void ApriltagArrayDisplay::processMessage(
@@ -214,6 +214,7 @@ void ApriltagArrayDisplay::processMessage(
 
   apriltag_visuals_.clear();
   for (const apriltag_msgs::Apriltag& apriltag : msg->apriltags) {
+    // TODO: replace this thing with one constructor
     ApriltagVisualPtr apriltag_visual = boost::make_shared<ApriltagVisual>(
         context_->getSceneManager(), camera_node_);
     apriltag_visual->setMessage(apriltag);

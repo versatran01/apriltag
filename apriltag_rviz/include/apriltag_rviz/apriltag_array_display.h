@@ -68,7 +68,7 @@ class ApriltagArrayDisplay
   void clear();
   bool useAxesShape() const;
   bool useUniformTexture() const;
-  void hideColorAndAlpha(bool use_arrow);
+  void hideColorAndAlpha(bool use_axes);
 
   // properties related to axes and arrow are disabled
   rviz::ColorProperty* color_property_;

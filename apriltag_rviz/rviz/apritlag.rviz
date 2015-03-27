@@ -80,11 +80,11 @@ Visualization Manager:
       Value: true
     - Alpha: 0
       Class: apriltag_rviz/ApriltagArray
-      Color: 255; 25; 0
+      Color: 255; 0; 0
       Display: Shape
       Enabled: true
       Name: ApriltagArray
-      Shape: Arrow
+      Shape: Axes
       Texture: Uniform
       Topic: /mv_25000851/apriltags
       Value: true
@@ -147,5 +147,5 @@ Window Geometry:
   Views:
     collapsed: true
   Width: 1717
-  X: 48
-  Y: 58
+  X: 39
+  Y: 50

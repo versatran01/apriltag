@@ -21,7 +21,7 @@ class ApriltagVisual {
   struct Property {
     bool use_axes{true};
     bool use_uniform{true};
-    bool show_shape{false};
+    bool show_shape{true};
     bool show_texture{false};
     float color[4] = {1.0, 0.0, 0.0, 1.0};
 
@@ -29,10 +29,17 @@ class ApriltagVisual {
     void setColor(float r, float g, float b);
     void setAlpha(float a) { color[4] = a; }
 
+    // Some ugly hacks here
     float r() const { return color[0]; }
     float g() const { return color[1]; }
     float b() const { return color[2]; }
     float a() const { return color[3]; }
+    int ri() const { return floatToInt(r()); }
+    int gi() const { return floatToInt(g()); }
+    int bi() const { return floatToInt(b()); }
+
+   private:
+    int floatToInt(float f) const { return static_cast<int>(f * 255); }
   };
 
   static Property property;
@@ -58,7 +65,6 @@ class ApriltagVisual {
 };
 
 using ApriltagVisualPtr = ApriltagVisual::Ptr;
-
 
 }  // namespace apriltag_rviz
 

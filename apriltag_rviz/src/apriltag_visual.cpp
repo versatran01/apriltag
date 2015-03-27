@@ -11,13 +11,15 @@ ApriltagVisual::ApriltagVisual(Ogre::SceneManager* scene_manager,
       arrow_(new rviz::Arrow(scene_manager, tag_node_)),
       axes_(new rviz::Axes(scene_manager, tag_node_)) {
   // The state is unconfigured
-  // TODO: hide arrow for now
 }
 
 ApriltagVisual::ApriltagVisual(Ogre::SceneManager* scene_manager,
                                Ogre::SceneNode* camera_node,
                                const apriltag_msgs::Apriltag& msg)
-    : ApriltagVisual(scene_manager, camera_node) {}
+    : ApriltagVisual(scene_manager, camera_node) {
+  // TODO: This constructor will construct arrow and axes according to msg and
+  // property
+}
 
 ApriltagVisual::~ApriltagVisual() {
   scene_manager_->destroySceneNode(tag_node_);
