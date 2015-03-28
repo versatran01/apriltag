@@ -9,6 +9,8 @@
 #include <OGRE/OgreMeshManager.h>
 #include <OGRE/OgrePlane.h>
 
+#include "apriltag_rviz/apriltag_visual_manager.h"
+
 namespace apriltag_rviz {
 
 /**
@@ -51,9 +53,11 @@ class ApriltagVisual {
   static Property property;
 
   ApriltagVisual(Ogre::SceneManager* scene_manager,
-                 Ogre::SceneNode* camera_node);
+                 Ogre::SceneNode* camera_node,
+                 ApriltagVisualManager* apriltag_visual_manager);
   ApriltagVisual(Ogre::SceneManager* scene_manager,
                  Ogre::SceneNode* camera_node,
+                 ApriltagVisualManager* apriltag_visual_manager,
                  const apriltag_msgs::Apriltag& msg);
   virtual ~ApriltagVisual();
 
@@ -82,8 +86,9 @@ class ApriltagVisual {
   boost::shared_ptr<rviz::Arrow> arrow_;
   boost::shared_ptr<rviz::Axes> axes_;
 
-  Ogre::ManualObject* tag_object_;
-  //  Ogre::MaterialPtr uniform_material_;
+  Ogre::ManualObject* quad_object_;
+  Ogre::ManualObject* border_object_;
+  ApriltagVisualManager* apriltag_visual_manager_;
 };
 
 using ApriltagVisualPtr = ApriltagVisual::Ptr;

@@ -81,6 +81,10 @@ ApriltagArrayDisplay::ApriltagArrayDisplay() {
       this, SLOT(updateColorAndAlpha()));
   alpha_property_->setMax(0.0);
   alpha_property_->setMax(1.0);
+
+  // Test
+  apriltag_visual_manager_ =
+      boost::make_shared<ApriltagVisualManager>(scene_manager_);
 }
 
 ApriltagArrayDisplay::~ApriltagArrayDisplay() {}
@@ -245,7 +249,8 @@ void ApriltagArrayDisplay::processMessage(
   apriltag_visuals_.clear();
   for (const apriltag_msgs::Apriltag& apriltag : msg->apriltags) {
     apriltag_visuals_.emplace_back(boost::make_shared<ApriltagVisual>(
-        context_->getSceneManager(), scene_node_, apriltag));
+        context_->getSceneManager(), scene_node_,
+        apriltag_visual_manager_.get(), apriltag));
   }
 }
 

@@ -79,9 +79,9 @@ Visualization Manager:
       Radius: 0.01
       Reference Frame: <Fixed Frame>
       Value: true
-    - Alpha: 0.1
+    - Alpha: 0.5
       Class: apriltag_rviz/ApriltagArray
-      Color: 255; 85; 0
+      Color: 255; 85; 127
       Display: Texture
       Enabled: true
       Name: ApriltagArray
@@ -113,7 +113,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 2.31782
+      Distance: 2.92608
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
@@ -125,10 +125,10 @@ Visualization Manager:
         Z: 0.0136902
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: -1.2798
+      Pitch: -0.780203
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 4.6504
+      Yaw: 0.192205
     Saved: ~
 Window Geometry:
   Camera:
