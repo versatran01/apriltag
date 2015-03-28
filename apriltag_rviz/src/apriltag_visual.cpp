@@ -12,7 +12,8 @@ ApriltagVisual::ApriltagVisual(Ogre::SceneManager* scene_manager,
     : scene_manager_(scene_manager),
       tag_node_(camera_node->createChildSceneNode()),
       arrow_(new rviz::Arrow(scene_manager, tag_node_)),
-      axes_(new rviz::Axes(scene_manager, tag_node_)) {}
+      axes_(new rviz::Axes(scene_manager, tag_node_)),
+      tag_object_(scene_manager->createManualObject()) {}
 
 ApriltagVisual::ApriltagVisual(Ogre::SceneManager* scene_manager,
                                Ogre::SceneNode* camera_node,
@@ -22,15 +23,18 @@ ApriltagVisual::ApriltagVisual(Ogre::SceneManager* scene_manager,
   setMessage(msg);
   updateColorAndAlpha();
   updateShapeVisibility();
+  updateTextureVisibility();
 }
 
 ApriltagVisual::~ApriltagVisual() {
+  scene_manager_->destroyManualObject(tag_object_);
   scene_manager_->destroySceneNode(tag_node_);
 }
 
 void ApriltagVisual::setMessage(const Apriltag& msg) {
   setTagPose(msg.pose);
   setShapeGeometry(msg.size);
+  setTextureGeometry(msg.size);
 }
 
 void ApriltagVisual::setShapeGeometry(float tag_size) {
@@ -41,10 +45,43 @@ void ApriltagVisual::setShapeGeometry(float tag_size) {
   arrow_->set(tag_size, tag_size / (tag_bit + 2), tag_size / 4, tag_size / 5);
 }
 
+void ApriltagVisual::setTextureGeometry(float tag_size) {
+  tag_object_->begin("BaseWhiteNoLighting",
+                     Ogre::RenderOperation::OT_TRIANGLE_LIST);
+  tag_object_->colour(property.ogreColor());
+  const float s = tag_size / 2;
+  const std::vector<Ogre::Vector3> corners = {
+      {-s, -s, 0}, {s, -s, 0}, {s, s, 0}, {-s, s, 0}};
+  for (const auto& corner : corners) {
+    tag_object_->position(corner);
+  }
+
+  // Draws triangles on both sides
+  tag_object_->index(0);
+  tag_object_->index(3);
+  tag_object_->index(1);
+
+  tag_object_->index(0);
+  tag_object_->index(1);
+  tag_object_->index(3);
+
+  tag_object_->index(1);
+  tag_object_->index(2);
+  tag_object_->index(3);
+
+  tag_object_->index(3);
+  tag_object_->index(2);
+  tag_object_->index(1);
+
+  tag_object_->end();
+  tag_node_->attachObject(tag_object_);
+}
+
 void ApriltagVisual::setTagPose(const geometry_msgs::Pose& pose) {
-  Ogre::Vector3 position(pose.position.x, pose.position.y, pose.position.z);
-  Ogre::Quaternion orientation(pose.orientation.w, pose.orientation.x,
-                               pose.orientation.y, pose.orientation.z);
+  const Ogre::Vector3 position(pose.position.x, pose.position.y,
+                               pose.position.z);
+  const Ogre::Quaternion orientation(pose.orientation.w, pose.orientation.x,
+                                     pose.orientation.y, pose.orientation.z);
   setTagPose(position, orientation);
 }
 
@@ -63,9 +100,7 @@ void ApriltagVisual::setTagOrientation(const Ogre::Quaternion& orientation) {
 }
 
 void ApriltagVisual::updateColorAndAlpha() {
-  // Handle shape color
-  arrow_->setColor(property.r(), property.g(), property.b(), property.a());
-  // Handle texture color
+  arrow_->setColor(property.ogreColor());
 }
 
 void ApriltagVisual::updateShapeVisibility() {
@@ -75,7 +110,7 @@ void ApriltagVisual::updateShapeVisibility() {
 }
 
 void ApriltagVisual::updateTextureVisibility() {
-  // Stuff
+  tag_object_->setVisible(property.show_texture && property.use_uniform);
 }
 
 /// ========================

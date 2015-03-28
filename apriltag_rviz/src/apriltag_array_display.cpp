@@ -174,8 +174,10 @@ void ApriltagArrayDisplay::updateDisplayVisibility() {
 void ApriltagArrayDisplay::updateColorAndAlpha() {
   const float alpha = alpha_property_->getFloat();
   const Ogre::ColourValue color = color_property_->getOgreColor();
+
   ApriltagVisual::property.setColor(color);
   ApriltagVisual::property.setAlpha(alpha);
+
   for (const ApriltagVisualPtr& apriltag_visual : apriltag_visuals_) {
     apriltag_visual->updateColorAndAlpha();
   }

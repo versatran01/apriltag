@@ -5,6 +5,9 @@
 #include <apriltag_msgs/Apriltag.h>
 #include <rviz/ogre_helpers/arrow.h>
 #include <rviz/ogre_helpers/axes.h>
+#include <OGRE/OgreManualObject.h>
+#include <OGRE/OgreMeshManager.h>
+#include <OGRE/OgrePlane.h>
 
 namespace apriltag_rviz {
 
@@ -30,6 +33,9 @@ class ApriltagVisual {
     void setAlpha(float a) { color[3] = a; }
 
     // Some ugly hacks here
+    Ogre::ColourValue ogreColor() const {
+      return Ogre::ColourValue(color[0], color[1], color[2], color[3]);
+    }
     float r() const { return color[0]; }
     float g() const { return color[1]; }
     float b() const { return color[2]; }
@@ -56,6 +62,7 @@ class ApriltagVisual {
   /// setSomething will set the visual based on external input
   void setMessage(const apriltag_msgs::Apriltag& msg);
   void setShapeGeometry(float tag_size);
+  void setTextureGeometry(float tag_size);
   void setTagPose(const geometry_msgs::Pose& pose);
   void setTagPose(const Ogre::Vector3& position,
                   const Ogre::Quaternion& orientation);
@@ -74,6 +81,9 @@ class ApriltagVisual {
 
   boost::shared_ptr<rviz::Arrow> arrow_;
   boost::shared_ptr<rviz::Axes> axes_;
+
+  Ogre::ManualObject* tag_object_;
+  //  Ogre::MaterialPtr uniform_material_;
 };
 
 using ApriltagVisualPtr = ApriltagVisual::Ptr;
