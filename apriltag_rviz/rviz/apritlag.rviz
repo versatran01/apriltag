@@ -5,6 +5,7 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /Global Options1
+        - /Axes1
         - /ApriltagArray1
       Splitter Ratio: 0.5
     Tree Height: 529
@@ -73,15 +74,15 @@ Visualization Manager:
       Value: true
     - Class: rviz/Axes
       Enabled: true
-      Length: 1
+      Length: 0.1
       Name: Axes
-      Radius: 0.1
+      Radius: 0.01
       Reference Frame: <Fixed Frame>
       Value: true
-    - Alpha: 0.5
+    - Alpha: 0.1
       Class: apriltag_rviz/ApriltagArray
       Color: 255; 85; 0
-      Display: Shape
+      Display: Texture
       Enabled: true
       Name: ApriltagArray
       Shape: Axes
@@ -124,10 +125,10 @@ Visualization Manager:
         Z: 0.0136902
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.155203
+      Pitch: -1.2798
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 4.7504
+      Yaw: 4.6504
     Saved: ~
 Window Geometry:
   Camera:

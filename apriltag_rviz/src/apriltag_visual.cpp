@@ -40,12 +40,13 @@ void ApriltagVisual::setMessage(const Apriltag& msg) {
 void ApriltagVisual::setShapeGeometry(float tag_size) {
   // TODO: fix this hardcoded variable based on tag family
   int tag_bit = 6;
-  axes_->set(tag_size, tag_size / (tag_bit + 2));
+  axes_->set(tag_size, tag_size / (tag_bit + 2) / 2);
   // Update geometry of the arrow
   arrow_->set(tag_size, tag_size / (tag_bit + 2), tag_size / 4, tag_size / 5);
 }
 
 void ApriltagVisual::setTextureGeometry(float tag_size) {
+  // TODO: replace this texture with something that enables transparency
   tag_object_->begin("BaseWhiteNoLighting",
                      Ogre::RenderOperation::OT_TRIANGLE_LIST);
   tag_object_->colour(property.ogreColor());
@@ -57,21 +58,10 @@ void ApriltagVisual::setTextureGeometry(float tag_size) {
   }
 
   // Draws triangles on both sides
-  tag_object_->index(0);
-  tag_object_->index(3);
-  tag_object_->index(1);
-
-  tag_object_->index(0);
-  tag_object_->index(1);
-  tag_object_->index(3);
-
-  tag_object_->index(1);
-  tag_object_->index(2);
-  tag_object_->index(3);
-
-  tag_object_->index(3);
-  tag_object_->index(2);
-  tag_object_->index(1);
+  tag_object_->triangle(0, 3, 1);
+  tag_object_->triangle(0, 1, 3);
+  tag_object_->triangle(1, 2, 3);
+  tag_object_->triangle(3, 2, 1);
 
   tag_object_->end();
   tag_node_->attachObject(tag_object_);
