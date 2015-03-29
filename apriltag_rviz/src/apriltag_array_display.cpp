@@ -28,17 +28,17 @@ bool validateFloats(const apriltag_msgs::ApriltagArrayStamped& msg) {
 }
 
 ApriltagArrayDisplay::ApriltagArrayDisplay() {
+  visual_manager_ = boost::make_shared<ApriltagVisualManager>(scene_manager_);
   // Display property
   std::string default_display;
-  if (ApriltagVisual::property.show_shape &&
-      ApriltagVisual::property.show_texture) {
+  if (visual_manager_->show_shape && visual_manager_->show_texture) {
     default_display = "Shape and texture";
-  } else if (ApriltagVisual::property.show_shape) {
+  } else if (visual_manager_->show_shape) {
     default_display = "Shape";
-  } else if (ApriltagVisual::property.show_texture) {
+  } else if (visual_manager_->show_texture) {
     default_display = "Texture";
   } else {
-    ApriltagVisual::property.show_shape = true;
+    visual_manager_->show_shape = true;
     default_display = "Shape";
   }
 
@@ -51,7 +51,7 @@ ApriltagArrayDisplay::ApriltagArrayDisplay() {
 
   // Shape property
   const std::string default_shape =
-      (ApriltagVisual::property.use_axes) ? "Axes" : "Arrow";
+      (visual_manager_->use_axes) ? "Axes" : "Arrow";
   shape_property_ = new rviz::EnumProperty("Shape", default_shape.c_str(),
                                            "Shape to display the tags as.",
                                            this, SLOT(updateShapeChoice()));
@@ -60,7 +60,7 @@ ApriltagArrayDisplay::ApriltagArrayDisplay() {
 
   // Texture property
   const std::string default_texture =
-      (ApriltagVisual::property.use_uniform) ? "Uniform" : "Tag";
+      (visual_manager_->use_uniform) ? "Uniform" : "Tag";
   texture_property_ = new rviz::EnumProperty("Texture", default_texture.c_str(),
                                              "Texture of the tag.", this,
                                              SLOT(updateTextureChoice()));
@@ -68,14 +68,13 @@ ApriltagArrayDisplay::ApriltagArrayDisplay() {
   texture_property_->addOption("Tag", Texture::TAG);
 
   // Color and alpha property
-  const QColor default_color(ApriltagVisual::property.ri(),
-                             ApriltagVisual::property.gi(),
-                             ApriltagVisual::property.bi());
+  const QColor default_color(visual_manager_->ri(), visual_manager_->gi(),
+                             visual_manager_->bi());
   color_property_ = new rviz::ColorProperty(
       "Color", default_color, "Color to draw the apriltag arrows.", this,
       SLOT(updateColorAndAlpha()));
 
-  const auto default_alpha = ApriltagVisual::property.a();
+  const auto default_alpha = visual_manager_->a();
   alpha_property_ = new rviz::FloatProperty(
       "Alpha", default_alpha, "0 is fully transparent, 1.0 is fully opaque.",
       this, SLOT(updateColorAndAlpha()));
@@ -83,8 +82,6 @@ ApriltagArrayDisplay::ApriltagArrayDisplay() {
   alpha_property_->setMax(1.0);
 
   // Test
-  apriltag_visual_manager_ =
-      boost::make_shared<ApriltagVisualManager>(scene_manager_);
 }
 
 ApriltagArrayDisplay::~ApriltagArrayDisplay() {}
@@ -124,8 +121,8 @@ void ApriltagArrayDisplay::updateDisplayChoice() {
 
     hideColorAndAlpha(useAxesShape());
 
-    ApriltagVisual::property.show_shape = true;
-    ApriltagVisual::property.show_texture = false;
+    visual_manager_->show_shape = true;
+    visual_manager_->show_texture = false;
   } else if (display_option == Display::TEXTURE_ONLY) {
     ROS_INFO("Texture only");
     // Hide shape, show texture, show alpha, hide color if texture is tag
@@ -134,8 +131,8 @@ void ApriltagArrayDisplay::updateDisplayChoice() {
 
     hideColorAndAlpha(!useUniformTexture());
 
-    ApriltagVisual::property.show_shape = false;
-    ApriltagVisual::property.show_texture = true;
+    visual_manager_->show_shape = false;
+    visual_manager_->show_texture = true;
   } else {
     ROS_INFO("Texture and shape");
     // Show all
@@ -143,8 +140,8 @@ void ApriltagArrayDisplay::updateDisplayChoice() {
     texture_property_->setHidden(false);
     alpha_property_->setHidden(false);
     color_property_->setHidden(false);
-    ApriltagVisual::property.show_shape = true;
-    ApriltagVisual::property.show_texture = true;
+    visual_manager_->show_shape = true;
+    visual_manager_->show_texture = true;
   }
 
   updateDisplayVisibility();
@@ -177,10 +174,10 @@ void ApriltagArrayDisplay::updateDisplayVisibility() {
 
 void ApriltagArrayDisplay::updateColorAndAlpha() {
   const float alpha = alpha_property_->getFloat();
-  const Ogre::ColourValue color = color_property_->getOgreColor();
+  const auto color = color_property_->getOgreColor();
 
-  ApriltagVisual::property.setColor(color);
-  ApriltagVisual::property.setAlpha(alpha);
+  visual_manager_->setColor(color);
+  visual_manager_->setAlpha(alpha);
 
   for (const ApriltagVisualPtr& apriltag_visual : apriltag_visuals_) {
     apriltag_visual->updateColorAndAlpha();
@@ -188,14 +185,14 @@ void ApriltagArrayDisplay::updateColorAndAlpha() {
 }
 
 void ApriltagArrayDisplay::updateShapeVisibility() {
-  ApriltagVisual::property.use_axes = useAxesShape();
+  visual_manager_->use_axes = useAxesShape();
   for (const ApriltagVisualPtr& apriltag_visual : apriltag_visuals_) {
     apriltag_visual->updateShapeVisibility();
   }
 }
 
 void ApriltagArrayDisplay::updateTextureVisibility() {
-  ApriltagVisual::property.use_uniform = useUniformTexture();
+  visual_manager_->use_uniform = useUniformTexture();
   for (const ApriltagVisualPtr& apriltag_visual : apriltag_visuals_) {
     apriltag_visual->updateTextureVisibility();
   }
@@ -249,8 +246,8 @@ void ApriltagArrayDisplay::processMessage(
   apriltag_visuals_.clear();
   for (const apriltag_msgs::Apriltag& apriltag : msg->apriltags) {
     apriltag_visuals_.emplace_back(boost::make_shared<ApriltagVisual>(
-        context_->getSceneManager(), scene_node_,
-        apriltag_visual_manager_.get(), apriltag));
+        context_->getSceneManager(), scene_node_, visual_manager_.get(),
+        apriltag));
   }
 }
 

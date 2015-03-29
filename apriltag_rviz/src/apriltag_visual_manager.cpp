@@ -2,8 +2,10 @@
 
 namespace apriltag_rviz {
 
+ApriltagVisualManager::ApriltagVisualManager() : color_(1.0, 0.0, 1.0, 1.0) {}
+
 ApriltagVisualManager::ApriltagVisualManager(Ogre::SceneManager* scene_manager)
-    : scene_manager_(scene_manager) {
+    : scene_manager_(scene_manager), color_(1.0, 0.0, 1.0, 1.0) {
   createUniformMaterial();
 }
 

@@ -79,7 +79,7 @@ class ApriltagArrayDisplay
   rviz::EnumProperty* texture_property_;
   rviz::EnumProperty* display_property_;
 
-  ApriltagVisualManagerPtr apriltag_visual_manager_;
+  ApriltagVisualManagerPtr visual_manager_;
   std::vector<ApriltagVisualPtr> apriltag_visuals_;
 };
 

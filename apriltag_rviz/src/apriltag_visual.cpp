@@ -16,7 +16,7 @@ ApriltagVisual::ApriltagVisual(Ogre::SceneManager* scene_manager,
       axes_(new rviz::Axes(scene_manager, tag_node_)),
       quad_object_(scene_manager->createManualObject()),
       border_object_(scene_manager->createManualObject()),
-      apriltag_visual_manager_(apriltag_visual_manager) {}
+      visual_manager_(apriltag_visual_manager) {}
 
 ApriltagVisual::ApriltagVisual(Ogre::SceneManager* scene_manager,
                                Ogre::SceneNode* camera_node,
@@ -48,12 +48,13 @@ void ApriltagVisual::setShapeGeometry(float tag_size) {
 }
 
 void ApriltagVisual::setTextureGeometry(float tag_size) {
+  const Ogre::ColourValue& color = visual_manager_->color();
   const float s = tag_size / 2;
   const std::vector<Ogre::Vector3> corners = {
       {-s, -s, 0}, {s, -s, 0}, {s, s, 0}, {-s, s, 0}};
   border_object_->begin("BaseWhiteNoLighting",
                         Ogre::RenderOperation::OT_LINE_STRIP);
-  border_object_->colour(property.ogreColor());
+  border_object_->colour(color);
   for (const auto& corner : corners) {
     border_object_->position(corner);
   }
@@ -65,9 +66,9 @@ void ApriltagVisual::setTextureGeometry(float tag_size) {
   border_object_->end();
   tag_node_->attachObject(border_object_);
 
-  quad_object_->begin(apriltag_visual_manager_->uniform_material()->getName(),
+  quad_object_->begin(visual_manager_->uniform_material()->getName(),
                       Ogre::RenderOperation::OT_TRIANGLE_LIST);
-  quad_object_->colour(property.ogreColor());
+  quad_object_->colour(color);
   for (const auto& corner : corners) {
     quad_object_->position(corner);
   }
@@ -102,32 +103,21 @@ void ApriltagVisual::setTagOrientation(const Ogre::Quaternion& orientation) {
 }
 
 void ApriltagVisual::updateColorAndAlpha() {
-  arrow_->setColor(property.ogreColor());
+  arrow_->setColor(visual_manager_->color());
 }
 
 void ApriltagVisual::updateShapeVisibility() {
-  arrow_->getSceneNode()->setVisible(property.show_shape && !property.use_axes);
-  axes_->getSceneNode()->setVisible(property.show_shape && property.use_axes);
+  arrow_->getSceneNode()->setVisible(visual_manager_->show_shape &&
+                                     !visual_manager_->use_axes);
+  axes_->getSceneNode()->setVisible(visual_manager_->show_shape &&
+                                    visual_manager_->use_axes);
 }
 
 void ApriltagVisual::updateTextureVisibility() {
-  quad_object_->setVisible(property.show_texture && property.use_uniform);
-  border_object_->setVisible(property.show_texture && property.use_uniform);
-}
-
-/// ========================
-/// ApriltagVisual::Property
-/// ========================
-ApriltagVisual::Property ApriltagVisual::property = ApriltagVisual::Property();
-
-void ApriltagVisual::Property::setColor(const Ogre::ColourValue& color) {
-  setColor(color.r, color.g, color.b);
-}
-
-void ApriltagVisual::Property::setColor(float r, float g, float b) {
-  color[0] = r;
-  color[1] = g;
-  color[2] = b;
+  quad_object_->setVisible(visual_manager_->show_texture &&
+                           visual_manager_->use_uniform);
+  border_object_->setVisible(visual_manager_->show_texture &&
+                             visual_manager_->use_uniform);
 }
 
 }  // namespace apriltag_rviz
