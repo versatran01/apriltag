@@ -35,11 +35,11 @@ class ApriltagVisual {
   void setMessage(const apriltag_msgs::Apriltag& msg);
   void setShapeGeometry(float tag_size);
   void setTextureGeometry(float tag_size);
-  void setTagPose(const geometry_msgs::Pose& pose);
-  void setTagPose(const Ogre::Vector3& position,
+  void setNodePose(const geometry_msgs::Pose& pose);
+  void setNodePose(const Ogre::Vector3& position,
                   const Ogre::Quaternion& orientation);
-  void setTagPosition(const Ogre::Vector3& position);
-  void setTagOrientation(const Ogre::Quaternion& orientation);
+  void setNodePosition(const Ogre::Vector3& position);
+  void setNodeOrientation(const Ogre::Quaternion& orientation);
 
   /// updateSomething will update the visual based on static property
   void updateColorAndAlpha();

@@ -236,6 +236,8 @@ void ApriltagArrayDisplay::processMessage(
   // Move camera node accordingly
   scene_node_->setPosition(position);
   scene_node_->setOrientation(orientation);
+
+  const std::vector<apriltag_msgs::Apriltag>& apriltags = msg->apriltags;
   //  ROS_INFO(
   //      "Camera position: (%0.2f, %0.2f, %0.2f), "
   //      "camera orientation: (%0.2f, %0.2f, %0.2f, %0.2f)",
@@ -249,7 +251,23 @@ void ApriltagArrayDisplay::processMessage(
         context_->getSceneManager(), scene_node_, visual_manager_.get(),
         apriltag));
   }
+
+  // Delete tags that are not detected
+  // Remove the visuals that is not in the incoming msg
+  //  auto tag_not_detected = [&](const ApriltagVisualPtr& visual) {
+  //    return std::find_if(apriltags.begin(), apriltags.end(),
+  //                        [&](const apriltag_msgs::Apriltag& apriltag) {
+  //             return apriltag.id == visual->id();
+  //           }) == apriltags.end();
+  //  };
+  //  apriltag_visuals_.erase(std::remove_if(
+  //      apriltag_visuals_.begin(), apriltag_visuals_.end(),
+  //      tag_not_detected));
+
+  // Check if an apirltag is already in visual, if ture, update pose, otherwise
+  // just create a new one
 }
+// If visual exists, just update its tag_node
 
 }  // namespace apriltag_rviz
 

@@ -36,7 +36,7 @@ ApriltagVisual::~ApriltagVisual() {
 }
 
 void ApriltagVisual::setMessage(const Apriltag& msg) {
-  setTagPose(msg.pose);
+  setNodePose(msg.pose);
   setShapeGeometry(msg.size);
   setTextureGeometry(msg.size);
 }
@@ -80,25 +80,25 @@ void ApriltagVisual::setTextureGeometry(float tag_size) {
   tag_node_->attachObject(quad_object_);
 }
 
-void ApriltagVisual::setTagPose(const geometry_msgs::Pose& pose) {
+void ApriltagVisual::setNodePose(const geometry_msgs::Pose& pose) {
   const Ogre::Vector3 position(pose.position.x, pose.position.y,
                                pose.position.z);
   const Ogre::Quaternion orientation(pose.orientation.w, pose.orientation.x,
                                      pose.orientation.y, pose.orientation.z);
-  setTagPose(position, orientation);
+  setNodePose(position, orientation);
 }
 
-void ApriltagVisual::setTagPose(const Ogre::Vector3& position,
-                                const Ogre::Quaternion& orientation) {
-  setTagPosition(position);
-  setTagOrientation(orientation);
+void ApriltagVisual::setNodePose(const Ogre::Vector3& position,
+                                 const Ogre::Quaternion& orientation) {
+  setNodePosition(position);
+  setNodeOrientation(orientation);
 }
 
-void ApriltagVisual::setTagPosition(const Ogre::Vector3& position) {
+void ApriltagVisual::setNodePosition(const Ogre::Vector3& position) {
   tag_node_->setPosition(position);
 }
 
-void ApriltagVisual::setTagOrientation(const Ogre::Quaternion& orientation) {
+void ApriltagVisual::setNodeOrientation(const Ogre::Quaternion& orientation) {
   tag_node_->setOrientation(orientation);
 }
 
