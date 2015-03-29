@@ -30,6 +30,7 @@ catkin_package()
 add_library(${PROJECT_NAME}
     src/apriltag_array_display.cpp
     src/apriltag_visual.cpp
+    src/apriltag_visual_manager.cpp
     ${${PROJECT_NAME}_HEADERS_MOC}
     )
 target_link_libraries(${PROJECT_NAME}

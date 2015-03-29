@@ -10,6 +10,7 @@
 #include <rviz/selection/selection_handler.h>
 
 #include "apriltag_rviz/apriltag_visual.h"
+#include "apriltag_rviz/apriltag_visual_manager.h"
 
 namespace apriltag_rviz {
 
@@ -43,7 +44,7 @@ class ApriltagArrayDisplay
    * @brief Overriden from MessageFilterDisplay to get arrow/axes visibility
    * correct.
    */
-  virtual void onEnable(); // TODO: do I need this here?
+  virtual void onEnable();  // TODO: do I need this here?
 
   /**
    * @brief Overriden from MessageFilterDisplay to clear all visuals when
@@ -78,6 +79,7 @@ class ApriltagArrayDisplay
   rviz::EnumProperty* texture_property_;
   rviz::EnumProperty* display_property_;
 
+  ApriltagVisualManagerPtr visual_manager_;
   std::vector<ApriltagVisualPtr> apriltag_visuals_;
 };
 
