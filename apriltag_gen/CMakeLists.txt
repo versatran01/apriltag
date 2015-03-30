@@ -14,6 +14,18 @@ include_directories(
 
 catkin_package()
 
-add_executable(test_apriltag_gen test/test_apriltag_gen.cpp)
-target_link_libraries(test_apriltag_gen ${OpenCV_LIBRARIES})
+add_library(${PROJECT_NAME} src/${PROJECT_NAME}.cpp)
+target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBRARIES})
+
+if(CATKIN_ENABLE_TESTING)
+    catkin_add_gtest(gtest_${PROJECT_NAME}
+        test/test_apriltag_gen.cpp
+        )
+    target_link_libraries(
+        gtest_${PROJECT_NAME}
+        ${catkin_LIBRARIES}
+        ${PROJECT_NAME}
+        )
+endif()
+
 

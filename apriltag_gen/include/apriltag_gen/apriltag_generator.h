@@ -18,9 +18,6 @@ class ApriltagGenerator {
   apriltag_mit::TagFamily tag_familiy_;
 };
 
-cv::Mat tagCodeToCvMat(unsigned long long tag_code, int tag_bits,
-                       int black_border = 1);
-
 }  // namespace apriltag_gen
 
 #endif  // APRILTAG_GEN_APRILTAG_GENERATOR_H_
