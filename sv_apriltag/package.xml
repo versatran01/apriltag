@@ -1,5 +1,5 @@
 <package>
-  <name>apriltag</name>
+  <name>sv_apriltag</name>
   <version>0.1.0</version>
   <description>The Apriltag package</description>
   <maintainer email="quchao@seas.upenn.edu">Chao Qu</maintainer>
