@@ -47,13 +47,13 @@ add_dependencies(apriltag_detector_node
     )
 
 if(CATKIN_ENABLE_TESTING)
-    catkin_add_gtest(gtest_apriltag_ros
-        test/gtest_apriltag_ros.cpp
+    catkin_add_gtest(gtest_${PROJECT_NAME}
+        test/gtest_${PROJECT_NAME}.cpp
         test/test_timer.cpp
         test/test_apriltag_detector.cpp
         )
     target_link_libraries(
-        gtest_apriltag_ros
+        gtest_${PROJECT_NAME}
         ${catkin_LIBRARIES}
         ${PROJECT_NAME}
         )

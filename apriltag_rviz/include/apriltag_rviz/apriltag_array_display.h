@@ -10,6 +10,7 @@
 #include <rviz/selection/selection_handler.h>
 
 #include "apriltag_rviz/apriltag_visual.h"
+#include "apriltag_rviz/apriltag_visual_manager.h"
 
 namespace apriltag_rviz {
 
@@ -33,7 +34,7 @@ class ApriltagArrayDisplay
   enum Display { SHAPE_ONLY, TEXTURE_ONLY, SHAPE_AND_TEXTURE };
 
   ApriltagArrayDisplay();
-  virtual ~ApriltagArrayDisplay() = default;
+  virtual ~ApriltagArrayDisplay();
 
   virtual void onInitialize();
   virtual void reset();
@@ -43,7 +44,7 @@ class ApriltagArrayDisplay
    * @brief Overriden from MessageFilterDisplay to get arrow/axes visibility
    * correct.
    */
-  virtual void onEnable();
+  virtual void onEnable();  // TODO: do I need this here?
 
   /**
    * @brief Overriden from MessageFilterDisplay to clear all visuals when
@@ -61,6 +62,7 @@ class ApriltagArrayDisplay
   void updateTextureVisibility();
 
   void updateDisplayChoice();
+  void updateDisplayVisibility();
 
  private:
   void processMessage(const apriltag_msgs::ApriltagArrayStamped::ConstPtr& msg);
@@ -68,7 +70,7 @@ class ApriltagArrayDisplay
   void clear();
   bool useAxesShape() const;
   bool useUniformTexture() const;
-  void hideColorAndAlpha(bool use_arrow);
+  void hideColorAndAlpha(bool use_axes);
 
   // properties related to axes and arrow are disabled
   rviz::ColorProperty* color_property_;
@@ -77,14 +79,16 @@ class ApriltagArrayDisplay
   rviz::EnumProperty* texture_property_;
   rviz::EnumProperty* display_property_;
 
-  Ogre::SceneNode* camera_node_;
+  ApriltagVisualManagerPtr visual_manager_;
   std::vector<ApriltagVisualPtr> apriltag_visuals_;
-
-  //  std::vector<ApriltagVisual> apriltag_visuals_;
 };
 
+/**
+ * @brief validateFloats
+ */
 bool validateFloats(const apriltag_msgs::Apriltag& msg);
 bool validateFloats(const apriltag_msgs::ApriltagArrayStamped& msg);
+
 }  // namespace apriltag_rviz
 
 #endif  // APIRLTAG_RVIZ_APRILTAG_ARRAY_DISPLAY_H_
