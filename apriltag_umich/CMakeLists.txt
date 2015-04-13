@@ -43,8 +43,8 @@ target_link_libraries(${PROJECT_NAME} ${CMAKE_THREAD_LIBS_INIT})
 
 if(CATKIN_ENABLE_TESTING)
     include_directories(${catkin_INCLUDE_DIRS})
-    catkin_add_gtest(test_apriltag_umich test/test_apriltag_umich.cpp)
-    target_link_libraries(test_apriltag_umich
+    catkin_add_gtest(test_${PROJECT_NAME} test/test_${PROJECT_NAME}.cpp)
+    target_link_libraries(test_${PROJECT_NAME}
         ${PROJECT_NAME}
         ${catkin_LIBRARIES}
         ${OpenCV_LIBRARIES}
