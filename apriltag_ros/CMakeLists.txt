@@ -21,23 +21,7 @@ include_directories(
     ${Boost_INCLUDE_DIRS}
     )
 
-add_library(${PROJECT_NAME}
-    src/apriltag_detector.cpp
-    src/apriltag_detection.cpp
-    )
-target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
-
-add_executable(apriltag_detector_node src/apriltag_detector_node.cpp)
-target_link_libraries(apriltag_detector_node
-    ${PROJECT_NAME}
-    ${catkin_LIBRARIES}
-    )
-
-add_executable(playground test/playground.cpp)
-target_link_libraries(playground
-    ${PROJECT_NAME}
-    ${catkin_LIBRARIES}
-    )
+add_subdirectory(src)
 
 add_dependencies(apriltag_detector_node
     ${catkin_EXPORTED_TARGETS}
@@ -46,15 +30,4 @@ add_dependencies(apriltag_detector_node
     ${${PROJECT_NAME}_EXPORTED_TARGETS}
     )
 
-if(CATKIN_ENABLE_TESTING)
-    catkin_add_gtest(gtest_${PROJECT_NAME}
-        test/gtest_${PROJECT_NAME}.cpp
-        test/test_timer.cpp
-        test/test_apriltag_detector.cpp
-        )
-    target_link_libraries(
-        gtest_${PROJECT_NAME}
-        ${catkin_LIBRARIES}
-        ${PROJECT_NAME}
-        )
-endif()
+add_subdirectory(test)
