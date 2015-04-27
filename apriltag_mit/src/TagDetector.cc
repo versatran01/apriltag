@@ -24,13 +24,6 @@
 
 #include "AprilTags/TagDetector.h"
 
-//#define DEBUG_APRIL
-
-#ifdef DEBUG_APRIL
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
-#endif
-
 using namespace std;
 
 namespace AprilTags {
@@ -40,61 +33,15 @@ std::vector<TagDetection> TagDetector::extractTags(const cv::Mat &image) {
   // OpenCV)
   int width = image.cols;
   int height = image.rows;
-  AprilTags::FloatImage fimOrig(width, height);
-  int i = 0;
-  for (int y = 0; y < height; y++) {
-    for (int x = 0; x < width; x++) {
-      fimOrig.set(x, y, image.data[i] / 255.);
-      i++;
-    }
-  }
+  AprilTags::FloatImage fimOrig(image);
+  //  int i = 0;
+  //  for (int y = 0; y < height; y++) {
+  //    for (int x = 0; x < width; x++) {
+  //      fimOrig.set(x, y, image.data[i] / 255.);
+  //      i++;
+  //    }
+  //  }
   std::pair<int, int> opticalCenter(width / 2, height / 2);
-
-#ifdef DEBUG_APRIL
-#if 0
-  {
-    // debug - write
-    int height_ = fimOrig.getHeight();
-    int width_  = fimOrig.getWidth();
-    cv::Mat image(height_, width_, CV_8UC3);
-    {
-      for (int y = 0; y < height_; y++) {
-        for (int x = 0; x < width_; x++) {
-          cv::Vec3b v;
-          //        float vf = fimMag.get(x,y);
-          float vf = fimOrig.get(x, y);
-          int val = (int)(vf * 255.);
-          if ((val & 0xffff00) != 0) {printf("problem... %i\n", val);}
-          for (int k = 0; k < 3; k++) {
-            v(k) = val;
-          }
-          image.at<cv::Vec3b>(y, x) = v;
-        }
-      }
-    }
-    imwrite("out.bmp", image);
-  }
-#endif
-#if 0
-  FloatImage fimOrig = fimOrig_;
-  {
-    // debug - read
-
-    cv::Mat image = cv::imread("test.bmp");
-    int height_ = fimOrig.getHeight();
-    int width_  = fimOrig.getWidth();
-    {
-      for (int y = 0; y < height_; y++) {
-        for (int x = 0; x < width_; x++) {
-          cv::Vec3b v = image.at<cv::Vec3b>(y, x);
-          float val = (float)v(0) / 255.;
-          fimOrig.set(x, y, val);
-        }
-      }
-    }
-  }
-#endif
-#endif
 
   //================================================================
   // Step one: preprocess image (convert to grayscale) and low pass if necessary
@@ -166,29 +113,6 @@ std::vector<TagDetection> TagDetector::extractTags(const cv::Mat &image) {
       fimMag.set(x, y, mag);
     }
   }
-
-#ifdef DEBUG_APRIL
-  int height_ = fimSeg.getHeight();
-  int width_ = fimSeg.getWidth();
-  cv::Mat image(height_, width_, CV_8UC3);
-  {
-    for (int y = 0; y < height_; y++) {
-      for (int x = 0; x < width_; x++) {
-        cv::Vec3b v;
-        //        float vf = fimMag.get(x,y);
-        float vf = fimOrig.get(x, y);
-        int val = (int)(vf * 255.);
-        if ((val & 0xffff00) != 0) {
-          printf("problem... %i\n", val);
-        }
-        for (int k = 0; k < 3; k++) {
-          v(k) = val;
-        }
-        image.at<cv::Vec3b>(y, x) = v;
-      }
-    }
-  }
-#endif
 
   //================================================================
   // Step three. Extract edges by grouping pixels with similar
@@ -331,20 +255,6 @@ std::vector<TagDetection> TagDetector::extractTags(const cv::Mat &image) {
     segments.push_back(seg);
   }
 
-#ifdef DEBUG_APRIL
-#if 0
-  {
-    for (vector<Segment>::iterator it = segments.begin(); it != segments.end(); it++) {
-      long int r = random();
-      cv::line(image,
-               cv::Point2f(it->getX0(), it->getY0()),
-               cv::Point2f(it->getX1(), it->getY1()),
-               cv::Scalar(r % 0xff, (r % 0xff00) >> 8, (r % 0xff0000) >> 16, 0));
-    }
-  }
-#endif
-#endif
-
   // Step six: For each segment, find segments that begin where this segment
   // ends.
   // (We will chain segments together next...) The gridder accelerates the
@@ -414,40 +324,6 @@ std::vector<TagDetection> TagDetector::extractTags(const cv::Mat &image) {
     Quad::search(fimOrig, tmp, segments[i], 0, quads, opticalCenter);
   }
 
-#ifdef DEBUG_APRIL
-  {
-    for (unsigned int qi = 0; qi < quads.size(); qi++) {
-      Quad &quad = quads[qi];
-      std::pair<float, float> p1 = quad.quadPoints[0];
-      std::pair<float, float> p2 = quad.quadPoints[1];
-      std::pair<float, float> p3 = quad.quadPoints[2];
-      std::pair<float, float> p4 = quad.quadPoints[3];
-      cv::line(image, cv::Point2f(p1.first, p1.second),
-               cv::Point2f(p2.first, p2.second), cv::Scalar(0, 0, 255, 0));
-      cv::line(image, cv::Point2f(p2.first, p2.second),
-               cv::Point2f(p3.first, p3.second), cv::Scalar(0, 0, 255, 0));
-      cv::line(image, cv::Point2f(p3.first, p3.second),
-               cv::Point2f(p4.first, p4.second), cv::Scalar(0, 0, 255, 0));
-      cv::line(image, cv::Point2f(p4.first, p4.second),
-               cv::Point2f(p1.first, p1.second), cv::Scalar(0, 0, 255, 0));
-
-      p1 = quad.interpolate(-1, -1);
-      p2 = quad.interpolate(-1, 1);
-      p3 = quad.interpolate(1, 1);
-      p4 = quad.interpolate(1, -1);
-      cv::circle(image, cv::Point2f(p1.first, p1.second), 3,
-                 cv::Scalar(0, 255, 0, 0), 1);
-      cv::circle(image, cv::Point2f(p2.first, p2.second), 3,
-                 cv::Scalar(0, 255, 0, 0), 1);
-      cv::circle(image, cv::Point2f(p3.first, p3.second), 3,
-                 cv::Scalar(0, 255, 0, 0), 1);
-      cv::circle(image, cv::Point2f(p4.first, p4.second), 3,
-                 cv::Scalar(0, 255, 0, 0), 1);
-    }
-    cv::imshow("debug_april", image);
-  }
-#endif
-
   //================================================================
   // Step eight. Decode the quads. For each quad, we first estimate a
   // threshold color to decide between 0 and 1. Then, we read off the
@@ -498,16 +374,6 @@ std::vector<TagDetection> TagDetector::extractTags(const cv::Mat &image) {
         float v = fim.get(irx, iry);
         tagCode = tagCode << 1;
         if (v > threshold) tagCode |= 1;
-#ifdef DEBUG_APRIL
-        {
-          if (v > threshold)
-            cv::circle(image, cv::Point2f(irx, iry), 1,
-                       cv::Scalar(0, 0, 255, 0), 2);
-          else
-            cv::circle(image, cv::Point2f(irx, iry), 1,
-                       cv::Scalar(0, 255, 0, 0), 2);
-        }
-#endif
       }
     }
 
@@ -558,10 +424,6 @@ std::vector<TagDetection> TagDetector::extractTags(const cv::Mat &image) {
     }
   }
 
-#ifdef DEBUG_APRIL
-  { cv::imshow("debug_april", image); }
-#endif
-
   //================================================================
   // Step nine: Some quads may be detected more than once, due to
   // partial occlusion and our aggressive attempts to recover from
@@ -604,11 +466,6 @@ std::vector<TagDetection> TagDetector::extractTags(const cv::Mat &image) {
 
     if (newFeature) goodDetections.push_back(thisTagDetection);
   }
-
-  // cout << "AprilTags: edges=" << nEdges << " clusters=" << clusters.size() <<
-  // " segments=" << segments.size()
-  //     << " quads=" << quads.size() << " detections=" << detections.size() <<
-  // " unique tags=" << goodDetections.size() << endl;
 
   return goodDetections;
 }

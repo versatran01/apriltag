@@ -16,9 +16,7 @@ namespace AprilTags {
 //! Represent an image as a vector of floats in [0,1]
 class FloatImage {
  private:
-  int width;
-  int height;
-  std::vector<float> pixels;
+  cv::Mat image_;
 
  public:
   //! Default constructor
@@ -38,8 +36,6 @@ class FloatImage {
   int getNumFloatImagePixels() const { return image_.cols * image_.rows; }
 
   void filterFactoredCentered(int ksize, float sigma);
-
-  cv::Mat image_;
 };
 
 }  // namespace AprilTags

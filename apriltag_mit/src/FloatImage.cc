@@ -9,6 +9,10 @@ FloatImage::FloatImage(int widthArg, int heightArg) {
   image_.create(heightArg, widthArg, CV_32FC1);
 }
 
+FloatImage::FloatImage(const cv::Mat &image) {
+  image.convertTo(image_, CV_32FC1, 1.0 / 255);
+}
+
 FloatImage &FloatImage::operator=(const FloatImage &other) {
   other.image_.copyTo(image_);
   return *this;
