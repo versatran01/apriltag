@@ -34,9 +34,12 @@ void ApriltagDetectorNode::cameraCb(
   const auto gray = cv_bridge::toCvShare(
                         image_msg, sensor_msgs::image_encodings::MONO8)->image;
 
-  {
-    sv::base::ScopedTimerMs timer("detect");
-    detector_->detect(gray);
+  static sv::base::TimerMs timer("detect", false);
+  timer.start();
+  detector_->detect(gray);
+  timer.stop();
+  if (timer.count() % 100 == 0) {
+    timer.reportStats();
   }
 
   cv::Mat disp;
