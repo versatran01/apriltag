@@ -15,4 +15,4 @@ struct XYWeight {
 
 }  // namespace AprilTags
 
-#endif // APRILTAGS_XYWEIGHT_H_
+#endif  // APRILTAGS_XYWEIGHT_H_

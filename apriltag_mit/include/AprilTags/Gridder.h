@@ -20,7 +20,7 @@ class Gridder {
     T* object;
     Cell* next;
 
-    Cell() : object(NULL), next(NULL) {}
+    Cell() : object(nullptr), next(nullptr) {}
 
     Cell(const Cell& c) : object(c.object), next(c.next) {}
 
@@ -45,7 +45,7 @@ class Gridder {
     x1 = x0Arg + ppCell * width;
     y1 = y0Arg + ppCell * height;
     cells = std::vector<std::vector<Cell*> >(
-        height, std::vector<Cell*>(width, (Cell*)NULL));
+        height, std::vector<Cell*>(width, (Cell*)nullptr));
   }
 
   float x0, y0, x1, y1;
@@ -120,8 +120,8 @@ class Gridder {
     }
 
     bool hasNext() {
-      if (c == NULL) findNext();
-      return (c != NULL);
+      if (c == nullptr) findNext();
+      return (c != nullptr);
     }
 
     T& next() {
@@ -132,8 +132,8 @@ class Gridder {
 
    private:
     void findNext() {
-      if (c != NULL) c = c->next;
-      if (c != NULL) return;
+      if (c != nullptr) c = c->next;
+      if (c != nullptr) return;
 
       ix++;
       while (true) {
@@ -145,7 +145,7 @@ class Gridder {
 
         c = outer->cells[iy][ix];
 
-        if (c != NULL) break;
+        if (c != nullptr) break;
         ix++;
       }
     }
