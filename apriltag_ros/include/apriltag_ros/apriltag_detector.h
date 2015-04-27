@@ -31,10 +31,10 @@ class ApriltagDetector {
    */
   virtual void set_black_border(int black_border) = 0;
 
-  void set_decimate(double decimate) {
+  void set_decimate(int decimate) {
     decimate_ = (decimate >= 1) ? decimate : 1;
   }
-  const double decimate() const { return decimate_; }
+  const int decimate() const { return decimate_; }
 
   void set_refine(bool refine) { refine_ = refine; }
   const bool refine() { return refine_; }
@@ -82,7 +82,7 @@ class ApriltagDetector {
  protected:
   virtual void detectImpl(const cv::Mat& image) = 0;
 
-  double decimate_{1.0};
+  int decimate_{1};
   bool refine_{false};
   double tag_size_{0};
   std::string detector_type_;

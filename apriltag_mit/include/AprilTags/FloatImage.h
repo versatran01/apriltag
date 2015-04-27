@@ -37,11 +37,6 @@ class FloatImage {
   int getHeight() const { return image_.rows; }
   int getNumFloatImagePixels() const { return image_.cols * image_.rows; }
 
-  //! Rescale all values so that they are between [0,1]
-  //  void normalize();
-
-  void filterFactoredCentered(const std::vector<float>& fhoriz,
-                              const std::vector<float>& fvert);
   void filterFactoredCentered(int ksize, float sigma);
 
   cv::Mat image_;

@@ -123,8 +123,6 @@ std::vector<TagDetection> TagDetector::extractTags(const cv::Mat &image) {
 
   if (sigma > 0) {
     int filtsz = ((int)max(3.0f, 3 * sigma)) | 1;
-    //    std::vector<float> filt = Gaussian::makeGaussianFilter(sigma, filtsz);
-    //    fim.filterFactoredCentered(filt, filt);
     fim.filterFactoredCentered(filtsz, sigma);
   }
 
@@ -141,10 +139,7 @@ std::vector<TagDetection> TagDetector::extractTags(const cv::Mat &image) {
     } else {
       // blur anew
       int filtsz = ((int)max(3.0f, 3 * segSigma)) | 1;
-      //      std::vector<float> filt = Gaussian::makeGaussianFilter(segSigma,
-      //      filtsz);
       fimSeg = fimOrig;
-      //      fimSeg.filterFactoredCentered(filt, filt);
       fimSeg.filterFactoredCentered(filtsz, segSigma);
     }
   } else {
