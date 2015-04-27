@@ -99,6 +99,7 @@ std::vector<TagDetection> TagDetector::extractTags(const cv::Mat &image) {
   //================================================================
   // Step one: preprocess image (convert to grayscale) and low pass if necessary
 
+  // This is a copy
   FloatImage fim = fimOrig;
 
   //! Gaussian smoothing kernel applied to image (0 == no filter).
@@ -122,8 +123,9 @@ std::vector<TagDetection> TagDetector::extractTags(const cv::Mat &image) {
 
   if (sigma > 0) {
     int filtsz = ((int)max(3.0f, 3 * sigma)) | 1;
-    std::vector<float> filt = Gaussian::makeGaussianFilter(sigma, filtsz);
-    fim.filterFactoredCentered(filt, filt);
+    //    std::vector<float> filt = Gaussian::makeGaussianFilter(sigma, filtsz);
+    //    fim.filterFactoredCentered(filt, filt);
+    fim.filterFactoredCentered(filtsz, sigma);
   }
 
   //================================================================
@@ -139,9 +141,11 @@ std::vector<TagDetection> TagDetector::extractTags(const cv::Mat &image) {
     } else {
       // blur anew
       int filtsz = ((int)max(3.0f, 3 * segSigma)) | 1;
-      std::vector<float> filt = Gaussian::makeGaussianFilter(segSigma, filtsz);
+      //      std::vector<float> filt = Gaussian::makeGaussianFilter(segSigma,
+      //      filtsz);
       fimSeg = fimOrig;
-      fimSeg.filterFactoredCentered(filt, filt);
+      //      fimSeg.filterFactoredCentered(filt, filt);
+      fimSeg.filterFactoredCentered(filtsz, segSigma);
     }
   } else {
     fimSeg = fimOrig;
