@@ -17,9 +17,16 @@ class TagDetector {
 
   //! Constructor
   // note: TagFamily is instantiated here from TagCodes
-  explicit TagDetector(const TagCodes& tagCodes) : thisTagFamily(tagCodes) {}
+  explicit TagDetector(const TagCodes& tagCodes, int blackBorder = 1)
+      : thisTagFamily(tagCodes), blackBorder_(blackBorder) {}
 
   std::vector<TagDetection> extractTags(const cv::Mat& image);
+
+  void setBlackBorder(int blackBorder) { this->blackBorder_ = blackBorder; }
+  int getBlackBorder() const { return blackBorder_; }
+
+ private:
+  int blackBorder_;
 };
 
 }  // namespace AprilTags

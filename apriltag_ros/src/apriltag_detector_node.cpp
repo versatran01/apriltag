@@ -104,6 +104,7 @@ void ApriltagDetectorNode::configCb(ConfigT& config, int level) {
     detector_->set_tag_size(tag_size_);
     ROS_INFO("Tag size: %f", tag_size_);
   }
+  detector_->set_black_border(config.black_border);
   detector_->set_decimate(config.decimate);
   detector_->set_refine(config.refine);
   config_ = config;

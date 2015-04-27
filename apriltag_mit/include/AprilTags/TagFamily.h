@@ -64,7 +64,7 @@ class TagFamily {
   void printHammingDistances() const;
 
   //! Numer of pixels wide of the inner black border.
-  int blackBorder;
+  //  int blackBorder;
 
   //! Number of bits in the tag. Must be n^2.
   int bits;

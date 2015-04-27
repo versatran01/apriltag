@@ -36,7 +36,6 @@ using namespace std;
 namespace AprilTags {
 
 std::vector<TagDetection> TagDetector::extractTags(const cv::Mat &image) {
-
   // convert to internal AprilTags image (todo: slow, change internally to
   // OpenCV)
   int width = image.cols;
@@ -220,7 +219,6 @@ std::vector<TagDetection> TagDetector::extractTags(const cv::Mat &image) {
 
     for (int y = 0; y + 1 < height; y++) {
       for (int x = 0; x + 1 < width; x++) {
-
         float mag0 = fimMag.get(x, y);
         if (mag0 < Edge::minMag) continue;
         mmax[y * width + x] = mag0;
@@ -463,7 +461,7 @@ std::vector<TagDetection> TagDetector::extractTags(const cv::Mat &image) {
 
     // Find a threshold
     GrayModel blackModel, whiteModel;
-    const int dd = 2 * thisTagFamily.blackBorder + thisTagFamily.dimension;
+    const int dd = 2 * blackBorder_ + thisTagFamily.dimension;
 
     for (int iy = -1; iy <= dd; iy++) {
       float y = (iy + 0.5f) / dd;
@@ -484,9 +482,9 @@ std::vector<TagDetection> TagDetector::extractTags(const cv::Mat &image) {
     bool bad = false;
     unsigned long long tagCode = 0;
     for (int iy = thisTagFamily.dimension - 1; iy >= 0; iy--) {
-      float y = (thisTagFamily.blackBorder + iy + 0.5f) / dd;
+      float y = (blackBorder_ + iy + 0.5f) / dd;
       for (int ix = 0; ix < thisTagFamily.dimension; ix++) {
-        float x = (thisTagFamily.blackBorder + ix + 0.5f) / dd;
+        float x = (blackBorder_ + ix + 0.5f) / dd;
         std::pair<float, float> pxy = quad.interpolate01(x, y);
         int irx = (int)(pxy.first + 0.5);
         int iry = (int)(pxy.second + 0.5);

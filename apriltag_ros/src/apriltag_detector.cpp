@@ -13,7 +13,7 @@ namespace umich = apriltag_umich;
 /// ================
 ApriltagDetector::ApriltagDetector(const std::string& type,
                                    const std::string& tag_family)
-    : type_(type), tag_family_(tag_family) {}
+    : detector_type_(type), tag_family_(tag_family) {}
 
 void ApriltagDetector::detect(const cv::Mat& image) {
   if (image.empty()) return;
@@ -32,7 +32,6 @@ void ApriltagDetector::detect(const cv::Mat& image) {
 
 void ApriltagDetector::estimate(const cv::Matx33d& K,
                                 const cv::Mat_<double>& D) {
-  // TODO: just call ApriltagDetection::Estimate()
   if (tag_size() == 0) return;
   for (ApriltagDetection& td : tag_detections_) {
     td.estimate(K, D, tag_size());

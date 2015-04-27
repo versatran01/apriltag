@@ -22,8 +22,14 @@ class ApriltagDetector {
  public:
   using Ptr = boost::shared_ptr<ApriltagDetector>;
 
-  ApriltagDetector(const std::string& type, const std::string& tag_family);
+  ApriltagDetector(const std::string& detector_type,
+                   const std::string& tag_family);
   virtual ~ApriltagDetector() = default;
+
+  /**
+   * @brief set_black_border
+   */
+  virtual void set_black_border(int black_border) = 0;
 
   void set_decimate(double decimate) {
     decimate_ = (decimate >= 1) ? decimate : 1;
@@ -37,7 +43,7 @@ class ApriltagDetector {
   const double tag_size() const { return tag_size_; }
 
   const std::string& tag_family() const { return tag_family_; }
-  const std::string& type() const { return type_; }
+  const std::string& detector_type() const { return detector_type_; }
   const std::vector<ApriltagDetection>& tag_detections() const {
     return tag_detections_;
   }
@@ -52,7 +58,6 @@ class ApriltagDetector {
   /**
    * @brief Estimate estimates poses in camera frame
    */
-  // TODO: implement this
   void estimate(const cv::Matx33d& K, const cv::Mat_<double>& D);
 
   /**
@@ -71,7 +76,8 @@ class ApriltagDetector {
    * @param type mit or umich
    * @param tag_family 36h11, 25h9, 16h5
    */
-  static Ptr create(const std::string& type, const std::string& tag_family);
+  static Ptr create(const std::string& detector_type,
+                    const std::string& tag_family);
 
  protected:
   virtual void detectImpl(const cv::Mat& image) = 0;
@@ -79,7 +85,7 @@ class ApriltagDetector {
   double decimate_{1.0};
   bool refine_{false};
   double tag_size_{0};
-  std::string type_;
+  std::string detector_type_;
   std::string tag_family_;
   std::vector<ApriltagDetection> tag_detections_;
 };
@@ -93,7 +99,11 @@ class ApriltagDetectorMit : public ApriltagDetector {
  public:
   explicit ApriltagDetectorMit(const std::string& tag_family);
 
-  virtual void detectImpl(const cv::Mat& image) override;
+  void detectImpl(const cv::Mat& image) override;
+
+  void set_black_border(int black_border) override {
+    tag_detector_->setBlackBorder(black_border);
+  }
 
  private:
   /**
@@ -111,7 +121,11 @@ class ApriltagDetectorUmich : public ApriltagDetector {
  public:
   explicit ApriltagDetectorUmich(const std::string& tag_family);
 
-  virtual void detectImpl(const cv::Mat& image) override;
+  void detectImpl(const cv::Mat& image) override;
+
+  void set_black_border(int black_border) override {
+    tag_family_->black_border = black_border;
+  }
 
  private:
   apriltag_umich::TagFamilyPtr tag_family_;
