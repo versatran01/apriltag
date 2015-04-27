@@ -18,6 +18,8 @@
   <depend>apriltag_umich</depend>
   <depend>apriltag_msgs</depend>
 
+  <depend>sv_base</depend>
+
   <build_depend>message_generation</build_depend>
   <exec_depend>message_runtime</exec_depend>
   <test_depend>rosunit</test_depend>

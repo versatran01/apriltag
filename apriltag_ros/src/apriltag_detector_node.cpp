@@ -4,6 +4,7 @@
 #include <apriltag_msgs/ApriltagArrayStamped.h>
 #include <cv_bridge/cv_bridge.h>
 #include <opencv2/highgui/highgui.hpp>
+#include <sv_base/timer.hpp>
 
 #include <geometry_msgs/PoseArray.h>
 
@@ -33,7 +34,10 @@ void ApriltagDetectorNode::cameraCb(
   const auto gray = cv_bridge::toCvShare(
                         image_msg, sensor_msgs::image_encodings::MONO8)->image;
 
-  detector_->detect(gray);
+  {
+    sv::base::ScopedTimerMs timer("detect");
+    detector_->detect(gray);
+  }
 
   cv::Mat disp;
   cv::cvtColor(gray, disp, CV_GRAY2BGR);

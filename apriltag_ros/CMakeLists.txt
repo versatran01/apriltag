@@ -9,6 +9,7 @@ find_package(catkin REQUIRED COMPONENTS
     roscpp dynamic_reconfigure message_generation
     image_transport cv_bridge image_geometry
     apriltag_mit apriltag_umich apriltag_msgs
+    sv_base
     )
 
 generate_dynamic_reconfigure_options(cfg/ApriltagDyn.cfg)
