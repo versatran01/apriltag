@@ -85,8 +85,9 @@ ApriltagDetectorMit::ApriltagDetectorMit(const string& tag_family)
 void ApriltagDetectorMit::detectImpl(const cv::Mat& image) {
   // Decimate image
   cv::Mat im_scaled;
-  if (decimate_ != 1.0) {
-    cv::resize(image, im_scaled, cv::Size(0, 0), 1 / decimate_, 1 / decimate_);
+  if (decimate_ != 1) {
+    cv::resize(image, im_scaled, cv::Size(0, 0), 1.0 / decimate_,
+               1.0 / decimate_);
   } else {
     im_scaled = image;
   }
@@ -98,7 +99,7 @@ void ApriltagDetectorMit::detectImpl(const cv::Mat& image) {
   if (detections.empty()) return;
 
   // Handle decimation
-  if (decimate_ != 1.0) {
+  if (decimate_ != 1) {
     for (mit::TagDetection& td : detections) {
       td.scaleTag(decimate_);
     }

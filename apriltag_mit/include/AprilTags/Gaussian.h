@@ -7,7 +7,6 @@
 namespace AprilTags {
 
 class Gaussian {
-
  public:
   static bool warned;
 

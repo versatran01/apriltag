@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <vector>
+#include <opencv2/core/core.hpp>
 
 namespace DualCoding {
 typedef unsigned char uchar;
@@ -15,46 +16,26 @@ namespace AprilTags {
 //! Represent an image as a vector of floats in [0,1]
 class FloatImage {
  private:
-  int width;
-  int height;
-  std::vector<float> pixels;
+  cv::Mat image_;
 
  public:
   //! Default constructor
-  FloatImage();
+  FloatImage() = default;
+  FloatImage(const cv::Mat& image);
 
   //! Construct an empty image
   FloatImage(int widthArg, int heightArg);
 
-  //! Constructor that copies pixels from an array
-  FloatImage(int widthArg, int heightArg, const std::vector<float>& pArg);
-
   FloatImage& operator=(const FloatImage& other);
 
-  float get(int x, int y) const { return pixels[y * width + x]; }
-  void set(int x, int y, float v) { pixels[y * width + x] = v; }
+  float get(int x, int y) const { return image_.at<float>(y, x); }
+  void set(int x, int y, float v) { image_.at<float>(y, x) = v; }
 
-  int getWidth() const { return width; }
-  int getHeight() const { return height; }
-  int getNumFloatImagePixels() const { return width * height; }
-  const std::vector<float>& getFloatImagePixels() const { return pixels; }
+  int getWidth() const { return image_.cols; }
+  int getHeight() const { return image_.rows; }
+  int getNumFloatImagePixels() const { return image_.cols * image_.rows; }
 
-  //! TODO: Fix decimateAvg function. DO NOT USE!
-  void decimateAvg();
-
-  //! Rescale all values so that they are between [0,1]
-  void normalize();
-
-  void filterFactoredCentered(const std::vector<float>& fhoriz,
-                              const std::vector<float>& fvert);
-
-  template <typename T>
-  void copyToSketch(DualCoding::Sketch<T>& sketch) {
-    for (int i = 0; i < getNumFloatImagePixels(); i++)
-      sketch[i] = (T)(255.0f * getFloatImagePixels()[i]);
-  }
-
-  void printMinMax() const;
+  void filterFactoredCentered(int ksize, float sigma);
 };
 
 }  // namespace AprilTags

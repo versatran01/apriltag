@@ -14,9 +14,7 @@ class UnionFindSimple {
   };
 
  public:
-  explicit UnionFindSimple(int maxId) : data(maxId) {
-    init();
-  };
+  explicit UnionFindSimple(int maxId) : data(maxId) { init(); }
 
   int getSetSize(int thisId) { return data[getRepresentative(thisId)].size; }
 
