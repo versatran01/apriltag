@@ -10,8 +10,10 @@ def main():
     output_args = parser.add_argument_group('Output arguments')
     output_args.add_argument('output', nargs='?', default='april_grid',
                              help='output filename')
-    output_args.add_argument('--eps', action='store_true',
+    output_args.add_argument('--eps', '-e', action='store_true',
                              help='Also output an eps file')
+    output_args.add_argument('--yaml', '-y', action='store_true',
+                             help='Also output an yaml file')
 
     apriltag_args = parser.add_argument_group('Apriltag arguments')
     apriltag_args.add_argument('--rows', '-r', type=int, default=7,
@@ -28,6 +30,8 @@ def main():
     apriltag_args.add_argument('--tag-spacing', '-p', type=float, default=0.2,
                                help='The space between tags in fraction of'
                                     ' the tag size')
+    apriltag_args.add_argument('--show-id', '-i', action='store_true',
+                               help='Whether to print id under the tag')
 
     args = parser.parse_args()
     print(args)
