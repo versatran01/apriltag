@@ -128,3 +128,18 @@ t36h11 = [0xd5d628584, 0xd97f18b49, 0xdd280910e, 0xe479e9c98, 0xebcbca822,
           0x52ff83587, 0x3a1575dd8, 0x3feaa3564, 0xeacf78ba7, 0x0872b94f8,
           0xda8ddf9a2, 0x9aa920d2b, 0x1f350ed36, 0x18a5e861f, 0x2c35b89c3,
           0x3347ac48a, 0x7f23e022e, 0x2459068fb, 0xe83be4b73d]
+
+tag_families = {'t16h5': (t16h5, 4),
+                't25h9': (t25h9, 5),
+                't36h11': (t36h11, 6)}
+
+
+class ApriltagFamily:
+    def __init__(self, tag_family):
+        try:
+            self.tag_family = tag_family
+            self.tag_codes = tag_families[tag_family][0]
+            self.tag_bits = tag_families[tag_family][1]
+        except:
+            print("Unknown tag family {0}".format(tag_family))
+            raise
