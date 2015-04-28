@@ -9,9 +9,6 @@
   <license>BSD</license>
 
   <buildtool_depend>catkin</buildtool_depend>
-  <depend>apriltag_mit</depend>
-  <depend>apriltag_msgs</depend>
-  <test_depend>rosunit</test_depend>
 
   <export>
   </export>
