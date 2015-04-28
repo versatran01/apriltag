@@ -1,5 +1,5 @@
 from __future__ import absolute_import, division, print_function
-from pyx import canvas, path, color, style, deco, text
+from pyx import canvas, path, color, style, deco
 from apriltag_gen import tag_codes
 import numpy as np
 import yaml
@@ -27,11 +27,13 @@ def create_apriltag_grid(args):
 
 
 def test_yaml(rows, cols, tag_family, tag_size, tag_spacing, stream):
+    tf = tag_codes.ApriltagFamily(tag_family)
+
     apriltag_map = dict()
     apriltag_map['tag_family'] = tag_family
+    apriltag_map['tag_size'] = tag_size
     apriltag_list = []
 
-    tf = tag_codes.ApriltagFamily(tag_family)
     for r in range(rows):
         for c in range(cols):
             i = r * cols + c
@@ -41,7 +43,6 @@ def test_yaml(rows, cols, tag_family, tag_size, tag_spacing, stream):
             apriltag = dict()
             apriltag['id'] = i
             apriltag['code'] = tag_code
-            apriltag['size'] = tag_size
             apriltag['position'] = dict()
             apriltag['position']['x'] = x + tag_size / 2
             apriltag['position']['y'] = y + tag_size / 2
