@@ -1,0 +1,2 @@
+class ApriltagDrawer:
+    pass
