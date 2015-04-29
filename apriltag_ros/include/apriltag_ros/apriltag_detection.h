@@ -7,16 +7,35 @@
 #include <apriltag_mit/apriltag_mit.h>
 #include <apriltag_umich/apriltag_umich.h>
 
-#define EIGEN_MAKE_PARAMETERIZED_TYPEDEF
-
 namespace Eigen {
-template <typename T>
-using Vector3 = Matrix<T, 3, 1>;
+#define EIGEN_MAKE_PARAMETERIZED_TYPEDEFS(Size, SizeSuffix) \
+  template <typename T>                                    \
+  using Matrix##SizeSuffix = Matrix<T, Size, Size>;        \
+  template <typename T>                                    \
+  using Vector##SizeSuffix = Matrix<T, Size, 1>;           \
+  template <typename T>                                    \
+  using RowVector##SizeSuffix = Matrix<T, 1, Size>;
+
+#define EIGEN_MAKE_PARAMETERIZED_FIXED_TYPEDEFS(Size) \
+  template <typename T>                               \
+  using Matrix##Size##X = Matrix<T, Size, Dynamic>;   \
+  template <typename T>                               \
+  using Matrix##X##Size = Matrix<T, Dynamic, Size>;
+
+
+#define EIGEN_MAKE_PARAMETERIZED_TYPEDEFS_ALL_SIZES() \
+EIGEN_MAKE_PARAMETERIZED_TYPEDEFS(2, 2) \
+EIGEN_MAKE_PARAMETERIZED_TYPEDEFS(3, 3) \
+EIGEN_MAKE_PARAMETERIZED_TYPEDEFS(4, 4) \
+EIGEN_MAKE_PARAMETERIZED_TYPEDEFS(Dynamic, X) \
+EIGEN_MAKE_PARAMETERIZED_FIXED_TYPEDEFS(2) \
+EIGEN_MAKE_PARAMETERIZED_FIXED_TYPEDEFS(3) \
+EIGEN_MAKE_PARAMETERIZED_FIXED_TYPEDEFS(4)
+
+EIGEN_MAKE_PARAMETERIZED_TYPEDEFS_ALL_SIZES()
 }
-Eigen::Vector3d
 
 namespace apriltag_ros {
-
 /**
  * @brief The ApriltagDetection class
  */
