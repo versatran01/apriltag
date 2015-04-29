@@ -6,7 +6,8 @@ find_package(catkin REQUIRED
 
 add_message_files(
     DIRECTORY msg
-    FILES Apriltag.msg
+    FILES
+    Apriltag.msg
     ApriltagStamped.msg
     ApriltagArrayStamped.msg
     )

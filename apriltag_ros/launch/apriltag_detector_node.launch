@@ -1,19 +1,18 @@
 <launch>
   <arg name="camera" default="camera"/>
-  <arg name="rectify" default="false"/>
 
-  <node if="$(arg rectify)" output="screen"
+  <node output="screen"
   	pkg="image_proc" type="image_proc" name="image_proc" ns="$(arg camera)">
   </node>
 
-  <node pkg="apriltag_ros" type="apriltag_detector_node" name="apriltag_detector"
+  <node pkg="apriltag_ros" type="apriltag_detector_node"
+    name="apriltag_detector"
     output="screen" ns="$(arg camera)">
-    <param name="apriltag/family" type="int" value="0"/>
-    <param name="apriltag/type" type="int" value="0"/>
-    <param name="apriltag/size" type="double" value="0.159"/>
+    <param name="family" type="int" value="0"/>
+    <param name="type" type="int" value="0"/>
+    <param name="size" type="double" value="0.159"/>
 
-    <remap if="$(arg rectify)" from="~image" to="image_rect"/>
-    <remap unless="$(arg rectify)" from="~image" to="image_raw"/>
+    <remap from="~image" to="image_rect"/>
     <remap from="~apriltags" to="apriltags"/>
     <remap from="~image_detection" to="image_detection"/>
   </node>

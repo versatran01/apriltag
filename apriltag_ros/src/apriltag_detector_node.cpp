@@ -11,11 +11,8 @@
 namespace apriltag_ros {
 
 ApriltagDetectorNode::ApriltagDetectorNode(const ros::NodeHandle& pnh)
-    : pnh_(pnh), tag_nh_(pnh, "apriltag"), it_(pnh), cfg_server_(tag_nh_) {
-  // Handle rectified image
-  const auto resolved_topic = pnh.resolveName("image");
-  if (resolved_topic.find("rect") != std::string::npos) image_rectified_ = true;
-  tag_nh_.param("size", tag_size_, 0.0);
+    : pnh_(pnh), it_(pnh), cfg_server_(pnh) {
+  pnh_.param("size", tag_size_, 0.0);
 
   sub_camera_ =
       it_.subscribeCamera("image", 1, &ApriltagDetectorNode::cameraCb, this);
@@ -34,6 +31,7 @@ void ApriltagDetectorNode::cameraCb(
   const auto gray = cv_bridge::toCvShare(
                         image_msg, sensor_msgs::image_encodings::MONO8)->image;
 
+  // Detection
   static sv::base::TimerMs timer("detect", false);
   timer.start();
   detector_->detect(gray);
@@ -47,26 +45,19 @@ void ApriltagDetectorNode::cameraCb(
   detector_->draw(disp);
 
   // Only estimate if camera info is valid
-  if (cinfo_msg->K[0] != 0 && cinfo_msg->height != 0) {
-    model_.fromCameraInfo(cinfo_msg);
-    if (image_rectified_) {
-      // Call estimate with projection matrix
-      const auto P = model_.projectionMatrix();
-      cv::Matx33d K(P(0), P(1), P(2), P(4), P(5), P(6), P(8), P(9), P(10));
-      detector_->estimate(K, cv::Mat_<double>(1, 5, 0.0));
-    } else {
-      // Call estimate with K and D
-      detector_->estimate(model_.fullIntrinsicMatrix(),
-                          model_.distortionCoeffs());
-    }
+  if (cinfo_msg->K[0] != 0 && cinfo_msg->height != 0 && tag_size_ > 0) {
+    const auto P = cinfo_msg->P;
+    cv::Matx33d K(P[0], P[1], P[2], P[4], P[5], P[6], P[8], P[9], P[10]);
+    detector_->estimate(K);
   }
 
-  apriltag_msgs::ApriltagArrayStampedPtr apriltag_array_msg =
+  auto apriltag_array_msg =
       boost::make_shared<apriltag_msgs::ApriltagArrayStamped>();
   apriltag_array_msg->header = image_msg->header;
   apriltag_array_msg->apriltags = detector_->toApriltagMsg();
   pub_apriltags_.publish(apriltag_array_msg);
 
+  // Publish detection image if needed
   if (pub_image_.getNumSubscribers() > 0) {
     cv_bridge::CvImage cv_img(image_msg->header,
                               sensor_msgs::image_encodings::BGR8, disp);

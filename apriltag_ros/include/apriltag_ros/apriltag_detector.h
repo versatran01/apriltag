@@ -26,10 +26,14 @@ class ApriltagDetector {
                    const std::string& tag_family);
   virtual ~ApriltagDetector() = default;
 
-  /**
-   * @brief set_black_border
-   */
-  virtual void set_black_border(int black_border) = 0;
+  void set_black_border(int black_border) {
+    black_border_ = black_border;
+    setBlackBorder(black_border);
+  }
+  int black_border() const { return black_border_; }
+
+  void set_tag_bits(int tag_bits) { tag_bits_ = tag_bits; }
+  int tag_bits() const { return tag_bits_; }
 
   void set_decimate(int decimate) {
     decimate_ = (decimate >= 1) ? decimate : 1;
@@ -58,7 +62,7 @@ class ApriltagDetector {
   /**
    * @brief Estimate estimates poses in camera frame
    */
-  void estimate(const cv::Matx33d& K, const cv::Mat_<double>& D);
+  void estimate(const cv::Matx33d& K);
 
   /**
    * @brief Draw draws detected tags on given image
@@ -81,10 +85,13 @@ class ApriltagDetector {
 
  protected:
   virtual void detectImpl(const cv::Mat& image) = 0;
+  virtual void setBlackBorder(int black_border) = 0;
 
   int decimate_{1};
   bool refine_{false};
-  double tag_size_{0};
+  double tag_size_{0.0};
+  int black_border_{1};
+  int tag_bits_{6};  // default to t36h11
   std::string detector_type_;
   std::string tag_family_;
   std::vector<ApriltagDetection> tag_detections_;
@@ -101,16 +108,11 @@ class ApriltagDetectorMit : public ApriltagDetector {
 
   void detectImpl(const cv::Mat& image) override;
 
-  void set_black_border(int black_border) override {
+  void setBlackBorder(int black_border) override {
     tag_detector_->setBlackBorder(black_border);
   }
 
  private:
-  /**
-   * @brief RefineDetections Refine corners using opencv cornerSubPix
-   */
-  void refineDetections(const cv::Mat& image);
-
   apriltag_mit::TagDetectorPtr tag_detector_;
 };
 
@@ -123,7 +125,7 @@ class ApriltagDetectorUmich : public ApriltagDetector {
 
   void detectImpl(const cv::Mat& image) override;
 
-  void set_black_border(int black_border) override {
+  void setBlackBorder(int black_border) override {
     tag_family_->black_border = black_border;
   }
 

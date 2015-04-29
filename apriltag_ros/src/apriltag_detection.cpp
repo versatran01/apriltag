@@ -41,9 +41,8 @@ ApriltagDetection::operator apriltag_msgs::Apriltag() const {
     point.x = p[i][0];
     point.y = p[i][1];
     point.z = 1;
-    apriltag.corners.push_back(point);
-    if (estimated) {
-      apriltag.estimated = estimated;
+    apriltag.corners[i] = point;
+    if (size > 0) {
       apriltag.pose.position.x = t(0);
       apriltag.pose.position.y = t(1);
       apriltag.pose.position.z = t(2);
@@ -57,9 +56,9 @@ ApriltagDetection::operator apriltag_msgs::Apriltag() const {
   return apriltag;
 }
 
-void ApriltagDetection::estimate(const cv::Matx33d& K,
-                                 const cv::Mat_<double>& D, double tag_size) {
+void ApriltagDetection::estimate(const cv::Matx33d& K, double tag_size) {
   assert(tag_size > 0);
+  size = tag_size;
   const auto s = tag_size / 2.0;
 
   // tag corners in tag frame
@@ -75,20 +74,21 @@ void ApriltagDetection::estimate(const cv::Matx33d& K,
   // Estimate r and t
   // TODO: can not use Matx type here?
   cv::Mat rvec, tvec;
+  // Assume rectified image, so distortion is just 0s
+  const cv::Mat_<double> D(1, 4, 0.0);
   cv::solvePnP(p_tag, p_img, K, D, rvec, tvec);
   t = Eigen::Vector3d(tvec.at<double>(0), tvec.at<double>(1),
                       tvec.at<double>(2));
   Eigen::Vector3d r(rvec.at<double>(0), rvec.at<double>(1), rvec.at<double>(2));
 
   // Convert r to quat
-  const auto angle = r.norm();
-  Eigen::Vector3d axis;
-  if (angle > std::numeric_limits<double>::epsilon() * 10) {
-    axis = r / angle;
-  }
-  q = Eigen::AngleAxis<double>(angle, axis);
-
-  estimated = true;
+  //  const auto angle = r.norm();
+  //  Eigen::Vector3d axis(0, 0, 0);
+  //  if (angle > std::numeric_limits<double>::epsilon() * 10) {
+  //    axis = r / angle;
+  //  }
+  //  q = Eigen::AngleAxis<double>(angle, axis);
+  q = RotationVectorToQuaternion(r);
 }
 
 void ApriltagDetection::draw(cv::Mat& image, int thickness) const {

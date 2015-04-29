@@ -30,11 +30,10 @@ void ApriltagDetector::detect(const cv::Mat& image) {
   detectImpl(gray);
 }
 
-void ApriltagDetector::estimate(const cv::Matx33d& K,
-                                const cv::Mat_<double>& D) {
+void ApriltagDetector::estimate(const cv::Matx33d& K) {
   if (tag_size() == 0) return;
   for (ApriltagDetection& td : tag_detections_) {
-    td.estimate(K, D, tag_size());
+    td.estimate(K, tag_size());
   }
 }
 
@@ -46,10 +45,12 @@ void ApriltagDetector::draw(cv::Mat& image) const {
 
 ApriltagVec ApriltagDetector::toApriltagMsg() const {
   ApriltagVec apriltags;
-  for (const ApriltagDetection& td : tag_detections_) {
-    apriltag_msgs::Apriltag apriltag = static_cast<apriltag_msgs::Apriltag>(td);
+  for (const auto& td : tag_detections_) {
+    auto apriltag = static_cast<apriltag_msgs::Apriltag>(td);
     apriltag.size = tag_size();
+    apriltag.bits = tag_bits();
     apriltag.family = tag_family();
+    apriltag.border = black_border();
     apriltags.push_back(apriltag);
   }
   return apriltags;
@@ -73,10 +74,13 @@ ApriltagDetectorMit::ApriltagDetectorMit(const string& tag_family)
     : ApriltagDetector("mit", tag_family) {
   if (tag_family == "36h11") {
     tag_detector_.reset(new mit::TagDetector(mit::tagCodes36h11));
+    tag_bits_ = 6;
   } else if (tag_family == "25h9") {
     tag_detector_.reset(new mit::TagDetector(mit::tagCodes25h9));
+    tag_bits_ = 5;
   } else if (tag_family == "16h5") {
     tag_detector_.reset(new mit::TagDetector(mit::tagCodes16h5));
+    tag_bits_ = 4;
   } else {
     throw std::invalid_argument("Invalid tag family");
   }
@@ -127,10 +131,13 @@ ApriltagDetectorUmich::ApriltagDetectorUmich(const std::string& tag_family)
       tag_detector_(apriltag_detector_create()) {
   if (tag_family == "36h11") {
     tag_family_.reset(tag36h11_create());
+    tag_bits_ = 6;
   } else if (tag_family == "25h9") {
     tag_family_.reset(tag25h9_create());
+    tag_bits_ = 5;
   } else if (tag_family == "16h5") {
     tag_family_.reset(tag16h5_create());
+    tag_bits_ = 4;
   } else {
     throw std::invalid_argument("Invalid tag family");
   }

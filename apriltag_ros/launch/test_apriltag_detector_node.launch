@@ -2,7 +2,6 @@
   <arg name="output" default="screen"/>
   <arg name="bagfile" default="/home/chao/KuaiPan/apriltag1.bag"/>
   <arg name="camera" default="/mv_25000851"/>
-  <arg name="rectify" default="false"/>
 
   <!-- Rosbag -->
   <node pkg="rosbag" type="play" name="player" output="log" args="$(arg bagfile)">
@@ -11,6 +10,5 @@
   <!-- Detector Node -->
   <include file="$(find apriltag_ros)/launch/apriltag_detector_node.launch">
     <arg name="camera" value="$(arg camera)"/>
-    <arg name="rectify" value="$(arg rectify)"/>
   </include>
 </launch>

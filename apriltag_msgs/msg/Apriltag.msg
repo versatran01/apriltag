@@ -6,7 +6,6 @@ float64 size                   # Size of the Apriltag in meter
 int32 hamming                  # Hamming distance
 int32 border                   # Black border
 int32 bits                     # Bits, 36h11 has 6 bits
-bool estimated                 # Is pose estimated
-geometry_msgs/Point center
-geometry_msgs/Point[] corners
+geometry_msgs/Point center     # Center of this apriltag
+geometry_msgs/Point[4] corners # Corners of this apriltag
 geometry_msgs/Pose pose        # Pose of this Apriltag in camera frame

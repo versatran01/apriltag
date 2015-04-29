@@ -7,12 +7,12 @@ find_package(OpenCV REQUIRED)
 find_package(Boost REQUIRED)
 find_package(catkin REQUIRED COMPONENTS
     roscpp dynamic_reconfigure message_generation
-    image_transport cv_bridge image_geometry
+    image_transport cv_bridge
     apriltag_mit apriltag_umich apriltag_msgs
     sv_base
     )
 
-generate_dynamic_reconfigure_options(cfg/ApriltagDyn.cfg)
+generate_dynamic_reconfigure_options(cfg/ApriltagDetectorDyn.cfg)
 
 catkin_package()
 

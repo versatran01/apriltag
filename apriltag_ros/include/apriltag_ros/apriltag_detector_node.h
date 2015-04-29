@@ -6,16 +6,16 @@
 #include <dynamic_reconfigure/server.h>
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/CameraInfo.h>
-#include <image_geometry/pinhole_camera_model.h>
 
-#include <apriltag_ros/ApriltagDynConfig.h>
+#include <apriltag_ros/ApriltagDetectorDynConfig.h>
 #include "apriltag_ros/apriltag_detector.h"
 
 namespace apriltag_ros {
 
 class ApriltagDetectorNode {
  public:
-  using ConfigT = ApriltagDynConfig;
+  using ConfigT = ApriltagDetectorDynConfig;
+
   explicit ApriltagDetectorNode(const ros::NodeHandle& pnh);
 
   void cameraCb(const sensor_msgs::ImageConstPtr& image_msg,
@@ -25,16 +25,14 @@ class ApriltagDetectorNode {
   void configCb(ConfigT& config, int level);
 
  private:
-  ros::NodeHandle pnh_, tag_nh_;
+  ros::NodeHandle pnh_;
   ros::Publisher pub_apriltags_;
   image_transport::ImageTransport it_;
   image_transport::CameraSubscriber sub_camera_;
   image_transport::Publisher pub_image_;
   dynamic_reconfigure::Server<ConfigT> cfg_server_;
-  image_geometry::PinholeCameraModel model_;
   ConfigT config_;
   double tag_size_;
-  bool image_rectified_{false};
   ApriltagDetectorPtr detector_;
   ros::Publisher pub_pose_array_;
 };
