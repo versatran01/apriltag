@@ -7,10 +7,13 @@
 #include <apriltag_mit/apriltag_mit.h>
 #include <apriltag_umich/apriltag_umich.h>
 
+#define EIGEN_MAKE_PARAMETERIZED_TYPEDEF
+
 namespace Eigen {
 template <typename T>
-using Vector3 = Eigen::Matrix<T, 3, 1>;
+using Vector3 = Matrix<T, 3, 1>;
 }
+Eigen::Vector3d
 
 namespace apriltag_ros {
 
