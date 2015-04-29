@@ -1,6 +1,7 @@
 #include "apriltag_ros/apriltag_detection.h"
 
 #include <opencv2/highgui/highgui.hpp>
+#include "sv_base/math.h"
 
 #define CV_RED CV_RGB(255, 0, 0)
 #define CV_GREEN CV_RGB(0, 255, 0)
@@ -88,7 +89,7 @@ void ApriltagDetection::estimate(const cv::Matx33d& K, double tag_size) {
   //    axis = r / angle;
   //  }
   //  q = Eigen::AngleAxis<double>(angle, axis);
-  q = RotationVectorToQuaternion(r);
+  q = sv::base::RotationVectorToQuaternion(r);
 }
 
 void ApriltagDetection::draw(cv::Mat& image, int thickness) const {

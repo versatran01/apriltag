@@ -11,4 +11,8 @@
   <include file="$(find apriltag_ros)/launch/apriltag_detector_node.launch">
     <arg name="camera" value="$(arg camera)"/>
   </include>
+
+  <node pkg="rviz" name="rviz" type="rviz" output="log"
+    args="-d $(find apriltag_ros)/rviz/detector.rviz">
+  </node>
 </launch>
