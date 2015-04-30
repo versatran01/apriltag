@@ -55,14 +55,16 @@ class ApriltagDetector {
   /**
    * @brief Detect detects apriltags in given image
    * @param image A grayscale image
-   * @note corner starts from lower-left and goes counter-clockwise
+   * @note corner starts from lower-left and goes counter-clockwise, and detect
+   * does not need knowledge of the camera intrinsics
    */
   void detect(const cv::Mat& image);
 
   /**
    * @brief Estimate estimates poses in camera frame
    */
-  void estimate(const cv::Matx33d& K);
+  void estimate(const cv::Matx33d& K,
+                const cv::Mat_<double>& D = cv::Mat_<double>(1, 5, 0.0));
 
   /**
    * @brief Draw draws detected tags on given image

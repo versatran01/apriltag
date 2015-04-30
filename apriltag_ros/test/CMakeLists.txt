@@ -15,3 +15,6 @@ target_link_libraries(playground
     ${PROJECT_NAME}
     ${catkin_LIBRARIES}
     )
+
+add_executable(test_apriltag_map test_apriltag_map.cpp)
+target_link_libraries(test_apriltag_map ${PROJECT_NAME})

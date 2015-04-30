@@ -13,8 +13,6 @@ namespace apriltag_ros {
  */
 class ApriltagDetection {
  public:
-  using RtPair = std::pair<Eigen::Matrix3d, Eigen::Matrix3d>;
-
   ApriltagDetection() = default;
   explicit ApriltagDetection(const apriltag_mit::TagDetection& td);
   explicit ApriltagDetection(const apriltag_detection_t* td);
@@ -24,7 +22,8 @@ class ApriltagDetection {
   void drawLine(cv::Mat& image, int b, int e, const cv::Scalar& color,
                 int thickness = 1) const;
 
-  void estimate(const cv::Matx33d& K, double tag_size);
+  void estimate(double tag_size, const cv::Matx33d& K,
+                const cv::Mat_<double>& D = cv::Mat(1, 5, 0.0));
 
   int id;
   int hamming;
