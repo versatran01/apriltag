@@ -3,7 +3,10 @@ Panels:
     Help Height: 78
     Name: Displays
     Property Tree Widget:
-      Expanded: ~
+      Expanded:
+        - /Global Options1
+        - /ApriltagArray1
+        - /Camera1
       Splitter Ratio: 0.5
     Tree Height: 429
   - Class: rviz/Selection
@@ -54,7 +57,7 @@ Visualization Manager:
       Name: ApriltagArray
       Shape: Axes
       Texture: Uniform
-      Topic: /mv_25000851/apriltags
+      Topic: /mv_25000855/apriltags
       Value: true
     - Arrow Length: 0.3
       Class: rviz/PoseArray
@@ -73,7 +76,7 @@ Visualization Manager:
     - Class: rviz/Camera
       Enabled: true
       Image Rendering: background and overlay
-      Image Topic: /mv_25000851/image_detection
+      Image Topic: /mv_25000855/image_detection
       Name: Camera
       Overlay Alpha: 0.5
       Queue Size: 2
@@ -89,7 +92,7 @@ Visualization Manager:
   Enabled: true
   Global Options:
     Background Color: 0; 0; 0
-    Fixed Frame: mv_25000851
+    Fixed Frame: mv_25000855
     Frame Rate: 30
   Name: root
   Tools:
