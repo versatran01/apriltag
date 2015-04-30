@@ -1,4 +1,6 @@
 #include "apriltag_ros/apriltag_map.h"
+#include <opencv2/calib3d/calib3d.hpp>
+#include <opencv2/core/eigen.hpp>
 
 namespace apriltag_ros {
 
@@ -10,6 +12,18 @@ void ApriltagMap::addTag(const Tag3D& tag) {
     // Already there, throw
     throw std::runtime_error("");
   }
+}
+
+void ApriltagMap::estimatePose(
+    const std::vector<ApriltagDetection>& detections) {
+  std::vector<cv::Point2d> p_cam;  // points in camera coordinates
+  std::vector<cv::Point3d> p_tag;  // points in world coordinates
+
+  cv::Mat rvec, tvec;
+  //  cv::solvePnP(p_tag, p_img, K, D, rvec, tvec);
+  Eigen::Vector3d r, t;
+  cv::cv2eigen(rvec, r);
+  cv::cv2eigen(tvec, t);
 }
 
 ApriltagMap loadApriltagMapYaml(const std::string& filename) {

@@ -32,7 +32,6 @@ void ApriltagDetector::detect(const cv::Mat& image) {
 
 void ApriltagDetector::estimate(const cv::Matx33d& K,
                                 const cv::Mat_<double>& D) {
-  if (tag_size() == 0) return;
   for (ApriltagDetection& td : tag_detections_) {
     td.estimate(tag_size(), K, D);
   }

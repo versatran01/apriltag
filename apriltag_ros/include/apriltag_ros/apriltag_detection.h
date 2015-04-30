@@ -27,8 +27,9 @@ class ApriltagDetection {
 
   int id;
   int hamming;
-  double c[2];
-  double p[4][2];
+  double c[2];     // tag center in pixel coordinates
+  double p[4][2];  // tag corners in pixel coordinates
+  double n[4][2];  // tag corners in normalized image coordinates
   double size;
   Eigen::Quaterniond q;
   Eigen::Vector3d t;

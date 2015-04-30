@@ -62,6 +62,8 @@ class ApriltagDetector {
 
   /**
    * @brief Estimate estimates poses in camera frame
+   * It will also try to convert corners from pixel coordinates to normalized
+   * image coordinates
    */
   void estimate(const cv::Matx33d& K,
                 const cv::Mat_<double>& D = cv::Mat_<double>(1, 5, 0.0));

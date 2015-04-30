@@ -1,6 +1,7 @@
 #include "apriltag_ros/apriltag_detection.h"
 
 #include <opencv2/highgui/highgui.hpp>
+#include <opencv2/core/eigen.hpp>
 #include "sv_base/math.h"
 
 #define CV_RED CV_RGB(255, 0, 0)
@@ -59,7 +60,22 @@ ApriltagDetection::operator apriltag_msgs::Apriltag() const {
 
 void ApriltagDetection::estimate(double tag_size, const cv::Matx33d& K,
                                  const cv::Mat_<double>& D) {
-  assert(tag_size > 0);
+  // Undistort points if K is provided
+  // pixels coordinates in image frame
+  std::vector<cv::Point2d> p_img = {{p[0][0], p[0][1]},
+                                    {p[1][0], p[1][1]},
+                                    {p[2][0], p[2][1]},
+                                    {p[3][0], p[3][1]}};
+
+  std::vector<cv::Point2d> p_cam;
+  cv::undistortPoints(p_img, p_cam, K, D);
+  for (size_t i = 0; i < p_cam.size(); ++i) {
+    n[i][0] = p_cam[i].x;
+    n[i][1] = p_cam[i].y;
+  }
+
+  // Estimate each tag's pose in camera frame if tag size is provided
+  if (tag_size == 0) return;
   size = tag_size;
   const auto s = tag_size / 2.0;
 
@@ -67,21 +83,16 @@ void ApriltagDetection::estimate(double tag_size, const cv::Matx33d& K,
   std::vector<cv::Point3d> p_tag = {
       {-s, -s, 0}, {s, -s, 0}, {s, s, 0}, {-s, s, 0}};
 
-  // pixels coordinates in image frame
-  std::vector<cv::Point2d> p_img = {{p[0][0], p[0][1]},
-                                    {p[1][0], p[1][1]},
-                                    {p[2][0], p[2][1]},
-                                    {p[3][0], p[3][1]}};
-
   // Estimate r and t
-  // TODO: can not use Matx type here?
+  // Since points are already undistorted, we just use identity matrix for K
+  const cv::Mat E = cv::Mat::eye(3, 3, CV_64FC1);
   cv::Mat rvec, tvec;
   // Assume rectified image, so distortion is just 0s
-  cv::solvePnP(p_tag, p_img, K, D, rvec, tvec);
-  t = Eigen::Vector3d(tvec.at<double>(0), tvec.at<double>(1),
-                      tvec.at<double>(2));
-  Eigen::Vector3d r(rvec.at<double>(0), rvec.at<double>(1), rvec.at<double>(2));
+  cv::solvePnP(p_tag, p_cam, E, cv::noArray(), rvec, tvec);
 
+  Eigen::Vector3d r;
+  cv::cv2eigen(tvec, t);
+  cv::cv2eigen(rvec, r);
   q = sv::base::RotationVectorToQuaternion(r);
 }
 

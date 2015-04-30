@@ -8,8 +8,14 @@
 
 namespace apriltag_ros {
 
+/**
+ * @brief The ApriltagMap class
+ */
 class ApriltagMap {
  public:
+  /**
+   * @brief The Tag3D class
+   */
   class Tag3D {
    public:
     Tag3D() = default;
@@ -18,6 +24,7 @@ class ApriltagMap {
         : id_(id), q_(q), p_(p) {}
 
     int id() const { return id_; }
+    void set_id(int id) { id_ = id; }
     const Eigen::Quaterniond& q() const { return q_; }
     void set_q(const Eigen::Quaterniond& q) { q_ = q; }
     const Eigen::Vector3d& p() const { return p_; }
@@ -57,6 +64,11 @@ class ApriltagMap {
   std::map<int, Tag3D> tag_map_;
 };
 
+/**
+ * @brief loadApriltagMapYaml
+ * @param filename
+ * @return ApriltagMap
+ */
 ApriltagMap loadApriltagMapYaml(const std::string& filename);
 
 }  // namespace apriltag_ros
