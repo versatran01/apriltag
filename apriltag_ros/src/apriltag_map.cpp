@@ -47,7 +47,7 @@ ApriltagMap::QPB ApriltagMap::estimatePose(
   }
 
   cv::Mat rvec, tvec;
-  const cv::Mat E = cv::Mat::eye(3, 3, CV_64FC1);
+  const auto E = cv::Mat::eye(3, 3, CV_64FC1);
   cv::solvePnP(p_tag, p_cam, E, cv::noArray(), rvec, tvec);
   // The estimated r and t brings points from tag frame to camera frame, but we
   // are interested in the inverse transformation
