@@ -21,15 +21,15 @@ ApriltagDetectorNode::ApriltagDetectorNode(const ros::NodeHandle& pnh)
   sub_camera_ =
       it_.subscribeCamera("image", 1, &ApriltagDetectorNode::cameraCb, this);
   pub_apriltags_ =
-      pnh_.advertise<apriltag_msgs::ApriltagArrayStamped>("apriltags", 1);
-  pub_image_ = it_.advertise("image_detection", 1);
+      pnh_.advertise<apriltag_msgs::ApriltagArrayStamped>("/apriltags", 1);
+  pub_image_ = it_.advertise("/image_detection", 1);
   pub_pose_array_ =
-      pnh_.advertise<geometry_msgs::PoseArray>("apritlags_pose", 1);
+      pnh_.advertise<geometry_msgs::PoseArray>("/apritlags_pose", 1);
   pub_pose_array_map_ =
-      pnh_.advertise<geometry_msgs::PoseArray>("apriltag_map", 1);
+      pnh_.advertise<geometry_msgs::PoseArray>("/apriltag_map", 1);
   pub_pose_array_cam_ =
-      pnh_.advertise<geometry_msgs::PoseArray>("apriltag_cam", 1);
-  pub_pose_ = pnh_.advertise<geometry_msgs::PoseStamped>("pose", 1);
+      pnh_.advertise<geometry_msgs::PoseArray>("/apriltag_cam", 1);
+  pub_pose_ = pnh_.advertise<geometry_msgs::PoseStamped>("/pose", 1);
   cfg_server_.setCallback(
       boost::bind(&ApriltagDetectorNode::configCb, this, _1, _2));
 }

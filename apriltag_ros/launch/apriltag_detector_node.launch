@@ -10,8 +10,8 @@
     output="screen" ns="$(arg camera)">
     <param name="family" type="int" value="0"/>
     <param name="type" type="int" value="0"/>
-    <param name="size" type="double" value="0.035"/>
-    <param name="map" type="string" value="$(find apriltag_gen)/map/april_grid.yaml"/>
+    <param name="size" type="double" value="0.159"/>
+    <param name="map" type="string" value="$(find apriltag_gen)/map/april_quad.yaml"/>
 
     <remap from="~image" to="image_rect"/>
     <remap from="~apriltags" to="apriltags"/>

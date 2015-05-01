@@ -1,0 +1,19 @@
+tag_family: t36h11
+tag_size: 0.159
+tags:
+- code: 57401312644
+  id: 0
+  orientation: {w: 1.0, x: 0.0, y: 0.0, z: 0.0}
+  position: {x: 0.0795, y: 0.0795, z: 0.0}
+- code: 58383764297
+  id: 1
+  orientation: {w: 1.0, x: 0.0, y: 0.0, z: 0.0}
+  position: {x: 0.0795, y: 0.3975, z: 0.0}
+- code: 59366215950
+  id: 2
+  orientation: {w: 1.0, x: 0.0, y: 0.0, z: 0.0}
+  position: {x: 0.3975, y: 0.0795, z: 0.0}
+- code: 61331119256
+  id: 3
+  orientation: {w: 1.0, x: 0.0, y: 0.0, z: 0.0}
+  position: {x: 0.3975, y: 0.3975, z: 0.0}
