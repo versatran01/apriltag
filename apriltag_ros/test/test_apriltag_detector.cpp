@@ -46,7 +46,7 @@ TEST_P(ApriltagDetectorMitTest, Detection) {
 }
 
 INSTANTIATE_TEST_CASE_P(ThreeTagFamilies, ApriltagDetectorMitTest,
-                        Values("36h11", "25h9", "16h5"));
+                        Values("t36h11", "t25h9", "t16h5"));
 
 TEST_P(ApriltagDetectorUmichTest, Detection) {
   tag_detector_->detect(test_image_);
@@ -54,4 +54,4 @@ TEST_P(ApriltagDetectorUmichTest, Detection) {
 }
 
 INSTANTIATE_TEST_CASE_P(ThreeTagFamilies, ApriltagDetectorUmichTest,
-                        Values("36h11", "25h9"));
+                        Values("t36h11", "t25h9"));
