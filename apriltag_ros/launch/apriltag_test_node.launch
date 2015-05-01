@@ -1,0 +1,8 @@
+<launch>
+	<node pkg="apriltag_ros" type="apriltag_test_node" name="apriltag_test_node"
+		output="screen">
+		<param name="bag_path" type="string" value="/home/chao/KuaiPan/apriltag1.bag"/>
+		<remap from="~image" to="/mv_25000851/image_raw"/>
+		<remap from="~camera_info" to="/mv_25000851/camera_info"/>
+	</node>
+</launch>

@@ -9,6 +9,7 @@
 #include <message_filters/sync_policies/approximate_time.h>
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/CameraInfo.h>
+#include <image_geometry/pinhole_camera_model.h>
 
 namespace apriltag_ros {
 
@@ -29,7 +30,7 @@ class BagSubscriber : public message_filters::SimpleFilter<M> {
 
 class ApriltagTestNode {
  public:
-  using ExactPolicy = ExactTime<Image, Image, CameraInfo, CameraInfo>;
+  using ExactPolicy = ExactTime<Image, CameraInfo>;
   using ExactSync = message_filters::Synchronizer<ExactPolicy>;
 
   explicit ApriltagTestNode(const ros::NodeHandle& pnh);
@@ -40,11 +41,13 @@ class ApriltagTestNode {
 
  private:
   ros::NodeHandle pnh_;
-  boost::shared_ptr<ExactSync> exact_sync_;
   BagSubscriber<Image> sub_image_;
   BagSubscriber<CameraInfo> sub_cinfo_;
+  boost::shared_ptr<ExactSync> exact_sync_;
   std::string bag_path_;
+  std::string image_topic_, cinfo_topic_;
   double bag_start_;
+  image_geometry::PinholeCameraModel model_;
 };
 
 }  // namespace apritlag_ros
