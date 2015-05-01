@@ -69,7 +69,8 @@ void ApriltagDetection::estimate(double tag_size, const cv::Matx33d& K,
 
   std::vector<cv::Point2d> p_cam;
   cv::undistortPoints(p_img, p_cam, K, D);
-  for (size_t i = 0; i < p_cam.size(); ++i) {
+
+  for (size_t i = 0; i < 4; ++i) {
     n[i][0] = p_cam[i].x;
     n[i][1] = p_cam[i].y;
   }
@@ -90,6 +91,7 @@ void ApriltagDetection::estimate(double tag_size, const cv::Matx33d& K,
   // Assume rectified image, so distortion is just 0s
   cv::solvePnP(p_tag, p_cam, E, cv::noArray(), rvec, tvec);
 
+  // The estiamted r and t brings points from tag frame to camera frame
   Eigen::Vector3d r;
   cv::cv2eigen(tvec, t);
   cv::cv2eigen(rvec, r);

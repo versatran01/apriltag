@@ -5,6 +5,7 @@
 #include <Eigen/Core>
 #include <yaml-cpp/yaml.h>
 #include <map>
+#include <tuple>
 
 namespace apriltag_ros {
 
@@ -18,6 +19,8 @@ class ApriltagMap {
    */
   class Tag3D {
    public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    using Matrix34d = Eigen::Matrix<double, 3, 4>;
     Tag3D() = default;
     Tag3D(int id) : id_(id) {}
     Tag3D(int id, const Eigen::Quaterniond& q, const Eigen::Vector3d& p)
@@ -25,17 +28,29 @@ class ApriltagMap {
 
     int id() const { return id_; }
     void set_id(int id) { id_ = id; }
+
     const Eigen::Quaterniond& q() const { return q_; }
     void set_q(const Eigen::Quaterniond& q) { q_ = q; }
+
     const Eigen::Vector3d& p() const { return p_; }
     void set_p(const Eigen::Vector3d& p) { p_ = p; }
+
+    const Matrix34d& corners() const { return corners_; }
+    Matrix34d& corners() { return corners_; }
+
+    /**
+     * @brief update Update corners position
+     */
+    void update(double tag_size);
 
    private:
     int id_;
     Eigen::Quaterniond q_;
     Eigen::Vector3d p_;
+    Matrix34d corners_;
   };
 
+  using QPB = std::tuple<Eigen::Quaterniond, Eigen::Vector3d, bool>;
   ApriltagMap() = default;
   ApriltagMap(const std::string& tag_family, double tag_size)
       : tag_family_(tag_family), tag_size_(tag_size) {}
@@ -50,13 +65,15 @@ class ApriltagMap {
 
   size_t size() const { return tag_map_.size(); }
   bool empty() const { return tag_map_.empty(); }
+  const std::map<int, Tag3D>& tag_map() const { return tag_map_; }
 
   /**
    * @brief addTag add a tag to the map based on the id
    */
   void addTag(const Tag3D& tag);
 
-  void estimatePose(const std::vector<ApriltagDetection>& detections);
+  QPB estimatePose(const std::vector<ApriltagDetection>& detections,
+                   const cv::Matx33d& K);
 
  private:
   std::string tag_family_;

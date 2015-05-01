@@ -4,7 +4,8 @@
   <arg name="camera" default="/mv_25000855"/>
 
   <!-- Rosbag -->
-  <node pkg="rosbag" type="play" name="player" output="log" args="$(arg bagfile)">
+  <node pkg="rosbag" type="play" name="player" output="log"
+    args="-r 0.5 $(arg bagfile)">
   </node>
 
   <!-- Detector Node -->

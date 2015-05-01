@@ -7,12 +7,16 @@
 #include <sv_base/timer.hpp>
 
 #include <geometry_msgs/PoseArray.h>
+#include <geometry_msgs/PoseStamped.h>
 
 namespace apriltag_ros {
 
 ApriltagDetectorNode::ApriltagDetectorNode(const ros::NodeHandle& pnh)
     : pnh_(pnh), it_(pnh), cfg_server_(pnh) {
   pnh_.param("size", tag_size_, 0.0);
+  std::string map_file;
+  pnh_.param<std::string>("map", map_file, "");
+  map_ = loadApriltagMapYaml(map_file);
 
   sub_camera_ =
       it_.subscribeCamera("image", 1, &ApriltagDetectorNode::cameraCb, this);
@@ -21,6 +25,11 @@ ApriltagDetectorNode::ApriltagDetectorNode(const ros::NodeHandle& pnh)
   pub_image_ = it_.advertise("image_detection", 1);
   pub_pose_array_ =
       pnh_.advertise<geometry_msgs::PoseArray>("apritlags_pose", 1);
+  pub_pose_array_map_ =
+      pnh_.advertise<geometry_msgs::PoseArray>("apriltag_map", 1);
+  pub_pose_array_cam_ =
+      pnh_.advertise<geometry_msgs::PoseArray>("apriltag_cam", 1);
+  pub_pose_ = pnh_.advertise<geometry_msgs::PoseStamped>("pose", 1);
   cfg_server_.setCallback(
       boost::bind(&ApriltagDetectorNode::configCb, this, _1, _2));
 }
@@ -44,10 +53,12 @@ void ApriltagDetectorNode::cameraCb(
   cv::cvtColor(gray, disp, CV_GRAY2BGR);
   detector_->draw(disp);
 
+  cv::Matx33d kk;
   // Only estimate if camera info is valid
   if (cinfo_msg->K[0] != 0 && cinfo_msg->height != 0 && tag_size_ > 0) {
     const auto P = cinfo_msg->P;
     cv::Matx33d K(P[0], P[1], P[2], P[4], P[5], P[6], P[8], P[9], P[10]);
+    kk = K;
     detector_->estimate(K);
   }
 
@@ -65,12 +76,78 @@ void ApriltagDetectorNode::cameraCb(
   }
 
   geometry_msgs::PoseArray pose_array;
+  pose_array.header = image_msg->header;
   for (const apriltag_msgs::Apriltag& apriltag :
        apriltag_array_msg->apriltags) {
-    pose_array.header = apriltag_array_msg->header;
     pose_array.poses.push_back(apriltag.pose);
   }
   pub_pose_array_.publish(pose_array);
+
+  geometry_msgs::PoseArray pose_array_map;
+  pose_array_map.header.frame_id = "map";
+  pose_array_map.header.stamp = image_msg->header.stamp;
+  for (const auto& tag : map_.tag_map()) {
+    const ApriltagMap::Tag3D& tag_3d = tag.second;
+    geometry_msgs::Pose tag_pose;
+    const ApriltagMap::Tag3D::Matrix34d& corners = tag_3d.corners();
+    tag_pose.position.x = corners(0, 0);
+    tag_pose.position.y = corners(1, 0);
+    tag_pose.position.z = corners(2, 0);
+    tag_pose.orientation.w = tag_3d.q().w();
+    tag_pose.orientation.x = tag_3d.q().x();
+    tag_pose.orientation.y = tag_3d.q().y();
+    tag_pose.orientation.z = tag_3d.q().z();
+    pose_array_map.poses.push_back(tag_pose);
+  }
+  pub_pose_array_map_.publish(pose_array_map);
+
+  geometry_msgs::PoseArray pose_array_cam;
+  pose_array_cam.header = image_msg->header;
+  for (const ApriltagDetection& td : detector_->tag_detections()) {
+    geometry_msgs::Pose pose;
+    pose.position.x = td.n[0][0] + td.n[1][0] + td.n[2][0] + td.n[3][0];
+    pose.position.x /= 4;
+    pose.position.y = td.n[0][1] + td.n[1][1] + td.n[2][1] + td.n[3][1];
+    pose.position.y /= 4;
+    pose.position.z = 1;
+    pose.orientation.w = td.q.w();
+    pose.orientation.x = td.q.x();
+    pose.orientation.y = td.q.y();
+    pose.orientation.z = td.q.z();
+    pose_array_cam.poses.push_back(pose);
+  }
+  pub_pose_array_cam_.publish(pose_array_cam);
+
+  // Estimate pose
+  if (!map_.empty()) {
+    const auto qpb = map_.estimatePose(detector_->tag_detections(), kk);
+    Eigen::Quaterniond q;
+    Eigen::Vector3d p;
+    bool b;
+    std::tie(q, p, b) = qpb;
+    if (b) {
+      geometry_msgs::PoseStamped pose;
+      pose.header.frame_id = "map";
+      pose.header.stamp = image_msg->header.stamp;
+      pose.pose.position.x = p(0);
+      pose.pose.position.y = p(1);
+      pose.pose.position.z = p(2);
+      pose.pose.orientation.w = q.w();
+      pose.pose.orientation.x = q.x();
+      pose.pose.orientation.y = q.y();
+      pose.pose.orientation.z = q.z();
+      pub_pose_.publish(pose);
+      // Need a tf from map to camera
+      geometry_msgs::TransformStamped transform;
+      transform.header = pose.header;
+      transform.child_frame_id = image_msg->header.frame_id;
+      transform.transform.translation.x = p(0);
+      transform.transform.translation.y = p(1);
+      transform.transform.translation.z = p(2);
+      transform.transform.rotation = pose.pose.orientation;
+      broadcaster_.sendTransform(transform);
+    }
+  }
 
   cv::imshow("image", disp);
   cv::waitKey(1);
@@ -81,7 +158,8 @@ void ApriltagDetectorNode::configCb(ConfigT& config, int level) {
     ROS_INFO("%s: %s", pnh_.getNamespace().c_str(),
              "Initializing reconfigure server");
   }
-  if (config_.type != config.type || config_.family != config.family) {
+  if (level < 0 || config_.type != config.type ||
+      config_.family != config.family) {
     std::string tag_family;
     if (config.family == 0) {
       tag_family = "36h11";
@@ -98,10 +176,13 @@ void ApriltagDetectorNode::configCb(ConfigT& config, int level) {
       detector_type = "umich";
     }
 
+    ROS_INFO("detector_type: %s, tag_family: %s", detector_type.c_str(),
+             tag_family.c_str());
     detector_ = ApriltagDetector::create(detector_type, tag_family);
     detector_->set_tag_size(tag_size_);
     ROS_INFO("Tag size: %f", tag_size_);
   }
+  ROS_INFO("Configuring detector");
   detector_->set_black_border(config.black_border);
   detector_->set_decimate(config.decimate);
   detector_->set_refine(config.refine);

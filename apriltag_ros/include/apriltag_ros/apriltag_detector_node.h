@@ -6,9 +6,11 @@
 #include <dynamic_reconfigure/server.h>
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/CameraInfo.h>
+#include <tf2_ros/transform_broadcaster.h>
 
 #include <apriltag_ros/ApriltagDetectorDynConfig.h>
 #include "apriltag_ros/apriltag_detector.h"
+#include "apriltag_ros/apriltag_map.h"
 
 namespace apriltag_ros {
 
@@ -34,7 +36,11 @@ class ApriltagDetectorNode {
   ConfigT config_;
   double tag_size_;
   ApriltagDetectorPtr detector_;
-  ros::Publisher pub_pose_array_;
+  ros::Publisher pub_pose_array_, pub_pose_array_map_, pub_pose_array_cam_;
+  ros::Publisher pub_pose_;
+
+  ApriltagMap map_;
+  tf2_ros::TransformBroadcaster broadcaster_;
 };
 
 }  // namespace apriltag_ros

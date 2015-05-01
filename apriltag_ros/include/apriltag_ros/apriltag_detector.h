@@ -79,6 +79,8 @@ class ApriltagDetector {
    */
   ApriltagVec toApriltagMsg() const;
 
+  bool empty() const { return tag_detections_.empty(); }
+
   /**
    * @brief Create creates an instance of ApriltagDetector
    * @param type mit or umich
