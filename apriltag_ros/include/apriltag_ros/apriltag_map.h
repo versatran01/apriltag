@@ -72,8 +72,7 @@ class ApriltagMap {
    */
   void addTag(const Tag3D& tag);
 
-  QPB estimatePose(const std::vector<ApriltagDetection>& detections,
-                   const cv::Matx33d& K);
+  QPB estimatePose(const std::vector<ApriltagDetection>& detections);
 
  private:
   std::string tag_family_;

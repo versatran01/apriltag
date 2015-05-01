@@ -27,8 +27,6 @@ ApriltagDetectorNode::ApriltagDetectorNode(const ros::NodeHandle& pnh)
       pnh_.advertise<geometry_msgs::PoseArray>("/apritlags_pose", 1);
   pub_pose_array_map_ =
       pnh_.advertise<geometry_msgs::PoseArray>("/apriltag_map", 1);
-  pub_pose_array_cam_ =
-      pnh_.advertise<geometry_msgs::PoseArray>("/apriltag_cam", 1);
   pub_pose_ = pnh_.advertise<geometry_msgs::PoseStamped>("/pose", 1);
   cfg_server_.setCallback(
       boost::bind(&ApriltagDetectorNode::configCb, this, _1, _2));
@@ -53,12 +51,10 @@ void ApriltagDetectorNode::cameraCb(
   cv::cvtColor(gray, disp, CV_GRAY2BGR);
   detector_->draw(disp);
 
-  cv::Matx33d kk;
   // Only estimate if camera info is valid
   if (cinfo_msg->K[0] != 0 && cinfo_msg->height != 0 && tag_size_ > 0) {
     const auto P = cinfo_msg->P;
     cv::Matx33d K(P[0], P[1], P[2], P[4], P[5], P[6], P[8], P[9], P[10]);
-    kk = K;
     detector_->estimate(K);
   }
 
@@ -101,26 +97,9 @@ void ApriltagDetectorNode::cameraCb(
   }
   pub_pose_array_map_.publish(pose_array_map);
 
-  geometry_msgs::PoseArray pose_array_cam;
-  pose_array_cam.header = image_msg->header;
-  for (const ApriltagDetection& td : detector_->tag_detections()) {
-    geometry_msgs::Pose pose;
-    pose.position.x = td.n[0][0] + td.n[1][0] + td.n[2][0] + td.n[3][0];
-    pose.position.x /= 4;
-    pose.position.y = td.n[0][1] + td.n[1][1] + td.n[2][1] + td.n[3][1];
-    pose.position.y /= 4;
-    pose.position.z = 1;
-    pose.orientation.w = td.q.w();
-    pose.orientation.x = td.q.x();
-    pose.orientation.y = td.q.y();
-    pose.orientation.z = td.q.z();
-    pose_array_cam.poses.push_back(pose);
-  }
-  pub_pose_array_cam_.publish(pose_array_cam);
-
   // Estimate pose
   if (!map_.empty()) {
-    const auto qpb = map_.estimatePose(detector_->tag_detections(), kk);
+    const auto qpb = map_.estimatePose(detector_->tag_detections());
     Eigen::Quaterniond q;
     Eigen::Vector3d p;
     bool b;

@@ -36,7 +36,7 @@ class ApriltagDetectorNode {
   ConfigT config_;
   double tag_size_;
   ApriltagDetectorPtr detector_;
-  ros::Publisher pub_pose_array_, pub_pose_array_map_, pub_pose_array_cam_;
+  ros::Publisher pub_pose_array_, pub_pose_array_map_;
   ros::Publisher pub_pose_;
 
   ApriltagMap map_;
