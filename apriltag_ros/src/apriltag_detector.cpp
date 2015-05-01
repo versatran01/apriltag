@@ -77,13 +77,13 @@ ApriltagDetectorPtr ApriltagDetector::create(const std::string& type,
 /// ===================
 ApriltagDetectorMit::ApriltagDetectorMit(const string& tag_family)
     : ApriltagDetector("mit", tag_family) {
-  if (tag_family == "36h11") {
+  if (tag_family == "t36h11") {
     tag_detector_.reset(new mit::TagDetector(mit::tagCodes36h11));
     tag_bits_ = 6;
-  } else if (tag_family == "25h9") {
+  } else if (tag_family == "t25h9") {
     tag_detector_.reset(new mit::TagDetector(mit::tagCodes25h9));
     tag_bits_ = 5;
-  } else if (tag_family == "16h5") {
+  } else if (tag_family == "t16h5") {
     tag_detector_.reset(new mit::TagDetector(mit::tagCodes16h5));
     tag_bits_ = 4;
   } else {
@@ -134,13 +134,13 @@ void ApriltagDetectorMit::detectImpl(const cv::Mat& image) {
 ApriltagDetectorUmich::ApriltagDetectorUmich(const std::string& tag_family)
     : ApriltagDetector("umich", tag_family),
       tag_detector_(apriltag_detector_create()) {
-  if (tag_family == "36h11") {
+  if (tag_family == "t36h11") {
     tag_family_.reset(tag36h11_create());
     tag_bits_ = 6;
-  } else if (tag_family == "25h9") {
+  } else if (tag_family == "t25h9") {
     tag_family_.reset(tag25h9_create());
     tag_bits_ = 5;
-  } else if (tag_family == "16h5") {
+  } else if (tag_family == "t16h5") {
     tag_family_.reset(tag16h5_create());
     tag_bits_ = 4;
   } else {

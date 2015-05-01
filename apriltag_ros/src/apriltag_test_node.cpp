@@ -20,15 +20,28 @@ ApriltagTestNode::ApriltagTestNode(const ros::NodeHandle& pnh) : pnh_(pnh) {
   cinfo_topic_ = pnh_.resolveName("camera_info");
   ROS_INFO("Image: %s", image_topic_.c_str());
   ROS_INFO("CameraInfo: %s", cinfo_topic_.c_str());
+  detector_ = ApriltagDetector::create("mit", "t36h11");
 }
 
 void ApriltagTestNode::cameraCb(const ImageConstPtr& image_msg,
                                 const CameraInfoConstPtr& cinfo_msg) {
   model_.fromCameraInfo(cinfo_msg);
   const auto image_raw = cv_bridge::toCvCopy(image_msg)->image;
-  cv::Mat image_rect;
+  cv::Mat image_rect, image_color;
   model_.rectifyImage(image_raw, image_rect);
-  cv::imshow("rect", image_rect);
+  cv::cvtColor(image_rect, image_color, CV_GRAY2BGR);
+
+  detector_->detect(image_rect);
+  //  detector_->draw(image_color);
+
+  drawDetection(detector_->tag_detections(), image_color);
+
+  const auto tag_view =
+      tagView(detector_->tag_detections(), image_color, 49, 2);
+
+  cv::imshow("color", image_color);
+  cv::namedWindow("view", CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO);
+  if (!tag_view.empty()) cv::imshow("view", tag_view);
   cv::waitKey(1);
 }
 
@@ -42,6 +55,7 @@ void ApriltagTestNode::process() {
   ROS_INFO("Begin time: %fs", (view.getBeginTime() - begin_time).toSec());
 
   for (auto it = view.begin(), it_end = view.end(); it != it_end; ++it) {
+    if (!ros::ok()) break;
     const rosbag::MessageInstance& m = *it;
 
     if (m.getTopic() == image_topic_) {
@@ -55,6 +69,72 @@ void ApriltagTestNode::process() {
       if (cinfo_msg) sub_cinfo_.newMessage(cinfo_msg);
       continue;
     }
+  }
+}
+
+void drawDetection(const std::vector<ApriltagDetection>& detections,
+                   cv::Mat& image) {
+  if (detections.empty()) return;
+  for (const ApriltagDetection& td : detections) {
+    for (int i = 0; i < 4; ++i) {
+      cv::Point point(td.p[i][0], td.p[i][1]);
+      cv::circle(image, point, 1, CV_RGB(255, 0, 0), 1);
+    }
+  }
+}
+
+cv::Mat tagView(const std::vector<ApriltagDetection>& detections,
+                const cv::Mat& image, int corner_win_size, int tags_per_row) {
+  if (detections.empty() || image.empty()) return cv::Mat();
+
+  int s = corner_win_size;
+  // Make sure s is odd
+  if (s % 2 == 0) ++s;
+  int s2 = s * 2 + 1;
+  const int tag_cols = tags_per_row;
+  const int tag_rows = (detections.size() - 1) / tags_per_row + 1;
+  cv::Mat tag_view =
+      cv::Mat::zeros(tag_rows * 2 * s2, tag_cols * 2 * s2, CV_8UC3);
+
+  cv::Mat image_pad;
+  cv::copyMakeBorder(image, image_pad, s, s, s, s, cv::BORDER_CONSTANT);
+  for (int i = 0; i < detections.size(); ++i) {
+    // for each tag
+    int r = i / tag_cols;
+    int c = i - r * tag_cols;
+    const ApriltagDetection& td = detections[i];
+    for (int j = 0; j < 4; ++j) {
+      // for each corner
+      int ix = td.p[j][0];
+      int iy = td.p[j][1];
+      int x_src = ix;  // -s + s
+      int y_src = iy;  // -s + s
+      // Make sure in bound
+      if (ix < 0 || ix >= image.cols || iy < 0 || iy >= image.rows) continue;
+      int x_dst = (c * 2 + j - (j / 2) * 2) * s2;
+      int y_dst = (r * 2 + j / 2) * s2;
+      // calculate w and x_dst
+      cv::Mat src(image_pad(cv::Rect(x_src, y_src, s2, s2)));
+      cv::Mat dst(tag_view(cv::Rect(x_dst, y_dst, s2, s2)));
+      src.copyTo(dst);
+    }
+  }
+
+  // Draw line to seperate
+  drawGrid(tag_view, tag_rows * 2, tag_cols * 2, s2, CV_RGB(0, 255, 0));
+  drawGrid(tag_view, tag_rows, tag_cols, s2 * 2, CV_RGB(255, 0, 0));
+  return tag_view;
+}
+
+void drawGrid(cv::Mat& image, int rows, int cols, int size,
+              const cv::Scalar& color) {
+  for (int c = 1; c < cols; ++c) {
+    int x = c * size;
+    cv::line(image, {x, 0}, {x, image.rows}, color);
+  }
+  for (int r = 1; r < rows; ++r) {
+    int y = r * size;
+    cv::line(image, {0, y}, {image.cols, y}, color);
   }
 }
 

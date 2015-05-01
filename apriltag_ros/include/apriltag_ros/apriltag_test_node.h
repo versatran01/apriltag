@@ -11,6 +11,8 @@
 #include <sensor_msgs/CameraInfo.h>
 #include <image_geometry/pinhole_camera_model.h>
 
+#include "apriltag_ros/apriltag_detector.h"
+
 namespace apriltag_ros {
 
 using sensor_msgs::Image;
@@ -48,8 +50,18 @@ class ApriltagTestNode {
   std::string image_topic_, cinfo_topic_;
   double bag_start_;
   image_geometry::PinholeCameraModel model_;
+  ApriltagDetectorPtr detector_;
 };
 
+void drawDetection(const std::vector<ApriltagDetection>& detections,
+                   cv::Mat& image);
+
+cv::Mat tagView(const std::vector<ApriltagDetection>& detections,
+                const cv::Mat& image, int corner_win_size,
+                int tags_per_row = 4);
+
+void drawGrid(cv::Mat& image, int rows, int cols, int size,
+              const cv::Scalar& color);
 }  // namespace apritlag_ros
 
 #endif  // APRILTAG_ROS_APRILTAG_TEST_NODE_H_
