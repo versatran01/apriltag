@@ -31,6 +31,8 @@ class ApriltagDetection {
   double p[4][2];  // tag corners in pixel coordinates
   double n[4][2];  // tag corners in normalized image coordinates
   double size;
+  int w;  // image width
+  int h;  // image height
   Eigen::Quaterniond q;
   Eigen::Vector3d t;
 };

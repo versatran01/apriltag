@@ -1,7 +1,7 @@
 <launch>
   <arg name="output" default="screen"/>
-  <arg name="bagfile" default="/home/chao/KuaiPan/apriltag1.bag"/>
-  <arg name="camera" default="/mv_25000851"/>
+  <arg name="bagfile" default="/home/chao/KuaiPan/apriltag_grid.bag"/>
+  <arg name="camera" default="/mv_25000855"/>
 
   <!-- Rosbag -->
   <node pkg="rosbag" type="play" name="player" output="log"

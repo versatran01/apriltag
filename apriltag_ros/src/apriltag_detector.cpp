@@ -28,6 +28,11 @@ void ApriltagDetector::detect(const cv::Mat& image) {
   }
   // Detect
   detectImpl(gray);
+  // Set width and height of image
+  for (auto& td : tag_detections_) {
+    td.w = image.cols;
+    td.h = image.rows;
+  }
 }
 
 void ApriltagDetector::estimate(const cv::Matx33d& K,

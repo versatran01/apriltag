@@ -41,8 +41,9 @@ ApriltagMap::QPB ApriltagMap::estimatePose(
     assert(td.id == tag_3d.id());
     const auto& c = tag_3d.corners();
     for (int i = 0; i < 4; ++i) {
-      if (td.p[i][0] > 50 && td.p[i][0] < 700 && td.p[i][1] > 50 &&
-          td.p[i][1] < 430) {
+      double k = 0.15;
+      if (td.p[i][0] > td.w * k && td.p[i][0] < td.w * (1 - k) &&
+          td.p[i][1] > td.h * k && td.p[i][1] < td.h * (1 - k)) {
         p_cam.push_back({td.n[i][0], td.n[i][1]});
         p_tag.push_back({c(0, i), c(1, i), c(2, i)});
       }
