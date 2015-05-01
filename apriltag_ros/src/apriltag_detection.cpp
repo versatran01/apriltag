@@ -106,12 +106,6 @@ void ApriltagDetection::draw(cv::Mat& image, int thickness) const {
 
   cv::putText(image, std::to_string(id), cv::Point2f(c[0] - 5, c[1] + 5),
               cv::FONT_HERSHEY_SIMPLEX, 1, CV_MAGENTA, 2);
-
-  for (int i = 0; i < 4; ++i) {
-    cv::putText(image, std::to_string(p[i][0]) + "," + std::to_string(p[i][1]),
-                cv::Point2f(p[i][0], p[i][1]), cv::FONT_HERSHEY_PLAIN, 1,
-                CV_MAGENTA);
-  }
 }
 
 void ApriltagDetection::drawLine(cv::Mat& image, int b, int e,
