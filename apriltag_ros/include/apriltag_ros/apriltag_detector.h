@@ -74,12 +74,17 @@ class ApriltagDetector {
    */
   void draw(cv::Mat& image) const;
 
+  void zoom(const cv::Mat& image, cv::Mat& view, int win_size,
+            int tags_per_row = 4, bool draw_grid = true) const;
+
   /**
    * @brief ToApriltagMsgs convert internal tag detection to ros message
    */
   ApriltagVec toApriltagMsg() const;
 
   bool empty() const { return tag_detections_.empty(); }
+
+  size_t size() const { return tag_detections_.size(); }
 
   /**
    * @brief Create creates an instance of ApriltagDetector
@@ -139,6 +144,14 @@ class ApriltagDetectorUmich : public ApriltagDetector {
   apriltag_umich::TagFamilyPtr tag_family_;
   apriltag_umich::TagDetectorPtr tag_detector_;
 };
+
+template <typename T>
+bool isInsideImage(T x, T y, int width, int height) {
+  return (x >= 0 && y >= 0 && x < width && y < height);
+}
+
+void drawGrid(cv::Mat& image, int rows, int cols, int size,
+              const cv::Scalar& color);
 
 }  // apriltag_ros
 

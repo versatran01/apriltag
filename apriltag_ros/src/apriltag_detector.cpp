@@ -48,6 +48,46 @@ void ApriltagDetector::draw(cv::Mat& image) const {
   }
 }
 
+void ApriltagDetector::zoom(const cv::Mat& image, cv::Mat& view, int win_size,
+                            int tags_per_row, bool draw_grid) const {
+  if (empty() || image.empty()) return;
+  const int k = 2;    // arrange corners in a 2x2 grid
+  auto s = win_size;  // this is actually half win size
+  // Make sure s is odd
+  s = (s % 2 == 0) ? s + 1 : s;
+  const auto s2 = s * 2 + 1;  // this is full win size
+  const auto tag_cols = tags_per_row;
+  const auto tag_rows = (size() - 1) / tag_cols + 1;
+
+  view = cv::Mat::zeros(tag_rows * k * s2, tag_cols * 2 * s2, CV_8UC3);
+  // Pad the image
+  cv::Mat image_pad;
+  cv::copyMakeBorder(image, image_pad, s, s, s, s, cv::BORDER_CONSTANT);
+  for (size_t i = 0; i < size(); ++i) {
+    // for each tag
+    // calculate the row and col of this tag
+    int r = i / tag_cols;
+    int c = i - r * tag_cols;
+    const ApriltagDetection& td = tag_detections_[i];
+    for (int j = 0; j < 4; ++j) {
+      // for each corner
+      int ix = td.p[j][0];
+      int iy = td.p[j][1];
+      // Make sure in bound
+      if (!isInsideImage(ix, iy, image.cols, image.rows)) continue;
+      int x_dst = (c * k + j - (j / k) * k) * s2;
+      int y_dst = (r * k + j / 2) * s2;
+      cv::Mat src(image_pad(cv::Rect(ix, iy, s2, s2)));
+      cv::Mat dst(view(cv::Rect(x_dst, y_dst, s2, s2)));
+      src.copyTo(dst);
+    }
+  }
+  if (draw_grid) {
+    drawGrid(view, tag_rows * 2, tag_cols * 2, s2, CV_RGB(0, 255, 0));
+    drawGrid(view, tag_rows, tag_cols, s2 * 2, CV_RGB(255, 0, 0));
+  }
+}
+
 ApriltagVec ApriltagDetector::toApriltagMsg() const {
   ApriltagVec apriltags;
   for (const auto& td : tag_detections_) {
@@ -168,6 +208,18 @@ void ApriltagDetectorUmich::detectImpl(const cv::Mat& image) {
     apriltag_detection_t* td;
     zarray_get(detections.get(), i, &td);
     tag_detections_.push_back(ApriltagDetection(td));
+  }
+}
+
+void drawGrid(cv::Mat& image, int rows, int cols, int size,
+              const cv::Scalar& color) {
+  for (int c = 1; c < cols; ++c) {
+    int x = c * size;
+    cv::line(image, {x, 0}, {x, image.rows}, color);
+  }
+  for (int r = 1; r < rows; ++r) {
+    int y = r * size;
+    cv::line(image, {0, y}, {image.cols, y}, color);
   }
 }
 
