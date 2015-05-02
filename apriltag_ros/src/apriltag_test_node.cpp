@@ -32,17 +32,16 @@ void ApriltagTestNode::cameraCb(const ImageConstPtr& image_msg,
   cv::cvtColor(image_rect, image_color, CV_GRAY2BGR);
 
   detector_->detect(image_rect);
-  //  detector_->draw(image_color);
 
   drawDetection(detector_->tag_detections(), image_color);
 
   const auto tag_view =
-      tagView(detector_->tag_detections(), image_color, 49, 2);
+      tagView(detector_->tag_detections(), image_color, 19, 2);
 
   cv::imshow("color", image_color);
   cv::namedWindow("view", CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO);
   if (!tag_view.empty()) cv::imshow("view", tag_view);
-  cv::waitKey(1);
+  cv::waitKey(-1);
 }
 
 void ApriltagTestNode::process() {
@@ -78,7 +77,7 @@ void drawDetection(const std::vector<ApriltagDetection>& detections,
   for (const ApriltagDetection& td : detections) {
     for (int i = 0; i < 4; ++i) {
       cv::Point point(td.p[i][0], td.p[i][1]);
-      cv::circle(image, point, 1, CV_RGB(255, 0, 0), 1);
+      cv::circle(image, point, 1, CV_RGB(255, 0, 0), -1);
     }
   }
 }
@@ -86,7 +85,6 @@ void drawDetection(const std::vector<ApriltagDetection>& detections,
 cv::Mat tagView(const std::vector<ApriltagDetection>& detections,
                 const cv::Mat& image, int corner_win_size, int tags_per_row) {
   if (detections.empty() || image.empty()) return cv::Mat();
-
   int s = corner_win_size;
   // Make sure s is odd
   if (s % 2 == 0) ++s;

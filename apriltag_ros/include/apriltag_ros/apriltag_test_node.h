@@ -22,6 +22,17 @@ using sensor_msgs::CameraInfoConstPtr;
 using message_filters::sync_policies::ExactTime;
 using message_filters::sync_policies::ApproximateTime;
 
+class Track {
+ public:
+ private:
+};
+
+class Tracker {
+ public:
+ private:
+  std::vector<Track> tracks_;
+};
+
 template <class M>
 class BagSubscriber : public message_filters::SimpleFilter<M> {
  public:
