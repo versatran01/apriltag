@@ -141,11 +141,11 @@ void ApriltagDetectorNode::configCb(ConfigT& config, int level) {
       config_.family != config.family) {
     std::string tag_family;
     if (config.family == 0) {
-      tag_family = "36h11";
+      tag_family = "t36h11";
     } else if (config.family == 1) {
-      tag_family = "25h9";
+      tag_family = "t25h9";
     } else if (config.family == 2) {
-      tag_family = "16h5";
+      tag_family = "t16h5";
     }
 
     std::string detector_type;
