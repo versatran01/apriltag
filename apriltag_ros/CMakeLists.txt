@@ -7,14 +7,20 @@ find_package(OpenCV REQUIRED)
 find_package(Boost REQUIRED)
 find_package(catkin REQUIRED COMPONENTS
     roscpp dynamic_reconfigure message_generation
-    image_transport cv_bridge message_filters
+    image_transport cv_bridge tf2_ros
     apriltag_mit apriltag_umich apriltag_msgs
-    sv_base tf2_ros rosbag image_geometry
+    sv_base
     )
 
 generate_dynamic_reconfigure_options(cfg/ApriltagDetectorDyn.cfg)
 
-catkin_package()
+catkin_package(
+    INCLUDE_DIRS include
+    LIBRARIES ${PROJECT_NAME}
+    CATKIN_DEPENDS roscpp dynamic_reconfigure message_runtime image_transport
+    cv_bridge tf2_ros apriltag_mit apriltag_umich apriltag_msgs sv_base
+    DEPENDS OpenCV
+    )
 
 include_directories(
     include
@@ -23,6 +29,7 @@ include_directories(
     )
 
 add_subdirectory(src)
+add_subdirectory(test)
 
 add_dependencies(apriltag_detector_node
     ${catkin_EXPORTED_TARGETS}
@@ -30,5 +37,3 @@ add_dependencies(apriltag_detector_node
     ${PROJECT_NAME}_gencpp
     ${${PROJECT_NAME}_EXPORTED_TARGETS}
     )
-
-add_subdirectory(test)

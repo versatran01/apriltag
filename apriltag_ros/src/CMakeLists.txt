@@ -13,9 +13,3 @@ target_link_libraries(apriltag_detector_node
     ${PROJECT_NAME}
     ${catkin_LIBRARIES}
     )
-
-add_executable(apriltag_test_node apriltag_test_node.cpp)
-target_link_libraries(apriltag_test_node
-    ${PROJECT_NAME}
-    ${catkin_LIBRARIES}
-    )
