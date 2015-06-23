@@ -1,8 +1,6 @@
 #ifndef APRILTAG_ROS_APRILTAG_DETECTOR_H_
 #define APRILTAG_ROS_APRILTAG_DETECTOR_H_
 
-#include "apriltag_ros/apriltag_detection.h"
-
 #include <memory>
 #include <cassert>
 
@@ -43,14 +41,8 @@ class ApriltagDetector {
   void set_refine(bool refine) { refine_ = refine; }
   const bool refine() { return refine_; }
 
-  void set_tag_size(double tag_size) { tag_size_ = tag_size; }
-  const double tag_size() const { return tag_size_; }
-
   const std::string& tag_family() const { return tag_family_; }
   const std::string& detector_type() const { return detector_type_; }
-  const std::vector<ApriltagDetection>& tag_detections() const {
-    return tag_detections_;
-  }
 
   /**
    * @brief Detect detects apriltags in given image
@@ -61,25 +53,18 @@ class ApriltagDetector {
   void detect(const cv::Mat& image);
 
   /**
-   * @brief Estimate estimates poses in camera frame
-   * It will also try to convert corners from pixel coordinates to normalized
-   * image coordinates
-   */
-  void estimate(const cv::Matx33d& K,
-                const cv::Mat_<double>& D = cv::Mat_<double>(1, 5, 0.0));
-
-  /**
    * @brief Draw draws detected tags on given image
    * @param image A grayscale/color image
    */
   void draw(cv::Mat& image) const;
 
   /**
-   * @brief ToApriltagMsgs convert internal tag detection to ros message
+   * @brief empty If the current detection is empty
+   * @return
    */
-  ApriltagVec toApriltagMsg() const;
+  bool empty() const { return apriltags_.empty(); }
 
-  bool empty() const { return tag_detections_.empty(); }
+  ApriltagVec apriltags() const { return apriltags_; }
 
   /**
    * @brief Create creates an instance of ApriltagDetector
@@ -95,12 +80,11 @@ class ApriltagDetector {
 
   int decimate_{1};
   bool refine_{false};
-  double tag_size_{0.0};
   int black_border_{1};
   int tag_bits_{6};  // default to t36h11
   std::string detector_type_;
   std::string tag_family_;
-  std::vector<ApriltagDetection> tag_detections_;
+  ApriltagVec apriltags_;
 };
 
 using ApriltagDetectorPtr = ApriltagDetector::Ptr;
@@ -139,6 +123,14 @@ class ApriltagDetectorUmich : public ApriltagDetector {
   apriltag_umich::TagFamilyPtr tag_family_;
   apriltag_umich::TagDetectorPtr tag_detector_;
 };
+
+/**
+ * @brief drawApriltag
+ * @param image
+ * @param apriltag
+ */
+void drawApriltag(cv::Mat& image, const apriltag_msgs::Apriltag& apriltag,
+                  int thickness = 1);
 
 }  // apriltag_ros
 
