@@ -24,7 +24,7 @@ class FloatImage {
   FloatImage(const cv::Mat& image);
 
   //! Construct an empty image
-  FloatImage(int widthArg, int heightArg);
+  FloatImage(int width, int height);
 
   FloatImage& operator=(const FloatImage& other);
 

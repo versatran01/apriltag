@@ -12,7 +12,6 @@ GLineSegment2D GLineSegment2D::lsqFitXYW(
   GLine2D gline = GLine2D::lsqFitXYW(xyweight);
   float maxcoord = -std::numeric_limits<float>::infinity();
   float mincoord = std::numeric_limits<float>::infinity();
-  ;
 
   //  for (unsigned int i = 0; i < xyweight.size(); i++) {
   //    std::pair<float, float> p(xyweight[i].x, xyweight[i].y);
@@ -33,4 +32,4 @@ GLineSegment2D GLineSegment2D::lsqFitXYW(
   return GLineSegment2D(minValue, maxValue);
 }
 
-}  // namespace
+}  // namespace AprilTags

@@ -29,18 +29,9 @@ using namespace std;
 namespace AprilTags {
 
 std::vector<TagDetection> TagDetector::extractTags(const cv::Mat &image) {
-  // convert to internal AprilTags image (todo: slow, change internally to
-  // OpenCV)
   int width = image.cols;
   int height = image.rows;
   AprilTags::FloatImage fimOrig(image);
-  //  int i = 0;
-  //  for (int y = 0; y < height; y++) {
-  //    for (int x = 0; x < width; x++) {
-  //      fimOrig.set(x, y, image.data[i] / 255.);
-  //      i++;
-  //    }
-  //  }
   std::pair<int, int> opticalCenter(width / 2, height / 2);
 
   //================================================================
@@ -52,7 +43,7 @@ std::vector<TagDetection> TagDetector::extractTags(const cv::Mat &image) {
   //! Gaussian smoothing kernel applied to image (0 == no filter).
   /*! Used when sampling bits. Filtering is a good idea in cases
    * where A) a cheap camera is introducing artifical sharpening, B)
-   * the bayer pattern is creating artifcats, C) the sensor is very
+   * the bayer pattern is creating artifacts, C) the sensor is very
    * noisy and/or has hot/cold pixels. However, filtering makes it
    * harder to decode very small tags. Reasonable values are 0, or
    * [0.8, 1.5].
@@ -128,13 +119,12 @@ std::vector<TagDetection> TagDetector::extractTags(const cv::Mat &image) {
   // value is contained *within* the interval.
   {
     // limit scope of storage
-    /* Previously all this was on the stack, but this is 1.2MB for 320x240
-     * images
-     * That's already a problem for OS X (default 512KB thread stack size),
-     * could be a problem elsewhere for bigger images... so store on heap */
-    vector<float> storage(
-        width * height *
-        4);  // do all the memory in one big block, exception safe
+    // Previously all this was on the stack, but this is 1.2MB for 320x240
+    // images That's already a problem for OS X (default 512KB thread stack
+    // size), could be a problem elsewhere for bigger images... so store on heap
+
+    // do all the memory in one big block, exception safe
+    vector<float> storage(width * height * 4);
     float *tmin = &storage[width * height * 0];
     float *tmax = &storage[width * height * 1];
     float *mmin = &storage[width * height * 2];
@@ -256,17 +246,13 @@ std::vector<TagDetection> TagDetector::extractTags(const cv::Mat &image) {
   }
 
   // Step six: For each segment, find segments that begin where this segment
-  // ends.
-  // (We will chain segments together next...) The gridder accelerates the
-  // search by
-  // building (essentially) a 2D hash table.
+  // ends. (We will chain segments together next...) The gridder accelerates the
+  // search by building (essentially) a 2D hash table.
   Gridder<Segment> gridder(0, 0, width, height, 10);
 
   // add every segment to the hash table according to the position of the
-  // segment's
-  // first point. Remember that the first point has a specific meaning due to
-  // our
-  // left-hand rule above.
+  // segment's first point. Remember that the first point has a specific meaning
+  // due to our left-hand rule above.
   for (unsigned int i = 0; i < segments.size(); i++) {
     gridder.add(segments[i].getX0(), segments[i].getY0(), &segments[i]);
   }

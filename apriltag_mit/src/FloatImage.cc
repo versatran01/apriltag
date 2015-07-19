@@ -5,8 +5,8 @@
 
 namespace AprilTags {
 
-FloatImage::FloatImage(int widthArg, int heightArg) {
-  image_.create(heightArg, widthArg, CV_32FC1);
+FloatImage::FloatImage(int width, int height) {
+  image_.create(height, width, CV_32FC1);
 }
 
 FloatImage::FloatImage(const cv::Mat &image) {
@@ -22,4 +22,4 @@ void FloatImage::filterFactoredCentered(int ksize, float sigma) {
   cv::GaussianBlur(image_, image_, cv::Size(ksize, ksize), sigma);
 }
 
-}  // namespace
+}  // namespace AprilTags
