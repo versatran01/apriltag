@@ -3,7 +3,6 @@ project(apriltag_umich)
 
 set(USE_ROS TRUE)
 include(cmake/apriltag_umich-extras.cmake)
-add_definitions(-fPIC -Wall)
 
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE RelWithDebInfo)

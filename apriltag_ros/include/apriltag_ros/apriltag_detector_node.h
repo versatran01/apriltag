@@ -17,15 +17,14 @@ class ApriltagDetectorNode {
 
   explicit ApriltagDetectorNode(const ros::NodeHandle& pnh);
 
-  void imageCb(const sensor_msgs::ImageConstPtr& image_msg);
-  void connectCb();
+  void ImageCb(const sensor_msgs::ImageConstPtr& image_msg);
+  void ConnectCb();
 
-  void configCb(ConfigT& config, int level);
+  void ConfigCb(ConfigT& config, int level);
 
  private:
   ros::NodeHandle pnh_;
   ros::Publisher pub_apriltags_;
-  image_transport::ImageTransport it_;
   image_transport::Subscriber sub_image_;
   image_transport::Publisher pub_image_;
   dynamic_reconfigure::Server<ConfigT> cfg_server_;

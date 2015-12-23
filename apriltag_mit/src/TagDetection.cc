@@ -236,6 +236,15 @@ void TagDetection::draw(cv::Mat &image, int thickness) const {
               cv::FONT_HERSHEY_SIMPLEX, 1, CV_RGB(255, 0, 255), 2);
 }
 
+void TagDetection::scaleTag(float scale) {
+  cxy.first *= scale;
+  cxy.second *= scale;
+  for (auto &c : p) {
+    c.first *= scale;
+    c.second *= scale;
+  }
+}
+
 void TagDetection::refineTag(const cv::Mat &image) {
   std::vector<cv::Point2f> corners;
   for (const std::pair<float, float> &c : p) {

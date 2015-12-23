@@ -113,15 +113,7 @@ struct TagDetection {
 
   //! Scale this tag
   // TODO: Also need to scale homography?
-  template <typename T>
-  void scaleTag(T scale) {
-    cxy.first *= scale;
-    cxy.second *= scale;
-    for (std::pair<float, float>& c : p) {
-      c.first *= scale;
-      c.second *= scale;
-    }
-  }
+  void scaleTag(float scale);
 
   //! Refine this detection using cornerSubPix
   void refineTag(const cv::Mat& image);
