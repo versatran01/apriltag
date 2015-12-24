@@ -26,9 +26,6 @@ void ApriltagDetector::set_black_border(int black_border) {
 
 int ApriltagDetector::black_border() const { return black_border_; }
 
-void ApriltagDetector::set_tag_bits(int tag_bits) { tag_bits_ = tag_bits; }
-int ApriltagDetector::tag_bits() const { return tag_bits_; }
-
 void ApriltagDetector::set_decimate(int decimate) {
   decimate_ = (decimate >= 1) ? decimate : 1;
 }
@@ -37,16 +34,14 @@ int ApriltagDetector::decimate() const { return decimate_; }
 void ApriltagDetector::set_refine(bool refine) { refine_ = refine; }
 bool ApriltagDetector::refine() const { return refine_; }
 
+int ApriltagDetector::tag_bits() const { return tag_bits_; }
 const std::string& ApriltagDetector::tag_family() const {
   return tag_family_str_;
 }
 
-const ApriltagVec& ApriltagDetector::apriltags() const { return apriltags_; }
+ApriltagVec ApriltagDetector::Detect(const cv::Mat& image) {
+  if (image.empty()) return {};
 
-void ApriltagDetector::Detect(const cv::Mat& image) {
-  if (image.empty()) return;
-  // Cleanup previous detections
-  apriltags_.clear();
   // Check image type
   cv::Mat gray;
   if (image.type() == CV_8UC1) {
@@ -54,16 +49,11 @@ void ApriltagDetector::Detect(const cv::Mat& image) {
   } else if (image.type() == CV_8UC3) {
     cv::cvtColor(image, gray, CV_BGR2GRAY);
   } else {
-    return;
+    return {};
   }
-  // Detect
-  DetectImpl(gray);
-}
 
-void ApriltagDetector::Draw(cv::Mat& image) const {
-  for (const auto& apriltag : apriltags_) {
-    DrawApriltag(image, apriltag);
-  }
+  // Detect
+  return DetectImpl(gray);
 }
 
 ApriltagDetectorPtr ApriltagDetector::Create(const DetectorType& detector_type,
@@ -72,7 +62,6 @@ ApriltagDetectorPtr ApriltagDetector::Create(const DetectorType& detector_type,
     case DetectorType::Mit:
       return boost::make_shared<ApriltagDetectorMit>(tag_family);
     case DetectorType::Umich:
-      // TODO: Change this to boost::shared_ptr
       return ApriltagDetectorPtr(new ApriltagDetectorUmich(tag_family));
     default:
       throw std::invalid_argument("Invalid apriltag detector type.");
@@ -103,7 +92,7 @@ void ApriltagDetectorMit::SetBlackBorder(int black_border) {
   tag_detector_->setBlackBorder(black_border);
 }
 
-void ApriltagDetectorMit::DetectImpl(const cv::Mat& image) {
+ApriltagVec ApriltagDetectorMit::DetectImpl(const cv::Mat& image) {
   // Decimate image
   cv::Mat im_scaled;
   if (decimate_ > 1) {
@@ -123,15 +112,10 @@ void ApriltagDetectorMit::DetectImpl(const cv::Mat& image) {
     }
   }
 
-  // Refine corners
-  // Disable for now, maybe add black squares at corner
-  //  if (refine_) {
-  //    for (mit::TagDetection& td : detections) {
-  //      td.refineTag(im_scaled);
-  //    }
-  //  }
-
   // Convert to  Apriltag message
+  ApriltagVec apriltags;
+  apriltags.reserve(detections.size());
+
   for (const mit::TagDetection& td : detections) {
     apriltag_msgs::Apriltag apriltag;
     apriltag.id = td.id;
@@ -145,8 +129,9 @@ void ApriltagDetectorMit::DetectImpl(const cv::Mat& image) {
       apriltag.corners[i].x = td.p[i].first;
       apriltag.corners[i].y = td.p[i].second;
     }
-    apriltags_.push_back(apriltag);
+    apriltags.push_back(apriltag);
   }
+  return apriltags;
 }
 
 /// =====================
@@ -175,7 +160,7 @@ void ApriltagDetectorUmich::SetBlackBorder(int black_border) {
   tag_family_->black_border = black_border;
 }
 
-void ApriltagDetectorUmich::DetectImpl(const cv::Mat& image) {
+ApriltagVec ApriltagDetectorUmich::DetectImpl(const cv::Mat& image) {
   umich::ImageU8Ptr image_u8(
       image_u8_create_from_gray(image.cols, image.rows, image.data));
   // Handle options
@@ -189,6 +174,9 @@ void ApriltagDetectorUmich::DetectImpl(const cv::Mat& image) {
   // Handle empty detection
   const auto num_detections = zarray_size(detections.get());
 
+  ApriltagVec apriltags;
+  apriltags.reserve(num_detections);
+
   for (int i = 0; i < num_detections; ++i) {
     apriltag_detection_t* td;
     zarray_get(detections.get(), i, &td);
@@ -200,11 +188,13 @@ void ApriltagDetectorUmich::DetectImpl(const cv::Mat& image) {
     apriltag.center.x = td->c[0];
     apriltag.center.y = td->c[1];
     for (size_t i = 0; i < 4; ++i) {
+      // Umich's order of corners is different from mit's
       apriltag.corners[i].x = td->p[3 - i][0];
       apriltag.corners[i].y = td->p[3 - i][1];
     }
-    apriltags_.push_back(apriltag);
+    apriltags.push_back(apriltag);
   }
+  return apriltags;
 }
 
 void DrawApriltag(cv::Mat& image, const apriltag_msgs::Apriltag& apriltag,
@@ -222,6 +212,12 @@ void DrawApriltag(cv::Mat& image, const apriltag_msgs::Apriltag& apriltag,
   cv::putText(image, std::to_string(apriltag.id),
               cv::Point2f(apriltag.center.x - 5, apriltag.center.y + 5),
               cv::FONT_HERSHEY_SIMPLEX, 1, CV_RGB(255, 0, 255), 2);
+}
+
+void DrawApriltags(cv::Mat& image, const ApriltagVec& apriltags) {
+  for (const auto& apriltag : apriltags) {
+    DrawApriltag(image, apriltag);
+  }
 }
 
 int TagFamilyToTagBits(const TagFamily& tag_family) {
@@ -245,6 +241,49 @@ std::string DetectorTypeToString(const DetectorType& detector_type) {
       return std::string("umich");
     default:
       throw std::invalid_argument("Invalid detector type");
+  }
+}
+
+bool InsideImage(const cv::Mat& image, float x, float y, int b) {
+  const auto w = image.cols;
+  const auto h = image.rows;
+  return (x >= b) && (y >= b) && (x < w - b) && (y < h - b);
+}
+
+bool InsideImage(const cv::Mat& image, const cv::Point2f& p, int b) {
+  return InsideImage(image, p.x, p.y, b);
+}
+
+void RefineApriltags(const cv::Mat& image, ApriltagVec& apriltags,
+                     int win_size) {
+  if (apriltags.empty()) return;
+
+  std::vector<cv::Point2f> corners;
+  corners.reserve(apriltags.size() * 4);
+  for (const auto& apriltag : apriltags) {
+    for (const auto& corner : apriltag.corners) {
+      if (InsideImage(image, corner.x, corner.y, win_size)) {
+        corners.push_back(cv::Point2f(corner.x, corner.y));
+      }
+    }
+  }
+
+  const auto cv_win_size = cv::Size(win_size, win_size);
+  const auto zero_zone = cv::Size(-1, -1);
+  const auto criteria =
+      cv::TermCriteria(CV_TERMCRIT_EPS + CV_TERMCRIT_ITER, 10, 0.001);
+
+  cv::cornerSubPix(image, corners, cv_win_size, zero_zone, criteria);
+
+  size_t i = 0;
+  for (auto& apriltag : apriltags) {
+    for (auto& corner : apriltag.corners) {
+      if (InsideImage(image, corner.x, corner.y, win_size)) {
+        const auto& refined = corners[i++];
+        corner.x = refined.x;
+        corner.y = refined.y;
+      }
+    }
   }
 }
 

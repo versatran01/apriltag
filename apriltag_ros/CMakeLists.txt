@@ -5,6 +5,7 @@ set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-std=c++11 -Wall")
 set(CMAKE_BUILD_TYPE RelWithDebInfo)
 
 find_package(OpenCV REQUIRED)
+find_package(Boost REQUIRED COMPONENTS program_options)
 find_package(catkin REQUIRED COMPONENTS
     roscpp dynamic_reconfigure message_generation
     image_transport cv_bridge
@@ -24,6 +25,7 @@ catkin_package(
 include_directories(
     include
     ${catkin_INCLUDE_DIRS}
+    ${Boost_INCLUDE_DIRS}
     )
 
 add_subdirectory(src)

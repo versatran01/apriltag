@@ -26,12 +26,12 @@ void ApriltagDetectorNode::ImageCb(const ImageConstPtr& image_msg) {
       cv_bridge::toCvShare(image_msg, image_encodings::MONO8)->image;
 
   // Detection
-  detector_->Detect(gray);
+  auto apriltags = detector_->Detect(gray);
 
   // Publish apriltag detection
   auto apriltag_array_msg = boost::make_shared<ApriltagArrayStamped>();
   apriltag_array_msg->header = image_msg->header;
-  apriltag_array_msg->apriltags = detector_->apriltags();
+  apriltag_array_msg->apriltags = apriltags;
   pub_apriltags_.publish(apriltag_array_msg);
 
   // Publish detection image if needed
@@ -39,7 +39,7 @@ void ApriltagDetectorNode::ImageCb(const ImageConstPtr& image_msg) {
     cv::Mat disp;
     cv::cvtColor(gray, disp, CV_GRAY2BGR);
     // Draw detection
-    detector_->Draw(disp);
+    DrawApriltags(disp, apriltags);
     cv_bridge::CvImage cv_img(image_msg->header, image_encodings::BGR8, disp);
     pub_image_.publish(cv_img.toImageMsg());
   }
@@ -56,8 +56,6 @@ void ApriltagDetectorNode::ConfigCb(ConfigT& config, int level) {
     detector_ = ApriltagDetector::Create(static_cast<DetectorType>(config.type),
                                          static_cast<TagFamily>(config.family));
   }
-  // TODO: Add useful information here
-  ROS_INFO("Configuring detector");
   detector_->set_black_border(config.black_border);
   detector_->set_decimate(config.decimate);
   detector_->set_refine(config.refine);

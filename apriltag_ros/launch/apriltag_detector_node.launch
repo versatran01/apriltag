@@ -2,8 +2,7 @@
   <arg name="camera" default="camera"/>
 
   <node pkg="apriltag_ros" type="apriltag_detector_node"
-    name="apriltag_detector"
-    output="screen" ns="$(arg camera)">
+    name="apriltag_detector" output="screen" ns="$(arg camera)">
     <param name="family" type="int" value="0"/>
     <param name="type" type="int" value="0"/>
 

@@ -5,9 +5,9 @@
 #include <cassert>
 
 #include <opencv2/core/core.hpp>
+#include <apriltag_msgs/Apriltag.h>
 #include <apriltag_mit/apriltag_mit.h>
 #include <apriltag_umich/apriltag_umich.h>
-#include <apriltag_msgs/Apriltag.h>
 
 namespace apriltag_ros {
 
@@ -35,13 +35,6 @@ class ApriltagDetector {
   int black_border() const;
 
   /**
-   * @brief set_tag_bits
-   * @param tag_bits
-   */
-  void set_tag_bits(int tag_bits);
-  int tag_bits() const;
-
-  /**
    * @brief set_decimate
    * @param decimate
    */
@@ -55,8 +48,8 @@ class ApriltagDetector {
   void set_refine(bool refine);
   bool refine() const;
 
+  int tag_bits() const;
   const std::string& tag_family() const;
-  const ApriltagVec& apriltags() const;
 
   /**
    * @brief Detect detects apriltags in given image
@@ -64,13 +57,7 @@ class ApriltagDetector {
    * @note corner starts from lower-left and goes counter-clockwise, and detect
    * does not need knowledge of the camera intrinsics
    */
-  void Detect(const cv::Mat& image);
-
-  /**
-   * @brief Draw draws detected tags on given image
-   * @param image A grayscale/color image
-   */
-  void Draw(cv::Mat& image) const;
+  ApriltagVec Detect(const cv::Mat& image);
 
   /**
    * @brief Create creates an instance of ApriltagDetector
@@ -81,7 +68,7 @@ class ApriltagDetector {
                     const TagFamily& tag_family);
 
  protected:
-  virtual void DetectImpl(const cv::Mat& image) = 0;
+  virtual ApriltagVec DetectImpl(const cv::Mat& image) = 0;
   virtual void SetBlackBorder(int black_border) = 0;
 
   int decimate_{1};
@@ -91,7 +78,6 @@ class ApriltagDetector {
   DetectorType detector_type_;
   TagFamily tag_family_;
   std::string tag_family_str_;
-  ApriltagVec apriltags_;
 };
 
 using ApriltagDetectorPtr = ApriltagDetector::Ptr;
@@ -102,7 +88,7 @@ using ApriltagDetectorPtr = ApriltagDetector::Ptr;
 class ApriltagDetectorMit : public ApriltagDetector {
  public:
   explicit ApriltagDetectorMit(const TagFamily& tag_family);
-  void DetectImpl(const cv::Mat& image) override;
+  ApriltagVec DetectImpl(const cv::Mat& image) override;
   void SetBlackBorder(int black_border) override;
 
  private:
@@ -115,7 +101,7 @@ class ApriltagDetectorMit : public ApriltagDetector {
 class ApriltagDetectorUmich : public ApriltagDetector {
  public:
   explicit ApriltagDetectorUmich(const TagFamily& tag_family);
-  void DetectImpl(const cv::Mat& image) override;
+  ApriltagVec DetectImpl(const cv::Mat& image) override;
   void SetBlackBorder(int black_border) override;
 
  private:
@@ -132,6 +118,13 @@ void DrawApriltag(cv::Mat& image, const apriltag_msgs::Apriltag& apriltag,
                   int thickness = 1);
 
 /**
+ * @brief DrawApriltags
+ * @param image
+ * @param apriltags
+ */
+void DrawApriltags(cv::Mat& image, const ApriltagVec& apriltags);
+
+/**
  * @brief TagFamilyToTagBits
  * @param tag_family
  * @return
@@ -144,6 +137,14 @@ int TagFamilyToTagBits(const TagFamily& tag_family);
  * @return
  */
 std::string DetectorTypeToString(const DetectorType& detector_type);
+
+/**
+ * @brief RefineApriltags
+ * @param image
+ * @param apriltags
+ */
+void RefineApriltags(const cv::Mat& image, ApriltagVec& apriltags,
+                     int win_size = 5);
 
 }  // apriltag_ros
 
