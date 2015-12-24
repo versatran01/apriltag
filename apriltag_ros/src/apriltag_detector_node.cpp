@@ -25,10 +25,15 @@ void ApriltagDetectorNode::ImageCb(const ImageConstPtr& image_msg) {
   const auto gray =
       cv_bridge::toCvShare(image_msg, image_encodings::MONO8)->image;
 
-  // Detection
+  // Detect
   auto apriltags = detector_->Detect(gray);
 
-  // Publish apriltag detection
+  // Refine
+  if (config_.refine) {
+    RefineApriltags(gray, apriltags);
+  }
+
+  // Publish apriltags
   auto apriltag_array_msg = boost::make_shared<ApriltagArrayStamped>();
   apriltag_array_msg->header = image_msg->header;
   apriltag_array_msg->apriltags = apriltags;
@@ -38,7 +43,6 @@ void ApriltagDetectorNode::ImageCb(const ImageConstPtr& image_msg) {
   if (pub_image_.getNumSubscribers()) {
     cv::Mat disp;
     cv::cvtColor(gray, disp, CV_GRAY2BGR);
-    // Draw detection
     DrawApriltags(disp, apriltags);
     cv_bridge::CvImage cv_img(image_msg->header, image_encodings::BGR8, disp);
     pub_image_.publish(cv_img.toImageMsg());

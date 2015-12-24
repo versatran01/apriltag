@@ -1,21 +1,28 @@
-# Apriltag
+# apriltag
 
 A collection of apriltag libraries and a ros node.
 
-`apriltag_mit` - a c++ library from http://people.csail.mit.edu/kaess/apriltags/
+## apriltag_mit
 
-`apriltag_umich` - a c library from http://april.eecs.umich.edu/wiki/index.php/AprilTags
+a c++ library from http://people.csail.mit.edu/kaess/apriltags/
 
-`apriltag_ros` - a ros node for detecting apriltag.
+## apriltag_umich
 
-`apriltag_msgs` - apriltag ros messages
+a c library from http://april.eecs.umich.edu/wiki/index.php/AprilTags
 
-## Videos
+## apriltag_ros
 
-[mapping](https://www.youtube.com/watch?v=MvLFmyHk4jE&list=UUISSElz91JM_B4ifoJ5MMXg)
+a ros node for detecting apriltag.
 
-[meam620](https://www.youtube.com/watch?v=JH61s4S2mVQ&list=UUISSElz91JM_B4ifoJ5MMXg)
+Detect apriltags in image topic `~image`
+```
+roslaunch apriltag_ros apriltag_detector_node.launch camera:=camera
+```
 
-[launchpad](https://www.youtube.com/watch?v=ZS2IXZT7aTY&index=3&list=UUISSElz91JM_B4ifoJ5MMXg)
+Detect apriltags in images
+```
+rosrun apriltag_ros apriltag_detect image1.png image2.png -t 0 -b 2
+```
+## apriltag_msgs
 
-[custom-map](https://www.youtube.com/watch?v=O_XabGqgRsg&list=UUISSElz91JM_B4ifoJ5MMXg&index=2)
+apriltag ros messages

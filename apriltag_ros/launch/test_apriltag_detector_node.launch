@@ -1,19 +1,15 @@
 <launch>
   <arg name="output" default="screen"/>
-  <arg name="bagfile" default="/home/chao/KuaiPan/apriltag_grid.bag"/>
-  <arg name="camera" default="/mv_25000855"/>
+  <arg name="camera" default="camera"/>
+  <arg name="bagfile"/>
 
   <!-- Rosbag -->
   <node pkg="rosbag" type="play" name="player" output="log"
-    args="-r 0.5 $(arg bagfile)">
+    args="$(arg bagfile)">
   </node>
 
   <!-- Detector Node -->
   <include file="$(find apriltag_ros)/launch/apriltag_detector_node.launch">
     <arg name="camera" value="$(arg camera)"/>
   </include>
-
-  <node pkg="rviz" name="rviz" type="rviz" output="log"
-    args="-d $(find apriltag_ros)/rviz/detector.rviz">
-  </node>
 </launch>
