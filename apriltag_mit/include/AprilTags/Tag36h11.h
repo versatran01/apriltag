@@ -53,6 +53,7 @@
 **/
 
 #pragma once
+#include "AprilTags/TagCodes.h"
 
 namespace AprilTags {
 

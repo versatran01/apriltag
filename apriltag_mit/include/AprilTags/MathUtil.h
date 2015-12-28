@@ -9,8 +9,6 @@
 
 namespace AprilTags {
 
-std::ostream &operator<<(std::ostream &os, const std::pair<float, float> &pt);
-
 //! Miscellaneous math utilities and fast exp functions.
 class MathUtil {
  public:
@@ -39,29 +37,6 @@ class MathUtil {
   //+/- Pi
   static inline float mod2pi(float ref, float v) {
     return ref + mod2pi(v - ref);
-  }
-
-  // lousy approximation of arctan function, but good enough for our purposes
-  // (about 4 degrees)
-  static inline double fast_atan2(double y, double x) {
-    double coeff_1 = M_PI / 4;
-    double coeff_2 = 3 * coeff_1;
-    double abs_y = fabs(y) + 1e-10;  // kludge to prevent 0/0 condition
-
-    double angle;
-
-    if (x >= 0) {
-      double r = (x - abs_y) / (x + abs_y);
-      angle = coeff_1 - coeff_1 * r;
-    } else {
-      double r = (x + abs_y) / (abs_y - x);
-      angle = coeff_2 - coeff_1 * r;
-    }
-
-    if (y < 0)
-      return -angle;  // negate if in quad III or IV
-    else
-      return angle;
   }
 };
 

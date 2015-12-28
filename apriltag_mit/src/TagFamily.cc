@@ -27,26 +27,26 @@ namespace AprilTags {
 using namespace std;
 
 TagFamily::TagFamily(const TagCodes &tag_codes)
-    : payload_bits_(tag_codes.payload_bits_),
-      dimension((int)std::sqrt((float)payload_bits_)),
-      min_hamming_distance_(tag_codes.min_hamming_distance_),
-      errorRecoveryBits(1),
+    : payload_bits_(tag_codes.payload_bits()),
+      dimension_bits_((int)std::sqrt((float)payload_bits_)),
+      min_hamming_distance_(tag_codes.min_hamming_distance()),
+      error_recovery_bits_(1),
       codes() {
-  if (payload_bits_ != dimension * dimension)
+  if (payload_bits_ != dimension_bits_ * dimension_bits_)
     cerr << "Error: TagFamily constructor called with bits=" << payload_bits_
          << "; must be a square number!" << endl;
-  codes = tag_codes.codes;
+  codes = tag_codes.codes();
 }
 
-void TagFamily::setErrorRecoveryBits(int b) { errorRecoveryBits = b; }
+void TagFamily::setErrorRecoveryBits(int b) { error_recovery_bits_ = b; }
 
 void TagFamily::setErrorRecoveryFraction(float v) {
-  errorRecoveryBits = (int)(((int)(min_hamming_distance_ - 1) / 2) * v);
+  error_recovery_bits_ = (int)(((int)(min_hamming_distance_ - 1) / 2) * v);
 }
 
-unsigned long long TagFamily::rotate90(unsigned long long w, int d) {
-  unsigned long long wr = 0;
-  const unsigned long long oneLongLong = 1;
+code_t TagFamily::rotate90(code_t w, int d) {
+  code_t wr = 0;
+  const code_t oneLongLong = 1;
 
   for (int r = d - 1; r >= 0; r--) {
     for (int c = 0; c < d; c++) {
@@ -59,11 +59,9 @@ unsigned long long TagFamily::rotate90(unsigned long long w, int d) {
   return wr;
 }
 
-int TagFamily::hammingDistance(unsigned long long a, unsigned long long b) {
-  return popCount(a ^ b);
-}
+int TagFamily::hammingDistance(code_t a, code_t b) { return popCount(a ^ b); }
 
-unsigned char TagFamily::popCountReal(unsigned long long w) {
+unsigned char TagFamily::popCountReal(code_t w) {
   unsigned char cnt = 0;
   while (w != 0) {
     w &= (w - 1);
@@ -72,7 +70,7 @@ unsigned char TagFamily::popCountReal(unsigned long long w) {
   return cnt;
 }
 
-int TagFamily::popCount(unsigned long long w) {
+int TagFamily::popCount(code_t w) {
   int count = 0;
   while (w != 0) {
     count += popCountTable[(unsigned int)(w & (popCountTableSize - 1))];
@@ -81,17 +79,17 @@ int TagFamily::popCount(unsigned long long w) {
   return count;
 }
 
-void TagFamily::decode(TagDetection &det, unsigned long long rCode) const {
+void TagFamily::decode(TagDetection &det, code_t rCode) const {
   int bestId = -1;
   int bestHamming = INT_MAX;
   int bestRotation = 0;
-  unsigned long long bestCode = 0;
+  code_t bestCode = 0;
 
-  unsigned long long rCodes[4];
+  code_t rCodes[4];
   rCodes[0] = rCode;
-  rCodes[1] = rotate90(rCodes[0], dimension);
-  rCodes[2] = rotate90(rCodes[1], dimension);
-  rCodes[3] = rotate90(rCodes[2], dimension);
+  rCodes[1] = rotate90(rCodes[0], dimension_bits_);
+  rCodes[2] = rotate90(rCodes[1], dimension_bits_);
+  rCodes[3] = rotate90(rCodes[2], dimension_bits_);
 
   for (unsigned int id = 0; id < codes.size(); id++) {
     for (unsigned int rot = 0; rot < 4; rot++) {
@@ -107,18 +105,18 @@ void TagFamily::decode(TagDetection &det, unsigned long long rCode) const {
   det.id = bestId;
   det.hammingDistance = bestHamming;
   det.rotation = bestRotation;
-  det.good = (det.hammingDistance <= errorRecoveryBits);
+  det.good = (det.hammingDistance <= error_recovery_bits_);
   det.obsCode = rCode;
   det.code = bestCode;
 }
 
 void TagFamily::printHammingDistances() const {
-  vector<int> hammings(dimension * dimension + 1);
+  vector<int> hammings(dimension_bits_ * dimension_bits_ + 1);
   for (unsigned i = 0; i < codes.size(); i++) {
-    unsigned long long r0 = codes[i];
-    unsigned long long r1 = rotate90(r0, dimension);
-    unsigned long long r2 = rotate90(r1, dimension);
-    unsigned long long r3 = rotate90(r2, dimension);
+    code_t r0 = codes[i];
+    code_t r1 = rotate90(r0, dimension_bits_);
+    code_t r2 = rotate90(r1, dimension_bits_);
+    code_t r3 = rotate90(r2, dimension_bits_);
     for (unsigned int j = i + 1; j < codes.size(); j++) {
       int d = min(
           min(hammingDistance(r0, codes[j]), hammingDistance(r1, codes[j])),
