@@ -45,38 +45,44 @@ void TagFamily::set_error_recovery_fraction(float v) {
   error_recovery_bits_ = static_cast<unsigned>(((min_hamming() - 1) / 2) * v);
 }
 
-void TagFamily::decode(TagDetection &det, code_t obs_code) const {
-  int best_id = -1;
-  int best_hamming = std::numeric_limits<int>::max();
-  int best_rotation = 0;
-  code_t best_code = 0;
+code_t TagFamily::Code(unsigned id) const { return codes()[id]; }
+
+bool TagFamily::IsGood(unsigned id, unsigned hamming_distance) const {
+  return (id != std::numeric_limits<unsigned>::max()) &&
+         (hamming_distance <= error_recovery_bits_);
+}
+
+TagDetection TagFamily::Decode(code_t obs_code) const {
+  auto best_id = std::numeric_limits<unsigned>::max();
+  auto best_hamming = std::numeric_limits<unsigned>::max();
+  unsigned best_rotation = 0;
 
   code_t rot_codes[4];
   rot_codes[0] = obs_code;
-  rot_codes[1] = rotate90_cwise(rot_codes[0], dimension_bits());
-  rot_codes[2] = rotate90_cwise(rot_codes[1], dimension_bits());
-  rot_codes[3] = rotate90_cwise(rot_codes[2], dimension_bits());
+  rot_codes[1] = Rotate90Cwise(rot_codes[0], dimension_bits());
+  rot_codes[2] = Rotate90Cwise(rot_codes[1], dimension_bits());
+  rot_codes[3] = Rotate90Cwise(rot_codes[2], dimension_bits());
 
-  for (unsigned int id = 0; id < num_codes_; ++id) {
-    for (unsigned int rot = 0; rot < 4; ++rot) {
-      int hamming = hamming_distance(rot_codes[rot], codes()[id]);
-      if (hamming < best_hamming) {
+  for (size_t id = 0; id < num_codes_; ++id) {
+    for (size_t rot = 0; rot < 4; ++rot) {
+      const auto hamming = HammingDistance(rot_codes[rot], Code(id));
+      if (hamming == 0) {
+        // Hamming distance is 0, this is our tag, no need to test against other
+        // tags
+        return TagDetection(id, true, obs_code, Code(id), hamming, rot);
+      } else if (hamming < best_hamming) {
+        best_id = id;
         best_hamming = hamming;
         best_rotation = rot;
-        best_id = id;
-        best_code = codes()[id];
       }
     }
   }
-  det.id = best_id;
-  det.hamming_distance = best_hamming;
-  det.num_rotations = best_rotation;
-  det.good = (det.hamming_distance <= error_recovery_bits_);
-  det.obs_code = obs_code;
-  det.code = best_code;
+
+  return TagDetection(best_id, IsGood(best_id, best_hamming), obs_code,
+                      Code(best_id), best_hamming, best_rotation);
 }
 
-code_t rotate90_cwise(code_t w, int d) {
+code_t Rotate90Cwise(code_t w, int d) {
   code_t wr = 0;
   const code_t oneLongLong = 1;
 
@@ -91,7 +97,7 @@ code_t rotate90_cwise(code_t w, int d) {
   return wr;
 }
 
-unsigned hamming_distance(code_t a, code_t b) {
+unsigned HammingDistance(code_t a, code_t b) {
   // Because code_t is unsigned long long
   return __builtin_popcountll(a ^ b);
 }

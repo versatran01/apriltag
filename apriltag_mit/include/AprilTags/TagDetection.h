@@ -18,7 +18,19 @@ struct TagDetection {
   TagDetection();
 
   //! Constructor for manually creating tags in a world map
-  TagDetection(int id);
+  TagDetection(unsigned id);
+
+  TagDetection(unsigned id, bool good, code_t obs_code, code_t code,
+               unsigned hamming_distance, unsigned num_rotations)
+      : id(id),
+        good(good),
+        obs_code(obs_code),
+        code(code),
+        hamming_distance(hamming_distance),
+        num_rotations(num_rotations) {}
+
+  //! What was the ID of the detected tag?
+  unsigned id;
 
   //! Is the detection good enough?
   bool good;
@@ -28,9 +40,6 @@ struct TagDetection {
 
   //! Matched code
   code_t code;
-
-  //! What was the ID of the detected tag?
-  unsigned id;
 
   //! The hamming distance between the detected code and the true code
   unsigned hamming_distance;

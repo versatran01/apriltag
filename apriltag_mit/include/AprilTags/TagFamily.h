@@ -26,12 +26,16 @@ class TagFamily {
   void set_error_recovery_bits(unsigned error_recovery_bits);
   void set_error_recovery_fraction(float v);
 
+  code_t Code(unsigned id) const;
+
   /**
    * @brief decode Recover id from observed code
    * @param det
    * @param obs_code
    */
-  void decode(TagDetection& det, code_t obs_code) const;
+  TagDetection Decode(code_t obs_code) const;
+
+  bool IsGood(unsigned id, unsigned hamming_distance) const;
 
  private:
   const TagCodes& tag_codes_;
@@ -56,20 +60,11 @@ class TagFamily {
  *  5 4 3  ==>  1 4 7 ==>  3 4 5    (rotate90 applied twice)
  *  2 1 0       0 3 6      6 7 8
  */
-code_t rotate90_cwise(code_t w, int d);
+code_t Rotate90Cwise(code_t w, int d);
 
-/**
- * @brief hamming_distance
- * @param a
- * @param b
- */
-unsigned hamming_distance(code_t a, code_t b);
+unsigned HammingDistance(code_t a, code_t b);
 
-/**
- * @brief popCount
- * @param w
- */
-unsigned pop_count(code_t w);
+unsigned PopCount(code_t w);
 
 }  // namespace AprilTags
 

@@ -11,8 +11,7 @@ TagDetection::TagDetection()
       code(),
       id(),
       hamming_distance(),
-      num_rotations(),
-      p(),
+      num_rotations(), p(),
       cxy(),
       observedPerimeter(),
       homography(),
@@ -20,11 +19,11 @@ TagDetection::TagDetection()
   homography.setZero();
 }
 
-TagDetection::TagDetection(int _id)
+TagDetection::TagDetection(unsigned id)
     : good(false),
       obs_code(),
       code(),
-      id(_id),
+      id(id),
       hamming_distance(),
       num_rotations(),
       p(),

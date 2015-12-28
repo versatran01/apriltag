@@ -348,15 +348,14 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
     }
 
     if (!bad) {
-      TagDetection thisTagDetection;
-      tag_family_.decode(thisTagDetection, tagCode);
+      auto td = tag_family_.Decode(tagCode);
 
       // compute the homography (and rotate it appropriately)
-      thisTagDetection.homography = quad.homography.getH();
-      thisTagDetection.hxy = quad.homography.getCXY();
+      td.homography = quad.homography.getH();
+      td.hxy = quad.homography.getCXY();
 
-      float c = std::cos(thisTagDetection.num_rotations * (float)M_PI / 2);
-      float s = std::sin(thisTagDetection.num_rotations * (float)M_PI / 2);
+      float c = std::cos(td.num_rotations * (float)M_PI / 2);
+      float s = std::sin(td.num_rotations * (float)M_PI / 2);
       Eigen::Matrix3d R;
       R.setZero();
       R(0, 0) = R(1, 1) = c;
@@ -364,14 +363,14 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
       R(1, 0) = s;
       R(2, 2) = 1;
       Eigen::Matrix3d tmp;
-      tmp = thisTagDetection.homography * R;
-      thisTagDetection.homography = tmp;
+      tmp = td.homography * R;
+      td.homography = tmp;
 
       // Rotate points in detection according to decoded
       // orientation.  Thus the order of the points in the
       // detection object can be used to determine the
       // orientation of the target.
-      std::pair<float, float> bottomLeft = thisTagDetection.interpolate(-1, -1);
+      std::pair<float, float> bottomLeft = td.interpolate(-1, -1);
       int bestRot = -1;
       float bestDist = FLT_MAX;
       for (int i = 0; i < 4; i++) {
@@ -383,13 +382,12 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
         }
       }
 
-      for (int i = 0; i < 4; i++)
-        thisTagDetection.p[i] = quad.quadPoints[(i + bestRot) % 4];
+      for (int i = 0; i < 4; i++) td.p[i] = quad.quadPoints[(i + bestRot) % 4];
 
-      if (thisTagDetection.good) {
-        thisTagDetection.cxy = quad.interpolate01(0.5f, 0.5f);
-        thisTagDetection.observedPerimeter = quad.observedPerimeter;
-        detections.push_back(thisTagDetection);
+      if (td.good) {
+        td.cxy = quad.interpolate01(0.5f, 0.5f);
+        td.observedPerimeter = quad.observedPerimeter;
+        detections.push_back(td);
       }
     }
   }
@@ -422,7 +420,8 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
       newFeature = false;
 
       // This detection is worse than the previous one... just don't use it.
-      if (thisTagDetection.hamming_distance > otherTagDetection.hamming_distance)
+      if (thisTagDetection.hamming_distance >
+          otherTagDetection.hamming_distance)
         continue;
 
       // Otherwise, keep the new one if it either has strictly *lower* error, or
