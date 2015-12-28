@@ -34,21 +34,29 @@ bool TagDetection::OverlapsTooMuch(const TagDetection &other) const {
   // Compute a sort of "radius" of the two targets. We'll do this by
   // computing the average length of the edges of the quads (in
   // pixels).
-  float radius =
-      (MathUtil::distance2D(p[0], p[1]) + MathUtil::distance2D(p[1], p[2]) +
-       MathUtil::distance2D(p[2], p[3]) + MathUtil::distance2D(p[3], p[0]) +
-       MathUtil::distance2D(other.p[0], other.p[1]) +
-       MathUtil::distance2D(other.p[1], other.p[2]) +
-       MathUtil::distance2D(other.p[2], other.p[3]) +
-       MathUtil::distance2D(other.p[3], other.p[0])) /
+  const float radius =
+      (Distance2D(p[0], p[1]) + Distance2D(p[1], p[2]) +
+       Distance2D(p[2], p[3]) + Distance2D(p[3], p[0]) +
+       Distance2D(other.p[0], other.p[1]) + Distance2D(other.p[1], other.p[2]) +
+       Distance2D(other.p[2], other.p[3]) +
+       Distance2D(other.p[3], other.p[0])) /
       16.0f;
 
   // distance (in pixels) between two tag centers
-  float dist = MathUtil::distance2D(cxy, other.cxy);
+  const auto dist = Distance2D(cxy, other.cxy);
 
   // reject pairs where the distance between centroids is smaller than
   // the "radius" of one of the tags.
   return (dist < radius);
+}
+
+void TagDetection::scaleTag(float scale) {
+  cxy.x *= scale;
+  cxy.y *= scale;
+  for (cv::Point2f &c : p) {
+    c.x *= scale;
+    c.y *= scale;
+  }
 }
 
 // Eigen::Matrix4d TagDetection::getRelativeTransform(double tag_size, double
@@ -178,14 +186,5 @@ std::for_each(begin(p), end(p), [&imgPts](const Pointf &corner) {
 //  // naturally agree with the orientation of the object
 //  rot = T.block(0, 0, 3, 3);
 //}
-
-void TagDetection::scaleTag(float scale) {
-  cxy.first *= scale;
-  cxy.second *= scale;
-  for (auto &c : p) {
-    c.first *= scale;
-    c.second *= scale;
-  }
-}
 
 }  // namespace

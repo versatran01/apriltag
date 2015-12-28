@@ -54,10 +54,10 @@ struct TagDetection {
   /*  The points travel counter-clockwise around the target, always
    *  starting from the same corner of the tag.
    */
-  std::pair<float, float> p[4];
+  cv::Point2f p[4];
 
   //! Center of tag in pixel coordinates.
-  std::pair<float, float> cxy;
+  cv::Point2f cxy;
 
   /**
    * @brief obs_perimeter length of the observed perimeter

@@ -7,6 +7,7 @@
 #include <Eigen/Dense>
 
 #include "AprilTags/Homography33.h"
+#include <opencv2/core/core.hpp>
 
 namespace AprilTags {
 
@@ -28,20 +29,24 @@ class Quad {
   //! Constructor
   /*! (x,y) are the optical center of the camera, which is
    *   needed to correctly compute the homography. */
-  Quad(const std::vector<std::pair<float, float> >& p,
+  Quad(const std::vector<std::pair<float, float>>& p,
        const std::pair<float, float>& opticalCenter);
 
   //! Interpolate given that the lower left corner of the lower left cell is at
   //(-1,-1) and the upper right corner of the upper right cell is at (1,1).
   std::pair<float, float> interpolate(float x, float y);
 
+  cv::Point2f interpolate(const cv::Point2f& p);
+
   //! Same as interpolate, except that the coordinates are interpreted between 0
   // and 1, instead of -1 and 1.
   std::pair<float, float> interpolate01(float x, float y);
 
+  cv::Point2f interpolate01(const cv::Point2f& p);
+
   //! Points for the quad (in pixel coordinates), in counter clockwise order.
   // These points are the intersections of segments.
-  std::vector<std::pair<float, float> > quadPoints;
+  std::vector<std::pair<float, float>> quadPoints;
 
   //! Segments composing this quad
   std::vector<Segment*> segments;

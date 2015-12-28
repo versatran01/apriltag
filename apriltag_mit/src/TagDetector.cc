@@ -172,7 +172,7 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
     GLineSegment2D gseg = GLineSegment2D::lsqFitXYW(points);
 
     // filter short lines
-    float length = MathUtil::distance2D(gseg.getP0(), gseg.getP1());
+    float length = MathUtil::Distance2D(gseg.getP0(), gseg.getP1());
     if (length < Segment::minimumLineLength) continue;
 
     Segment seg;
@@ -267,9 +267,9 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
         continue;
       }
 
-      float parentDist = MathUtil::distance2D(
+      float parentDist = MathUtil::Distance2D(
           p, std::pair<float, float>(parentseg.getX1(), parentseg.getY1()));
-      float childDist = MathUtil::distance2D(
+      float childDist = MathUtil::Distance2D(
           p, std::pair<float, float>(child.getX0(), child.getY0()));
 
       if (max(parentDist, childDist) > parentseg.getLength()) {
@@ -375,17 +375,21 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
       float bestDist = FLT_MAX;
       for (int i = 0; i < 4; i++) {
         float const dist =
-            AprilTags::MathUtil::distance2D(bottomLeft, quad.quadPoints[i]);
+            AprilTags::MathUtil::Distance2D(bottomLeft, quad.quadPoints[i]);
         if (dist < bestDist) {
           bestDist = dist;
           bestRot = i;
         }
       }
 
-      for (int i = 0; i < 4; i++) td.p[i] = quad.quadPoints[(i + bestRot) % 4];
+      for (int i = 0; i < 4; i++) {
+        const auto p = quad.quadPoints[(i + bestRot) % 4];
+        td.p[i] = cv::Point2f(p.first, p.second);
+      }
 
       if (td.good) {
-        td.cxy = quad.interpolate01(0.5f, 0.5f);
+        const auto c = quad.interpolate01(0.5f, 0.5f);
+        td.cxy = cv::Point2f(c.first, c.second);
         td.obs_perimeter = quad.observedPerimeter;
         detections.push_back(td);
       }

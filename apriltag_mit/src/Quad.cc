@@ -52,8 +52,23 @@ std::pair<float, float> Quad::interpolate(float x, float y) {
 #endif
 }
 
+cv::Point2f Quad::interpolate(const cv::Point2f &p) {
+#ifdef INTERPOLATE
+  Eigen::Vector2f r1 = p0 + p01 * (p.x + 1.) / 2.;
+  Eigen::Vector2f r2 = p3 + p32 * (p.x + 1.) / 2.;
+  Eigen::Vector2f r = r1 + (r2 - r1) * (p.y + 1) / 2;
+  return cv::Point2f(r(0), r(1));
+#else
+  return homography.project(p.x, p.y);
+#endif
+}
+
 std::pair<float, float> Quad::interpolate01(float x, float y) {
   return interpolate(2 * x - 1, 2 * y - 1);
+}
+
+cv::Point2f Quad::interpolate01(const cv::Point2f &p) {
+  return interpolate(cv::Point2f(2 * p.x - 1, 2 * p.y - 1));
 }
 
 void Quad::search(const FloatImage &fImage, std::vector<Segment *> &path,
@@ -110,12 +125,12 @@ void Quad::search(const FloatImage &fImage, std::vector<Segment *> &path,
       }
 
       if (!bad) {
-        float d0 = MathUtil::distance2D(p[0], p[1]);
-        float d1 = MathUtil::distance2D(p[1], p[2]);
-        float d2 = MathUtil::distance2D(p[2], p[3]);
-        float d3 = MathUtil::distance2D(p[3], p[0]);
-        float d4 = MathUtil::distance2D(p[0], p[2]);
-        float d5 = MathUtil::distance2D(p[1], p[3]);
+        float d0 = MathUtil::Distance2D(p[0], p[1]);
+        float d1 = MathUtil::Distance2D(p[1], p[2]);
+        float d2 = MathUtil::Distance2D(p[2], p[3]);
+        float d3 = MathUtil::Distance2D(p[3], p[0]);
+        float d4 = MathUtil::Distance2D(p[0], p[2]);
+        float d5 = MathUtil::Distance2D(p[1], p[3]);
 
         // check sizes
         if (d0 < Quad::minimumEdgeLength || d1 < Quad::minimumEdgeLength ||
