@@ -5,12 +5,6 @@
 #include <vector>
 #include <opencv2/core/core.hpp>
 
-namespace DualCoding {
-typedef unsigned char uchar;
-template <typename T>
-class Sketch;
-}
-
 namespace AprilTags {
 
 //! Represent an image as a vector of floats in [0,1]
@@ -31,11 +25,11 @@ class FloatImage {
   float get(int x, int y) const { return image_.at<float>(y, x); }
   void set(int x, int y, float v) { image_.at<float>(y, x) = v; }
 
-  int getWidth() const { return image_.cols; }
-  int getHeight() const { return image_.rows; }
-  int getNumFloatImagePixels() const { return image_.cols * image_.rows; }
+  int width() const { return image_.cols; }
+  int height() const { return image_.rows; }
+  int num_pixels() const { return image_.cols * image_.rows; }
 
-  void filterFactoredCentered(int ksize, float sigma);
+  void FilterGaussian(int ksize, float sigma);
 };
 
 }  // namespace AprilTags

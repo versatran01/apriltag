@@ -59,7 +59,7 @@ std::pair<float, float> GLine2D::intersectionWith(const GLine2D &line) const {
   return std::pair<float, float>(dx * x00 + p.first, dy * x00 + p.second);
 }
 
-GLine2D GLine2D::lsqFitXYW(const std::vector<XYWeight> &xyweights) {
+GLine2D GLine2D::lsqFitXYW(const std::vector<XYW> &xyweights) {
   float Cxx = 0, Cyy = 0, Cxy = 0, Ex = 0, Ey = 0, mXX = 0, mYY = 0, mXY = 0,
         mX = 0, mY = 0;
   float n = 0;
@@ -68,7 +68,7 @@ GLine2D GLine2D::lsqFitXYW(const std::vector<XYWeight> &xyweights) {
   for (unsigned int i = 0; i < xyweights.size(); i++) {
     float x = xyweights[i].x;
     float y = xyweights[i].y;
-    float alpha = xyweights[i].weight;
+    float alpha = xyweights[i].w;
 
     mY += y * alpha;
     mX += x * alpha;

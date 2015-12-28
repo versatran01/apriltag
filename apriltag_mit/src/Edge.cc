@@ -26,7 +26,7 @@ int Edge::edgeCost(float theta0, float theta1, float mag1) {
 void Edge::calcEdges(float theta0, int x, int y, const FloatImage &theta,
                      const FloatImage &mag, std::vector<Edge> &edges,
                      size_t &nEdges) {
-  int width = theta.getWidth();
+  int width = theta.width();
   int thisPixel = y * width + x;
 
   // horizontal edge

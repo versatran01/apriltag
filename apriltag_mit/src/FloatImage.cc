@@ -18,7 +18,7 @@ FloatImage &FloatImage::operator=(const FloatImage &other) {
   return *this;
 }
 
-void FloatImage::filterFactoredCentered(int ksize, float sigma) {
+void FloatImage::FilterGaussian(int ksize, float sigma) {
   cv::GaussianBlur(image_, image_, cv::Size(ksize, ksize), sigma);
 }
 

@@ -55,7 +55,7 @@ class GLine2D {
   // parallel.
   std::pair<float, float> intersectionWith(const GLine2D &line) const;
 
-  static GLine2D lsqFitXYW(const std::vector<XYWeight> &xyweights);
+  static GLine2D lsqFitXYW(const std::vector<XYW> &xyweights);
 
   inline float getDx() const { return dx; }
   inline float getDy() const { return dy; }
@@ -68,9 +68,12 @@ class GLine2D {
 
  private:
   float dx, dy;
-  std::pair<float, float> p;  //!< A point the line passes through; when
-  // normalized, it is the point closest to the
-  // origin (hence perpendicular to the line)
+
+  /**
+   * @brief p A point the line passes through
+   * When normalized, it is the point closest to the origin
+   */
+  std::pair<float, float> p;
   bool didNormalizeSlope;
   bool didNormalizeP;
 };

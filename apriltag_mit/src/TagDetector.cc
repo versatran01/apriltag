@@ -3,6 +3,7 @@
 #include <climits>
 #include <map>
 #include <vector>
+#include <iostream>
 
 #include <Eigen/Dense>
 
@@ -35,50 +36,58 @@ void TagDetector::set_black_border(int black_border) {
 }
 int TagDetector::black_border() const { return black_border_; }
 
+int TagDetector::CalcFilterSize(float sigma) const {
+  return static_cast<int>(std::max(3.0f, 3 * sigma)) | 1;
+}
+
+// TODO: This FloatImage class is stupid, it induces so many unnecessary copies
+void TagDetector::Preprocess(const FloatImage &im_orig, FloatImage &im_decode,
+                             FloatImage &im_segment) const {
+  im_decode = im_orig;
+  if (decode_sigma_ > 0) {
+    const auto filter_size = CalcFilterSize(decode_sigma_);
+    im_decode.FilterGaussian(filter_size, decode_sigma_);
+  }
+
+  if (segment_sigma_ > 0) {
+    if (segment_sigma_ == decode_sigma_) {
+      im_segment = im_decode;
+    } else {
+      const auto filter_size = CalcFilterSize(segment_sigma_);
+      im_segment = im_orig;
+      im_segment.FilterGaussian(filter_size, segment_sigma_);
+    }
+  } else {
+    im_segment = im_orig;
+  }
+}
+
 std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
   int width = image.cols;
   int height = image.rows;
-  AprilTags::FloatImage im_orig(image);
+  FloatImage im_orig(image);
   std::pair<int, int> optical_center(width / 2, height / 2);
 
-  //================================================================
-  // Step one: preprocess image (convert to grayscale) and low pass if necessary
+  /**
+   * Step 1: Preprocess image
+   */
 
-  // This is a copy
-  FloatImage fim = im_orig;
+  FloatImage im_decode, im_segment;
+  Preprocess(im_orig, im_decode, im_segment);
 
-  if (sampling_sigma_ > 0) {
-    int filtsz = ((int)max(3.0f, 3 * sampling_sigma_)) | 1;
-    fim.filterFactoredCentered(filtsz, sampling_sigma_);
-  }
-
-  //================================================================
+  //============================================================================
   // Step two: Compute the local gradient. We store the direction and magnitude.
   // This step is quite sensitve to noise, since a few bad theta estimates will
   // break up segments, causing us to miss Quads. It is useful to do a Gaussian
   // low pass on this step even if we don't want it for encoding.
 
-  FloatImage fimSeg;
-  if (segment_sigma_ > 0) {
-    if (segment_sigma_ == sampling_sigma_) {
-      fimSeg = fim;
-    } else {
-      // blur anew
-      int filtsz = ((int)max(3.0f, 3 * segment_sigma_)) | 1;
-      fimSeg = im_orig;
-      fimSeg.filterFactoredCentered(filtsz, segment_sigma_);
-    }
-  } else {
-    fimSeg = im_orig;
-  }
+  FloatImage fimTheta(im_segment.width(), im_segment.height());
+  FloatImage fimMag(im_segment.width(), im_segment.height());
 
-  FloatImage fimTheta(fimSeg.getWidth(), fimSeg.getHeight());
-  FloatImage fimMag(fimSeg.getWidth(), fimSeg.getHeight());
-
-  for (int y = 1; y < fimSeg.getHeight() - 1; y++) {
-    for (int x = 1; x < fimSeg.getWidth() - 1; x++) {
-      float Ix = fimSeg.get(x + 1, y) - fimSeg.get(x - 1, y);
-      float Iy = fimSeg.get(x, y + 1) - fimSeg.get(x, y - 1);
+  for (int y = 1; y < im_segment.height() - 1; y++) {
+    for (int x = 1; x < im_segment.width() - 1; x++) {
+      float Ix = im_segment.get(x + 1, y) - im_segment.get(x - 1, y);
+      float Iy = im_segment.get(x, y + 1) - im_segment.get(x, y - 1);
 
       float mag = Ix * Ix + Iy * Iy;
       float theta = atan2(Iy, Ix);
@@ -92,7 +101,7 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
   // Step three. Extract edges by grouping pixels with similar
   // thetas together. This is a greedy algorithm: we start with
   // the most similar pixels.  We use 4-connectivity.
-  UnionFindSimple uf(fimSeg.getWidth() * fimSeg.getHeight());
+  UnionFindSimple uf(im_segment.width() * im_segment.height());
 
   vector<Edge> edges(width * height * 4);
   size_t nEdges = 0;
@@ -142,32 +151,32 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
   // cluster.
   // We will soon fit lines (segments) to these points.
 
-  map<int, vector<XYWeight> > clusters;
-  for (int y = 0; y + 1 < fimSeg.getHeight(); y++) {
-    for (int x = 0; x + 1 < fimSeg.getWidth(); x++) {
-      if (uf.getSetSize(y * fimSeg.getWidth() + x) <
+  map<int, vector<XYW> > clusters;
+  for (int y = 0; y + 1 < im_segment.height(); y++) {
+    for (int x = 0; x + 1 < im_segment.width(); x++) {
+      if (uf.getSetSize(y * im_segment.width() + x) <
           Segment::minimumSegmentSize)
         continue;
 
-      int rep = (int)uf.getRepresentative(y * fimSeg.getWidth() + x);
+      int rep = (int)uf.getRepresentative(y * im_segment.width() + x);
 
-      map<int, vector<XYWeight> >::iterator it = clusters.find(rep);
+      map<int, vector<XYW> >::iterator it = clusters.find(rep);
       if (it == clusters.end()) {
-        clusters[rep] = vector<XYWeight>();
+        clusters[rep] = vector<XYW>();
         it = clusters.find(rep);
       }
-      vector<XYWeight> &points = it->second;
-      points.push_back(XYWeight(x, y, fimMag.get(x, y)));
+      vector<XYW> &points = it->second;
+      points.push_back(XYW(x, y, fimMag.get(x, y)));
     }
   }
 
   //================================================================
   // Step five: Loop over the clusters, fitting lines (which we call Segments).
   std::vector<Segment> segments;  // used in Step six
-  std::map<int, std::vector<XYWeight> >::const_iterator clustersItr;
+  std::map<int, std::vector<XYW> >::const_iterator clustersItr;
   for (clustersItr = clusters.begin(); clustersItr != clusters.end();
        clustersItr++) {
-    std::vector<XYWeight> points = clustersItr->second;
+    std::vector<XYW> points = clustersItr->second;
     GLineSegment2D gseg = GLineSegment2D::lsqFitXYW(points);
 
     // filter short lines
@@ -191,8 +200,8 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
     // could probably sample just one point!
 
     float flip = 0, noflip = 0;
-    for (unsigned int i = 0; i < points.size(); i++) {
-      XYWeight xyw = points[i];
+    for (size_t i = 0; i < points.size(); i++) {
+      XYW xyw = points[i];
 
       float theta = fimTheta.get((int)xyw.x, (int)xyw.y);
       float mag = fimMag.get((int)xyw.x, (int)xyw.y);
@@ -314,7 +323,7 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
         int irx = (int)(pxy.first + 0.5);
         int iry = (int)(pxy.second + 0.5);
         if (irx < 0 || irx >= width || iry < 0 || iry >= height) continue;
-        float v = fim.get(irx, iry);
+        float v = im_decode.get(irx, iry);
         if (iy == -1 || iy == dd || ix == -1 || ix == dd)
           whiteModel.addObservation(x, y, v);
         else if (iy == 0 || iy == (dd - 1) || ix == 0 || ix == (dd - 1))
@@ -338,7 +347,7 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
         float threshold =
             (blackModel.interpolate(x, y) + whiteModel.interpolate(x, y)) *
             0.5f;
-        float v = fim.get(irx, iry);
+        float v = im_decode.get(irx, iry);
         tag_code = tag_code << 1;
         if (v > threshold) tag_code |= 1;
       }

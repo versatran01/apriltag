@@ -4,13 +4,10 @@
 namespace AprilTags {
 
 //! Represents a triple holding an x value, y value, and weight value.
-struct XYWeight {
-  float x;
-  float y;
-  float weight;
+struct XYW {
+  float x, y, w;
 
-  XYWeight(float xval, float yval, float weightval)
-      : x(xval), y(yval), weight(weightval) {}
+  XYW(float x, float y, float w) : x(x), y(y), w(w) {}
 };
 
 }  // namespace AprilTags
