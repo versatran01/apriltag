@@ -50,14 +50,18 @@ struct TagDetection {
   unsigned num_rotations;
 
   /////////////// Fields below are filled in by TagDetector ///////////////
-  //! Position (in fractional pixel coordinates) of the detection.
-  /*  The points travel counter-clockwise around the target, always
-   *  starting from the same corner of the tag.
+
+  /**
+   * @brief cxy Center of tag in pixel coordinates
+   */
+  cv::Point2f cxy;
+
+  /**
+   * @brief p Position of the detection
+   * The points travel counter-clockwise around the target, alwasy starting from
+   * the same corner of the tag
    */
   cv::Point2f p[4];
-
-  //! Center of tag in pixel coordinates.
-  cv::Point2f cxy;
 
   /**
    * @brief obs_perimeter length of the observed perimeter
@@ -126,6 +130,6 @@ struct TagDetection {
   //                     cv::Mat& tvec) const;
 };
 
-}  // namespace AprilTags
+}  /// namespace AprilTags
 
 #endif  // APRILTAGS_TAGDETECTION_H_

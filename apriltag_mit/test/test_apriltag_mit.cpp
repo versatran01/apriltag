@@ -2,6 +2,7 @@
 
 #include <ros/package.h>
 #include <gtest/gtest.h>
+#include <opencv2/highgui/highgui.hpp>
 
 using namespace apriltag_mit;
 using testing::Test;
@@ -35,7 +36,8 @@ TEST_P(TagFamilyTest, Detection) {
 }
 
 INSTANTIATE_TEST_CASE_P(ThreeTagFamilies, TagFamilyTest,
-                        Values(tag_codes_36h11, tag_codes_25h9, tag_codes_16h5));
+                        Values(tag_codes_36h11, tag_codes_25h9,
+                               tag_codes_16h5));
 
 int main(int argc, char **argv) {
   testing::InitGoogleTest(&argc, argv);

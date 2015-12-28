@@ -38,7 +38,11 @@ class TagFamily {
   bool IsGood(unsigned id, unsigned hamming_distance) const;
 
  private:
+  /**
+   * @brief tag_codes_ All tag codes in this tag family
+   */
   const TagCodes& tag_codes_;
+
   const size_t num_codes_;
 
   /**

@@ -3,7 +3,6 @@
 #include <climits>
 #include <map>
 #include <vector>
-#include <iostream>
 
 #include <Eigen/Dense>
 
@@ -24,15 +23,15 @@
 
 #include "AprilTags/TagDetector.h"
 
-using namespace std;
-
 namespace AprilTags {
+
+using namespace std;
 
 TagDetector::TagDetector(const TagCodes &tag_codes, int black_border)
     : tag_family_(tag_codes), black_border_(black_border) {}
 
-void TagDetector::set_black_border(int blackBorder) {
-  this->black_border_ = blackBorder;
+void TagDetector::set_black_border(int black_border) {
+  black_border_ = black_border;
 }
 int TagDetector::black_border() const { return black_border_; }
 
@@ -273,7 +272,6 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
           p, std::pair<float, float>(child.getX0(), child.getY0()));
 
       if (max(parentDist, childDist) > parentseg.getLength()) {
-        // cout << "intersection too far" << endl;
         continue;
       }
 
@@ -334,7 +332,6 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
         int irx = (int)(pxy.first + 0.5);
         int iry = (int)(pxy.second + 0.5);
         if (irx < 0 || irx >= width || iry < 0 || iry >= height) {
-          // cout << "*** bad:  irx=" << irx << "  iry=" << iry << endl;
           bad = true;
           continue;
         }
@@ -371,19 +368,19 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
       // detection object can be used to determine the
       // orientation of the target.
       std::pair<float, float> bottomLeft = td.interpolate(-1, -1);
-      int bestRot = -1;
-      float bestDist = FLT_MAX;
+      int best_rot = -1;
+      float best_dist = FLT_MAX;
       for (int i = 0; i < 4; i++) {
         float const dist =
             AprilTags::MathUtil::Distance2D(bottomLeft, quad.quadPoints[i]);
-        if (dist < bestDist) {
-          bestDist = dist;
-          bestRot = i;
+        if (dist < best_dist) {
+          best_dist = dist;
+          best_rot = i;
         }
       }
 
       for (int i = 0; i < 4; i++) {
-        const auto p = quad.quadPoints[(i + bestRot) % 4];
+        const auto p = quad.quadPoints[(i + best_rot) % 4];
         td.p[i] = cv::Point2f(p.first, p.second);
       }
 
