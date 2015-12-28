@@ -355,8 +355,8 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
       thisTagDetection.homography = quad.homography.getH();
       thisTagDetection.hxy = quad.homography.getCXY();
 
-      float c = std::cos(thisTagDetection.rotation * (float)M_PI / 2);
-      float s = std::sin(thisTagDetection.rotation * (float)M_PI / 2);
+      float c = std::cos(thisTagDetection.num_rotations * (float)M_PI / 2);
+      float s = std::sin(thisTagDetection.num_rotations * (float)M_PI / 2);
       Eigen::Matrix3d R;
       R.setZero();
       R(0, 0) = R(1, 1) = c;
@@ -422,13 +422,13 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
       newFeature = false;
 
       // This detection is worse than the previous one... just don't use it.
-      if (thisTagDetection.hammingDistance > otherTagDetection.hammingDistance)
+      if (thisTagDetection.hamming_distance > otherTagDetection.hamming_distance)
         continue;
 
       // Otherwise, keep the new one if it either has strictly *lower* error, or
       // greater perimeter.
-      if (thisTagDetection.hammingDistance <
-              otherTagDetection.hammingDistance ||
+      if (thisTagDetection.hamming_distance <
+              otherTagDetection.hamming_distance ||
           thisTagDetection.observedPerimeter >
               otherTagDetection.observedPerimeter)
         goodDetections[odidx] = thisTagDetection;

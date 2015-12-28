@@ -1,6 +1,7 @@
 #include <iostream>
 
 #include "AprilTags/TagFamily.h"
+#include <numeric>
 
 /**
 
@@ -35,44 +36,44 @@ unsigned TagFamily::payload_bits() const { return tag_codes_.payload_bits; }
 unsigned TagFamily::dimension_bits() const { return tag_codes_.dimension_bits; }
 unsigned TagFamily::min_hamming() const { return tag_codes_.min_hamming; }
 const std::vector<code_t> &TagFamily::codes() const { return tag_codes_.codes; }
+size_t TagFamily::num_codes() const { return num_codes(); }
 
 void TagFamily::set_error_recovery_bits(unsigned error_recovery_bits) {
   error_recovery_bits_ = error_recovery_bits;
 }
-
 void TagFamily::set_error_recovery_fraction(float v) {
   error_recovery_bits_ = static_cast<unsigned>(((min_hamming() - 1) / 2) * v);
 }
 
-void TagFamily::decode(TagDetection &det, code_t rCode) const {
-  int bestId = -1;
-  int bestHamming = INT_MAX;
-  int bestRotation = 0;
-  code_t bestCode = 0;
+void TagFamily::decode(TagDetection &det, code_t obs_code) const {
+  int best_id = -1;
+  int best_hamming = std::numeric_limits<int>::max();
+  int best_rotation = 0;
+  code_t best_code = 0;
 
-  code_t rCodes[4];
-  rCodes[0] = rCode;
-  rCodes[1] = rotate90_cwise(rCodes[0], dimension_bits());
-  rCodes[2] = rotate90_cwise(rCodes[1], dimension_bits());
-  rCodes[3] = rotate90_cwise(rCodes[2], dimension_bits());
+  code_t rot_codes[4];
+  rot_codes[0] = obs_code;
+  rot_codes[1] = rotate90_cwise(rot_codes[0], dimension_bits());
+  rot_codes[2] = rotate90_cwise(rot_codes[1], dimension_bits());
+  rot_codes[3] = rotate90_cwise(rot_codes[2], dimension_bits());
 
-  for (unsigned int id = 0; id < codes().size(); id++) {
-    for (unsigned int rot = 0; rot < 4; rot++) {
-      int thisHamming = hamming_distance(rCodes[rot], codes()[id]);
-      if (thisHamming < bestHamming) {
-        bestHamming = thisHamming;
-        bestRotation = rot;
-        bestId = id;
-        bestCode = codes()[id];
+  for (unsigned int id = 0; id < num_codes_; ++id) {
+    for (unsigned int rot = 0; rot < 4; ++rot) {
+      int hamming = hamming_distance(rot_codes[rot], codes()[id]);
+      if (hamming < best_hamming) {
+        best_hamming = hamming;
+        best_rotation = rot;
+        best_id = id;
+        best_code = codes()[id];
       }
     }
   }
-  det.id = bestId;
-  det.hammingDistance = bestHamming;
-  det.rotation = bestRotation;
-  det.good = (det.hammingDistance <= error_recovery_bits_);
-  det.obsCode = rCode;
-  det.code = bestCode;
+  det.id = best_id;
+  det.hamming_distance = best_hamming;
+  det.num_rotations = best_rotation;
+  det.good = (det.hamming_distance <= error_recovery_bits_);
+  det.obs_code = obs_code;
+  det.code = best_code;
 }
 
 code_t rotate90_cwise(code_t w, int d) {

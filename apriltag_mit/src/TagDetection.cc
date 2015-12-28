@@ -3,27 +3,15 @@
 #include "AprilTags/TagDetection.h"
 #include "AprilTags/MathUtil.h"
 
-#ifdef PLATFORM_APERIOS
-// missing/broken isnan
-namespace std {
-static bool isnan(float x) {
-  const int EXP = 0x7f800000;
-  const int FRAC = 0x007fffff;
-  const int y = *((int *)(&x));
-  return ((y & EXP) == EXP && (y & FRAC) != 0);
-}
-}
-#endif
-
 namespace AprilTags {
 
 TagDetection::TagDetection()
     : good(false),
-      obsCode(),
+      obs_code(),
       code(),
       id(),
-      hammingDistance(),
-      rotation(),
+      hamming_distance(),
+      num_rotations(),
       p(),
       cxy(),
       observedPerimeter(),
@@ -34,11 +22,11 @@ TagDetection::TagDetection()
 
 TagDetection::TagDetection(int _id)
     : good(false),
-      obsCode(),
+      obs_code(),
       code(),
       id(_id),
-      hammingDistance(),
-      rotation(),
+      hamming_distance(),
+      num_rotations(),
       p(),
       cxy(),
       observedPerimeter(),
@@ -243,26 +231,6 @@ void TagDetection::scaleTag(float scale) {
     c.first *= scale;
     c.second *= scale;
   }
-}
-
-void TagDetection::refineTag(const cv::Mat &image) {
-  std::vector<cv::Point2f> corners;
-  for (const std::pair<float, float> &c : p) {
-    corners.push_back(cv::Point2f(c.first, c.second));
-  }
-  const auto criteria =
-      cv::TermCriteria(CV_TERMCRIT_EPS + CV_TERMCRIT_ITER, 20, 0.001);
-  cv::cornerSubPix(image, corners, cv::Size(3, 3), cv::Size(-1, -1), criteria);
-
-  decltype(cxy.first) sum_x{0.0}, sum_y{0.0};
-  for (size_t i = 0; i < 4; ++i) {
-    p[i].first = corners[i].x;
-    p[i].second = corners[i].y;
-    sum_x += p[i].first;
-    sum_y += p[i].second;
-  }
-  cxy.first = sum_x / 4;
-  cxy.second = sum_y / 4;
 }
 
 }  // namespace

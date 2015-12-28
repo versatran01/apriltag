@@ -122,7 +122,7 @@ ApriltagVec ApriltagDetectorMit::DetectImpl(const cv::Mat& image) {
     apriltag.bits = tag_bits();
     apriltag.border = black_border();
     apriltag.family = tag_family();
-    apriltag.hamming = td.hammingDistance;
+    apriltag.hamming = td.hamming_distance;
     apriltag.center.x = td.cxy.first;
     apriltag.center.y = td.cxy.second;
     for (size_t i = 0; i < 4; ++i) {

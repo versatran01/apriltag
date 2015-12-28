@@ -21,17 +21,22 @@ class TagFamily {
   unsigned dimension_bits() const;
   unsigned min_hamming() const;
   const std::vector<code_t>& codes() const;
+  size_t num_codes() const;
 
   void set_error_recovery_bits(unsigned error_recovery_bits);
   void set_error_recovery_fraction(float v);
 
-  //! Given an observed tag with code 'rCode', try to recover the id.
-  /*  The corresponding fields of TagDetection will be filled in. */
-  void decode(TagDetection& det, code_t rCode) const;
+  /**
+   * @brief decode Recover id from observed code
+   * @param det
+   * @param obs_code
+   */
+  void decode(TagDetection& det, code_t obs_code) const;
 
  private:
   const TagCodes& tag_codes_;
   const size_t num_codes_;
+
   /**
    * @brief error_recovery_bits_
    * The error recovery value determines our position on the ROC curve. We will

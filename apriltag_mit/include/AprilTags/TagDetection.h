@@ -2,8 +2,9 @@
 #define APRILTAGS_TAGDETECTION_H_
 
 #include <Eigen/Dense>
+#include <opencv2/core/core.hpp>
 
-#include "opencv2/opencv.hpp"
+#include "AprilTags/TagCodes.h"
 
 #include <utility>
 #include <vector>
@@ -23,20 +24,20 @@ struct TagDetection {
   bool good;
 
   //! Observed code
-  long long obsCode;
+  code_t obs_code;
 
   //! Matched code
-  long long code;
+  code_t code;
 
   //! What was the ID of the detected tag?
-  int id;
+  unsigned id;
 
   //! The hamming distance between the detected code and the true code
-  int hammingDistance;
+  unsigned hamming_distance;
 
   //! How many 90 degree rotations were required to align the code (internal use
   // only)
-  int rotation;
+  unsigned num_rotations;
 
   /////////////// Fields below are filled in by TagDetector ///////////////
   //! Position (in fractional pixel coordinates) of the detection.
@@ -114,9 +115,6 @@ struct TagDetection {
   //! Scale this tag
   // TODO: Also need to scale homography?
   void scaleTag(float scale);
-
-  //! Refine this detection using cornerSubPix
-  void refineTag(const cv::Mat& image);
 };
 
 }  // namespace AprilTags
