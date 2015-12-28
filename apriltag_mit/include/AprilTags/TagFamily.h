@@ -7,32 +7,17 @@
 #include <vector>
 #include <map>
 
+#include "AprilTags/TagCodes.h"
 #include "AprilTags/TagDetection.h"
-using namespace std;
 
 namespace AprilTags {
-
-class TagCodes {
- public:
-  int bits;
-  int minHammingDistance;
-  std::vector<unsigned long long> codes;
-
- public:
-  TagCodes(int bits, int minHammingDistance, const unsigned long long* codesA,
-           int num)
-      : bits(bits),
-        minHammingDistance(minHammingDistance),
-        codes(codesA, codesA + num)  // created vector for all entries of codesA
-  {}
-};
 
 //! Generic class for all tag encoding families
 class TagFamily {
  public:
   //! The codes array is not copied internally and so must not be modified
   // externally.
-  TagFamily(const TagCodes& tagCodes);
+  TagFamily(const TagCodes& tag_codes);
 
   void setErrorRecoveryBits(int b);
 
@@ -67,7 +52,7 @@ class TagFamily {
   //  int blackBorder;
 
   //! Number of bits in the tag. Must be n^2.
-  int bits;
+  int payload_bits_;
 
   //! Dimension of tag. e.g. for 16 bits, dimension=4. Must be sqrt(bits).
   int dimension;
@@ -76,7 +61,7 @@ class TagFamily {
   /*  Accounting for rotational ambiguity? The code can recover
    *  (minHammingDistance-1)/2 bit errors.
    */
-  int minimumHammingDistance;
+  int min_hamming_distance_;
 
   /* The error recovery value determines our position on the ROC
    * curve. We will report codes that are within errorRecoveryBits

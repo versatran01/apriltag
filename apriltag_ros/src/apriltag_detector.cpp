@@ -89,7 +89,7 @@ ApriltagDetectorMit::ApriltagDetectorMit(const TagFamily& tag_family)
 }
 
 void ApriltagDetectorMit::SetBlackBorder(int black_border) {
-  tag_detector_->setBlackBorder(black_border);
+  tag_detector_->set_black_border(black_border);
 }
 
 ApriltagVec ApriltagDetectorMit::DetectImpl(const cv::Mat& image) {
@@ -103,7 +103,7 @@ ApriltagVec ApriltagDetectorMit::DetectImpl(const cv::Mat& image) {
   }
 
   // Detection
-  auto detections = tag_detector_->extractTags(im_scaled);
+  auto detections = tag_detector_->ExtractTags(im_scaled);
 
   // Handle decimation
   if (decimate_ > 1) {

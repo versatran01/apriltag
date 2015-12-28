@@ -24,22 +24,24 @@ TagFamily *tag36h11 = new TagFamily(tagCodes36h11);
 
 namespace AprilTags {
 
-TagFamily::TagFamily(const TagCodes &tagCodes)
-    : bits(tagCodes.bits),
-      dimension((int)std::sqrt((float)bits)),
-      minimumHammingDistance(tagCodes.minHammingDistance),
+using namespace std;
+
+TagFamily::TagFamily(const TagCodes &tag_codes)
+    : payload_bits_(tag_codes.payload_bits_),
+      dimension((int)std::sqrt((float)payload_bits_)),
+      min_hamming_distance_(tag_codes.min_hamming_distance_),
       errorRecoveryBits(1),
       codes() {
-  if (bits != dimension * dimension)
-    cerr << "Error: TagFamily constructor called with bits=" << bits
+  if (payload_bits_ != dimension * dimension)
+    cerr << "Error: TagFamily constructor called with bits=" << payload_bits_
          << "; must be a square number!" << endl;
-  codes = tagCodes.codes;
+  codes = tag_codes.codes;
 }
 
 void TagFamily::setErrorRecoveryBits(int b) { errorRecoveryBits = b; }
 
 void TagFamily::setErrorRecoveryFraction(float v) {
-  errorRecoveryBits = (int)(((int)(minimumHammingDistance - 1) / 2) * v);
+  errorRecoveryBits = (int)(((int)(min_hamming_distance_ - 1) / 2) * v);
 }
 
 unsigned long long TagFamily::rotate90(unsigned long long w, int d) {

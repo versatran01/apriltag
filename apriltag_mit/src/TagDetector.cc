@@ -28,40 +28,29 @@ using namespace std;
 
 namespace AprilTags {
 
-std::vector<TagDetection> TagDetector::extractTags(const cv::Mat &image) {
+TagDetector::TagDetector(const TagCodes &tag_codes, int black_border)
+    : tag_family_(tag_codes), black_border_(black_border) {}
+
+void TagDetector::set_black_border(int blackBorder) {
+  this->black_border_ = blackBorder;
+}
+int TagDetector::black_border() const { return black_border_; }
+
+std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
   int width = image.cols;
   int height = image.rows;
-  AprilTags::FloatImage fimOrig(image);
-  std::pair<int, int> opticalCenter(width / 2, height / 2);
+  AprilTags::FloatImage im_orig(image);
+  std::pair<int, int> optical_center(width / 2, height / 2);
 
   //================================================================
   // Step one: preprocess image (convert to grayscale) and low pass if necessary
 
   // This is a copy
-  FloatImage fim = fimOrig;
+  FloatImage fim = im_orig;
 
-  //! Gaussian smoothing kernel applied to image (0 == no filter).
-  /*! Used when sampling bits. Filtering is a good idea in cases
-   * where A) a cheap camera is introducing artifical sharpening, B)
-   * the bayer pattern is creating artifacts, C) the sensor is very
-   * noisy and/or has hot/cold pixels. However, filtering makes it
-   * harder to decode very small tags. Reasonable values are 0, or
-   * [0.8, 1.5].
-   */
-  float sigma = 0;
-
-  //! Gaussian smoothing kernel applied to image (0 == no filter).
-  /*! Used when detecting the outline of the box. It is almost always
-   * useful to have some filtering, since the loss of small details
-   * won't hurt. Recommended value = 0.8. The case where sigma ==
-   * segsigma has been optimized to avoid a redundant filter
-   * operation.
-   */
-  float segSigma = 0.8f;
-
-  if (sigma > 0) {
-    int filtsz = ((int)max(3.0f, 3 * sigma)) | 1;
-    fim.filterFactoredCentered(filtsz, sigma);
+  if (sampling_sigma_ > 0) {
+    int filtsz = ((int)max(3.0f, 3 * sampling_sigma_)) | 1;
+    fim.filterFactoredCentered(filtsz, sampling_sigma_);
   }
 
   //================================================================
@@ -71,34 +60,29 @@ std::vector<TagDetection> TagDetector::extractTags(const cv::Mat &image) {
   // low pass on this step even if we don't want it for encoding.
 
   FloatImage fimSeg;
-  if (segSigma > 0) {
-    if (segSigma == sigma) {
+  if (segment_sigma_ > 0) {
+    if (segment_sigma_ == sampling_sigma_) {
       fimSeg = fim;
     } else {
       // blur anew
-      int filtsz = ((int)max(3.0f, 3 * segSigma)) | 1;
-      fimSeg = fimOrig;
-      fimSeg.filterFactoredCentered(filtsz, segSigma);
+      int filtsz = ((int)max(3.0f, 3 * segment_sigma_)) | 1;
+      fimSeg = im_orig;
+      fimSeg.filterFactoredCentered(filtsz, segment_sigma_);
     }
   } else {
-    fimSeg = fimOrig;
+    fimSeg = im_orig;
   }
 
   FloatImage fimTheta(fimSeg.getWidth(), fimSeg.getHeight());
   FloatImage fimMag(fimSeg.getWidth(), fimSeg.getHeight());
 
-#pragma omp parallel for
   for (int y = 1; y < fimSeg.getHeight() - 1; y++) {
     for (int x = 1; x < fimSeg.getWidth() - 1; x++) {
       float Ix = fimSeg.get(x + 1, y) - fimSeg.get(x - 1, y);
       float Iy = fimSeg.get(x, y + 1) - fimSeg.get(x, y - 1);
 
       float mag = Ix * Ix + Iy * Iy;
-#if 0  // kaess: fast version, but maybe less accurate?
-      float theta = MathUtil::fast_atan2(Iy, Ix);
-#else
       float theta = atan2(Iy, Ix);
-#endif
 
       fimTheta.set(x, y, theta);
       fimMag.set(x, y, mag);
@@ -307,7 +291,7 @@ std::vector<TagDetection> TagDetector::extractTags(const cv::Mat &image) {
   vector<Segment *> tmp(5);
   for (unsigned int i = 0; i < segments.size(); i++) {
     tmp[0] = &segments[i];
-    Quad::search(fimOrig, tmp, segments[i], 0, quads, opticalCenter);
+    Quad::search(im_orig, tmp, segments[i], 0, quads, optical_center);
   }
 
   //================================================================
@@ -322,7 +306,7 @@ std::vector<TagDetection> TagDetector::extractTags(const cv::Mat &image) {
 
     // Find a threshold
     GrayModel blackModel, whiteModel;
-    const int dd = 2 * blackBorder_ + thisTagFamily.dimension;
+    const int dd = 2 * black_border_ + tag_family_.dimension;
 
     for (int iy = -1; iy <= dd; iy++) {
       float y = (iy + 0.5f) / dd;
@@ -342,10 +326,10 @@ std::vector<TagDetection> TagDetector::extractTags(const cv::Mat &image) {
 
     bool bad = false;
     unsigned long long tagCode = 0;
-    for (int iy = thisTagFamily.dimension - 1; iy >= 0; iy--) {
-      float y = (blackBorder_ + iy + 0.5f) / dd;
-      for (int ix = 0; ix < thisTagFamily.dimension; ix++) {
-        float x = (blackBorder_ + ix + 0.5f) / dd;
+    for (int iy = tag_family_.dimension - 1; iy >= 0; iy--) {
+      float y = (black_border_ + iy + 0.5f) / dd;
+      for (int ix = 0; ix < tag_family_.dimension; ix++) {
+        float x = (black_border_ + ix + 0.5f) / dd;
         std::pair<float, float> pxy = quad.interpolate01(x, y);
         int irx = (int)(pxy.first + 0.5);
         int iry = (int)(pxy.second + 0.5);
@@ -365,7 +349,7 @@ std::vector<TagDetection> TagDetector::extractTags(const cv::Mat &image) {
 
     if (!bad) {
       TagDetection thisTagDetection;
-      thisTagFamily.decode(thisTagDetection, tagCode);
+      tag_family_.decode(thisTagDetection, tagCode);
 
       // compute the homography (and rotate it appropriately)
       thisTagDetection.homography = quad.homography.getH();

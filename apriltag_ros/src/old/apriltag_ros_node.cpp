@@ -137,7 +137,7 @@ void cam_callback(const sensor_msgs::ImageConstPtr &image,
   // Use apriltag_mit
   static AprilTags::TagDetector tag_detector(AprilTags::tagCodes36h11);
   std::vector<AprilTags::TagDetection> detections =
-      tag_detector.extractTags(cv_ptr->image);
+      tag_detector.ExtractTags(cv_ptr->image);
 
   // Check detection size, only do work if there's tag detected
   if (detections.size()) {
