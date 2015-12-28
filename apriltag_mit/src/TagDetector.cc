@@ -325,7 +325,7 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
     }
 
     bool bad = false;
-    code_t tagCode = 0;
+    code_t tag_code = 0;
     for (int iy = tag_family_.dimension_bits() - 1; iy >= 0; iy--) {
       float y = (black_border_ + iy + 0.5f) / dd;
       for (int ix = 0; ix < tag_family_.dimension_bits(); ix++) {
@@ -342,16 +342,16 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
             (blackModel.interpolate(x, y) + whiteModel.interpolate(x, y)) *
             0.5f;
         float v = fim.get(irx, iry);
-        tagCode = tagCode << 1;
-        if (v > threshold) tagCode |= 1;
+        tag_code = tag_code << 1;
+        if (v > threshold) tag_code |= 1;
       }
     }
 
     if (!bad) {
-      auto td = tag_family_.Decode(tagCode);
+      auto td = tag_family_.Decode(tag_code);
 
       // compute the homography (and rotate it appropriately)
-      td.homography = quad.homography.getH();
+      td.H = quad.homography.getH();
       td.hxy = quad.homography.getCXY();
 
       float c = std::cos(td.num_rotations * (float)M_PI / 2);
@@ -363,8 +363,8 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
       R(1, 0) = s;
       R(2, 2) = 1;
       Eigen::Matrix3d tmp;
-      tmp = td.homography * R;
-      td.homography = tmp;
+      tmp = td.H * R;
+      td.H = tmp;
 
       // Rotate points in detection according to decoded
       // orientation.  Thus the order of the points in the
@@ -386,7 +386,7 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
 
       if (td.good) {
         td.cxy = quad.interpolate01(0.5f, 0.5f);
-        td.observedPerimeter = quad.observedPerimeter;
+        td.obs_perimeter = quad.observedPerimeter;
         detections.push_back(td);
       }
     }
@@ -399,7 +399,7 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
   // keep the one with the lowest error, and if the error is the same,
   // the one with the greatest observed perimeter.
 
-  std::vector<TagDetection> goodDetections;
+  std::vector<TagDetection> good_td;
 
   // NOTE: allow multiple non-overlapping detections of the same target.
 
@@ -409,11 +409,11 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
 
     bool newFeature = true;
 
-    for (unsigned int odidx = 0; odidx < goodDetections.size(); odidx++) {
-      TagDetection &otherTagDetection = goodDetections[odidx];
+    for (unsigned int odidx = 0; odidx < good_td.size(); odidx++) {
+      TagDetection &otherTagDetection = good_td[odidx];
 
       if (thisTagDetection.id != otherTagDetection.id ||
-          !thisTagDetection.overlapsTooMuch(otherTagDetection))
+          !thisTagDetection.OverlapsTooMuch(otherTagDetection))
         continue;
 
       // There's a conflict.  We must pick one to keep.
@@ -428,15 +428,14 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
       // greater perimeter.
       if (thisTagDetection.hamming_distance <
               otherTagDetection.hamming_distance ||
-          thisTagDetection.observedPerimeter >
-              otherTagDetection.observedPerimeter)
-        goodDetections[odidx] = thisTagDetection;
+          thisTagDetection.obs_perimeter > otherTagDetection.obs_perimeter)
+        good_td[odidx] = thisTagDetection;
     }
 
-    if (newFeature) goodDetections.push_back(thisTagDetection);
+    if (newFeature) good_td.push_back(thisTagDetection);
   }
 
-  return goodDetections;
+  return good_td;
 }
 
 }  // namespace

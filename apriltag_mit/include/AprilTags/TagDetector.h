@@ -26,6 +26,7 @@ class TagDetector {
    * @brief black_border_ Number of bits of black border of the tag
    */
   int black_border_ = 1;
+
   /**
    * @brief sigma_ Gaussian smoothing kernel applied to image
    * Used when sampling bits. Filtering is a good idea in cases where A) a cheap
@@ -35,6 +36,7 @@ class TagDetector {
    * values are 0, 0.8, 1.5
    */
   float sampling_sigma_ = 0.8;
+
   /**
    * @brief segment_sigma_ Gaussian smoothing kernel applied to image
    * Used when detecting the outline of the box. It is almost always useful to

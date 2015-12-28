@@ -14,12 +14,7 @@ namespace AprilTags {
 using Pointf = std::pair<float, float>;
 
 struct TagDetection {
-  //! Constructor
-  TagDetection();
-
-  //! Constructor for manually creating tags in a world map
-  TagDetection(unsigned id);
-
+  TagDetection() = default;
   TagDetection(unsigned id, bool good, code_t obs_code, code_t code,
                unsigned hamming_distance, unsigned num_rotations)
       : id(id),
@@ -29,23 +24,29 @@ struct TagDetection {
         hamming_distance(hamming_distance),
         num_rotations(num_rotations) {}
 
-  //! What was the ID of the detected tag?
   unsigned id;
 
-  //! Is the detection good enough?
-  bool good;
+  bool good = false;
 
-  //! Observed code
+  /**
+   * @brief obs_code Observed code
+   */
   code_t obs_code;
 
-  //! Matched code
+  /**
+   * @brief code Matched code
+   */
   code_t code;
 
-  //! The hamming distance between the detected code and the true code
+  /**
+   * @brief hamming_distance
+   */
   unsigned hamming_distance;
 
-  //! How many 90 degree rotations were required to align the code (internal use
-  // only)
+  /**
+   * @brief num_rotations Number of 90 degree rotations clockwise required to
+   * align the code
+   */
   unsigned num_rotations;
 
   /////////////// Fields below are filled in by TagDetector ///////////////
@@ -58,10 +59,12 @@ struct TagDetection {
   //! Center of tag in pixel coordinates.
   std::pair<float, float> cxy;
 
-  //! Measured in pixels, how long was the observed perimeter.
-  /*! Observed perimeter excludes the inferred perimeter which is used to
-   * connect incomplete quads. */
-  float observedPerimeter;
+  /**
+   * @brief obs_perimeter length of the observed perimeter
+   * Observed perimeter excludes the inferred perimeter which is used to connect
+   * incomplete quads
+   */
+  float obs_perimeter;
 
   //! A 3x3 homography that computes pixel coordinates from tag-relative
   // coordinates.
@@ -73,10 +76,7 @@ struct TagDetection {
    * orientation
    *  of the target.
    */
-  Eigen::Matrix3d homography;
-
-  //! Orientation in the xy plane
-  float getXYOrientation() const;
+  Eigen::Matrix3d H;
 
   //! The homography is relative to image center, whose coordinates are below.
   std::pair<float, float> hxy;
@@ -86,7 +86,14 @@ struct TagDetection {
   std::pair<float, float> interpolate(float x, float y) const;
 
   //! Used to eliminate redundant tags
-  bool overlapsTooMuch(const TagDetection& other) const;
+  bool OverlapsTooMuch(const TagDetection& other) const;
+
+  //! Scale this tag
+  // TODO: Also need to scale homography?
+  void scaleTag(float scale);
+
+  //! Orientation in the xy plane
+  //  float getXYOrientation() const;
 
   //! Relative pose of tag with respect to the camera
   /* Returns the relative location and orientation of the tag using a
@@ -96,34 +103,27 @@ struct TagDetection {
      calibration (focal length and principal point); Result is in
      camera frame (z forward, x right, y down)
   */
-  Eigen::Matrix4d getRelativeTransform(double tag_size, double fx, double fy,
-                                       double px, double py) const;
+  //  Eigen::Matrix4d getRelativeTransform(double tag_size, double fx, double
+  //  fy,
+  //                                       double px, double py) const;
 
   //! Recover rotation matrix and translation vector of April tag relative to
   // camera.
   // Result is in object frame (x forward, y left, z up)
-  void getRelativeTranslationRotation(double tag_size, double fx, double fy,
-                                      double px, double py,
-                                      Eigen::Vector3d& trans,
-                                      Eigen::Matrix3d& rot) const;
-
-  //! Draw the detection within the supplied image, including boarders and tag
-  // ID.
-  void draw(cv::Mat& image, int thickness = 1) const;
+  //  void getRelativeTranslationRotation(double tag_size, double fx, double fy,
+  //                                      double px, double py,
+  //                                      Eigen::Vector3d& trans,
+  //                                      Eigen::Matrix3d& rot) const;
 
   //! Better version
-  Eigen::Matrix4d getRelativeH(double tag_size, const cv::Matx33d& K,
-                               const cv::Mat_<double>& D) const;
-  void getRelativeQT(double tag_size, const cv::Matx33d& K,
-                     const cv::Mat_<double>& D, Eigen::Quaterniond& quat,
-                     Eigen::Vector3d& trans) const;
-  void getRelativeRT(double tag_size, const cv::Matx33d& K,
-                     const cv::Mat_<double>& D, cv::Mat& rvec,
-                     cv::Mat& tvec) const;
-
-  //! Scale this tag
-  // TODO: Also need to scale homography?
-  void scaleTag(float scale);
+  //  Eigen::Matrix4d getRelativeH(double tag_size, const cv::Matx33d& K,
+  //                               const cv::Mat_<double>& D) const;
+  //  void getRelativeQT(double tag_size, const cv::Matx33d& K,
+  //                     const cv::Mat_<double>& D, Eigen::Quaterniond& quat,
+  //                     Eigen::Vector3d& trans) const;
+  //  void getRelativeRT(double tag_size, const cv::Matx33d& K,
+  //                     const cv::Mat_<double>& D, cv::Mat& rvec,
+  //                     cv::Mat& tvec) const;
 };
 
 }  // namespace AprilTags

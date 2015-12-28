@@ -84,14 +84,14 @@ TagDetection TagFamily::Decode(code_t obs_code) const {
 
 code_t Rotate90Cwise(code_t w, int d) {
   code_t wr = 0;
-  const code_t oneLongLong = 1;
+  const code_t one = 1;
 
   for (int r = d - 1; r >= 0; r--) {
     for (int c = 0; c < d; c++) {
       int b = r + d * c;
       wr = wr << 1;
 
-      if ((w & (oneLongLong << b)) != 0) wr |= 1;
+      if ((w & (one << b)) != 0) wr |= 1;
     }
   }
   return wr;
