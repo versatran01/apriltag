@@ -22,7 +22,7 @@ DetectorNode::DetectorNode(const ros::NodeHandle &nh,
       sub_camera_(
           it_.subscribeCamera("image_raw", 1, &DetectorNode::CameraCb, this)),
       pub_tags_(nh_.advertise<apriltag_ros::Apriltags>("apriltags", 1)),
-      tag_detector_(AprilTags::tagCodes36h11),
+      tag_detector_(AprilTags::tag_codes_36h11),
       tag_viz_(nh, "apriltags_marker") {
   // Do nothing if nobody subscribes
   /*

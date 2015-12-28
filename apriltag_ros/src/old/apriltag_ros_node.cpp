@@ -135,7 +135,7 @@ void cam_callback(const sensor_msgs::ImageConstPtr &image,
 
 #elif defined(BUILD_MIT)
   // Use apriltag_mit
-  static AprilTags::TagDetector tag_detector(AprilTags::tagCodes36h11);
+  static AprilTags::TagDetector tag_detector(AprilTags::tag_codes_36h11);
   std::vector<AprilTags::TagDetection> detections =
       tag_detector.ExtractTags(cv_ptr->image);
 

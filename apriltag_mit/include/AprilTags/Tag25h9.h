@@ -42,9 +42,11 @@
 
 #pragma once
 
+#include "AprilTags/TagCodes.h"
+
 namespace AprilTags {
 
-const unsigned long long t25h9[] = {
+static const std::vector<code_t> t25h9 = {
     0x155cbf1LL, 0x1e4d1b6LL, 0x17b0b68LL, 0x1eac9cdLL, 0x12e14ceLL,
     0x3548bbLL,  0x7757e6LL,  0x1065dabLL, 0x1baa2e7LL, 0xdea688LL,
     0x81d927LL,  0x51b241LL,  0xdbc8aeLL,  0x1e50e19LL, 0x15819d2LL,
@@ -53,6 +55,6 @@ const unsigned long long t25h9[] = {
     0x870fa4LL,  0x914709LL,  0x16684f0LL, 0xc8f2a5LL,  0x833ebbLL,
     0x59717fLL,  0x13cd050LL, 0xfa0ad1LL,  0x1b763b0LL, 0xb991ceLL};
 
-static const TagCodes tagCodes25h9 =
-    TagCodes(25, 9, t25h9, sizeof(t25h9) / sizeof(t25h9[0]));
-}
+static const auto tag_codes_25h9 = TagCodes(25, 9, t25h9);
+
+}  // namespace AprilTags

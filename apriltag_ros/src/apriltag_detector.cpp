@@ -75,13 +75,13 @@ ApriltagDetectorMit::ApriltagDetectorMit(const TagFamily& tag_family)
     : ApriltagDetector(DetectorType::Mit, tag_family) {
   switch (tag_family) {
     case TagFamily::tf36h11:
-      tag_detector_ = boost::make_shared<mit::TagDetector>(mit::tagCodes36h11);
+      tag_detector_ = boost::make_shared<mit::TagDetector>(mit::tag_codes_36h11);
       break;
     case TagFamily::tf25h9:
-      tag_detector_ = boost::make_shared<mit::TagDetector>(mit::tagCodes25h9);
+      tag_detector_ = boost::make_shared<mit::TagDetector>(mit::tag_codes_25h9);
       break;
     case TagFamily::tf16h5:
-      tag_detector_ = boost::make_shared<mit::TagDetector>(mit::tagCodes16h5);
+      tag_detector_ = boost::make_shared<mit::TagDetector>(mit::tag_codes_16h5);
       break;
     default:
       throw std::invalid_argument("Invalid tag family");

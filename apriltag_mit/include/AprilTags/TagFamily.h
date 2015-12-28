@@ -15,23 +15,15 @@ namespace AprilTags {
 //! Generic class for all tag encoding families
 class TagFamily {
  public:
-  //! The codes array is not copied internally and so must not be modified
-  // externally.
-  TagFamily(const TagCodes& tag_codes);
+  explicit TagFamily(const TagCodes& tag_codes);
 
-  void setErrorRecoveryBits(int b);
+  unsigned payload_bits() const;
+  unsigned dimension_bits() const;
+  unsigned min_hamming() const;
+  const std::vector<code_t>& codes() const;
 
-  void setErrorRecoveryFraction(float v);
-
-  /* if the bits in w were arranged in a d*d grid and that grid was
-   * rotated, what would the new bits in w be?
-   * The bits are organized like this (for d = 3):
-   *
-   *  8 7 6       2 5 8      0 1 2
-   *  5 4 3  ==>  1 4 7 ==>  3 4 5    (rotate90 applied twice)
-   *  2 1 0       0 3 6      6 7 8
-   */
-  static code_t rotate90(code_t w, int d);
+  void set_error_recovery_bits(unsigned error_recovery_bits);
+  void set_error_recovery_fraction(float v);
 
   //! Computes the hamming distance between two code_ts.
   static int hammingDistance(code_t a, code_t b);
@@ -49,30 +41,6 @@ class TagFamily {
   //! Numer of pixels wide of the inner black border.
   //  int blackBorder;
 
-  //! Number of bits in the tag. Must be n^2.
-  int payload_bits_;
-
-  //! Dimension of tag. e.g. for 16 bits, dimension=4. Must be sqrt(bits).
-  int dimension_bits_;
-
-  //! Minimum hamming distance between any two codes.
-  /*  Accounting for rotational ambiguity? The code can recover
-   *  (minHammingDistance-1)/2 bit errors.
-   */
-  int min_hamming_distance_;
-
-  /* The error recovery value determines our position on the ROC
-   * curve. We will report codes that are within errorRecoveryBits
-   * of a valid code. Small values mean greater rejection of bogus
-   * tags (but false negatives). Large values mean aggressive
-   * reporting of bad tags (but with a corresponding increase in
-   * false positives).
-   */
-  int error_recovery_bits_;
-
-  //! The array of the codes. The id for a code is its index.
-  std::vector<code_t> codes;
-
   static const int popCountTableShift = 12;
   static const unsigned int popCountTableSize = 1 << popCountTableShift;
   static unsigned char popCountTable[popCountTableSize];
@@ -85,7 +53,30 @@ class TagFamily {
         TagFamily::popCountTable[i] = TagFamily::popCountReal(i);
     }
   } initializer;
+
+ private:
+  const TagCodes& tag_codes_;
+  const size_t num_codes_;
+  /**
+   * @brief error_recovery_bits_
+   * The error recovery value determines our position on the ROC curve. We will
+   * report codes that are within error_recovery_bits_ of a valid code. Small
+   * values mean greater rejection of bogus tags (but false negatives). Large
+   * values mean aggressive reporting of bad tags (but with a corresponind
+   * increase in false positives).
+   */
+  unsigned error_recovery_bits_;
 };
+
+/* if the bits in w were arranged in a d*d grid and that grid was
+ * rotated, what would the new bits in w be?
+ * The bits are organized like this (for d = 3):
+ *
+ *  8 7 6       2 5 8      0 1 2
+ *  5 4 3  ==>  1 4 7 ==>  3 4 5    (rotate90 applied twice)
+ *  2 1 0       0 3 6      6 7 8
+ */
+code_t rotate90(code_t w, int d);
 
 }  // namespace AprilTags
 

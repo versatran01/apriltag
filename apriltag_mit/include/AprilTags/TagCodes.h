@@ -2,23 +2,21 @@
 #define APRILTAGS_TAGCODES_H_
 
 #include <vector>
+#include <cmath>
 
 using code_t = unsigned long long;
 
 namespace AprilTags {
-class TagCodes {
- public:
-  TagCodes(int bits, int min_hamming_distance, const code_t* codesA, int num);
+struct TagCodes {
+  TagCodes(unsigned payload_bits, unsigned min_hamming,
+           const std::vector<code_t>& codes)
+      : payload_bits(payload_bits),
+        dimension_bits(std::sqrt(payload_bits)),
+        min_hamming(min_hamming),
+        codes(codes) {}
 
-  int payload_bits() const;
-  int min_hamming_distance() const;
-
-  const std::vector<code_t>& codes() const;
-
- private:
-  int payload_bits_;
-  int min_hamming_distance_;
-  std::vector<code_t> codes_;
+  unsigned payload_bits, dimension_bits, min_hamming;
+  std::vector<code_t> codes;
 };
 
 }  // namespace AprilTags

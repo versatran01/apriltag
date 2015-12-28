@@ -306,7 +306,7 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
 
     // Find a threshold
     GrayModel blackModel, whiteModel;
-    const int dd = 2 * black_border_ + tag_family_.dimension_bits_;
+    const int dd = 2 * black_border_ + tag_family_.dimension_bits();
 
     for (int iy = -1; iy <= dd; iy++) {
       float y = (iy + 0.5f) / dd;
@@ -326,9 +326,9 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
 
     bool bad = false;
     code_t tagCode = 0;
-    for (int iy = tag_family_.dimension_bits_ - 1; iy >= 0; iy--) {
+    for (int iy = tag_family_.dimension_bits() - 1; iy >= 0; iy--) {
       float y = (black_border_ + iy + 0.5f) / dd;
-      for (int ix = 0; ix < tag_family_.dimension_bits_; ix++) {
+      for (int ix = 0; ix < tag_family_.dimension_bits(); ix++) {
         float x = (black_border_ + ix + 0.5f) / dd;
         std::pair<float, float> pxy = quad.interpolate01(x, y);
         int irx = (int)(pxy.first + 0.5);

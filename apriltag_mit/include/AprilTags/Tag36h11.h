@@ -57,7 +57,7 @@
 
 namespace AprilTags {
 
-const code_t t36h11[] = {
+static const std::vector<code_t> t36h11 = {
     0xd5d628584LL, 0xd97f18b49LL, 0xdd280910eLL, 0xe479e9c98LL, 0xebcbca822LL,
     0xf31dab3acLL, 0x056a5d085LL, 0x10652e1d4LL, 0x22b1dfeadLL, 0x265ad0472LL,
     0x34fe91b86LL, 0x3ff962cd5LL, 0x43a25329aLL, 0x474b4385fLL, 0x4e9d243e9LL,
@@ -177,7 +177,6 @@ const code_t t36h11[] = {
     0x1f350ed36LL, 0x18a5e861fLL, 0x2c35b89c3LL, 0x3347ac48aLL, 0x7f23e022eLL,
     0x2459068fbLL, 0xe83be4b73LL};
 
-static const TagCodes tagCodes36h11 =
-    TagCodes(36, 11, t36h11, sizeof(t36h11) / sizeof(t36h11[0]));
+static const auto tag_codes_36h11 = TagCodes(36, 11, t36h11);
 
 }  // namespace AprilTags

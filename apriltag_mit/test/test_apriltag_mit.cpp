@@ -35,7 +35,7 @@ TEST_P(TagFamilyTest, Detection) {
 }
 
 INSTANTIATE_TEST_CASE_P(ThreeTagFamilies, TagFamilyTest,
-                        Values(tagCodes36h11, tagCodes25h9, tagCodes16h5));
+                        Values(tag_codes_36h11, tag_codes_25h9, tag_codes_16h5));
 
 int main(int argc, char **argv) {
   testing::InitGoogleTest(&argc, argv);
