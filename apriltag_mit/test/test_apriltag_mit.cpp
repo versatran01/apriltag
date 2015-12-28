@@ -30,7 +30,7 @@ class TagFamilyTest : public SampleImageTest,
 };
 
 TEST_P(TagFamilyTest, Detection) {
-  const auto tag_detection = tag_detector_.extractTags(test_image_);
+  const auto tag_detection = tag_detector_.ExtractTags(test_image_);
   EXPECT_EQ(4, tag_detection.size());
 }
 

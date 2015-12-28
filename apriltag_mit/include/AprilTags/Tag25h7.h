@@ -41,9 +41,11 @@
 
 #pragma once
 
+#include "AprilTags/TagCodes.h"
+
 namespace AprilTags {
 
-const unsigned long long t25h7[] = {
+const code_t t25h7[] = {
     0x4b770dLL,  0x11693e6LL, 0x1a599abLL, 0xc3a535LL,  0x152aafaLL,
     0xaccd98LL,  0x1cad922LL, 0x2c2fadLL,  0xbb3572LL,  0x14a3b37LL,
     0x186524bLL, 0xc99d4cLL,  0x23bfeaLL,  0x141cb74LL, 0x1d0d139LL,
@@ -96,4 +98,5 @@ const unsigned long long t25h7[] = {
 
 static const TagCodes tagCodes25h7 =
     TagCodes(25, 7, t25h7, sizeof(t25h7) / sizeof(t25h7[0]));
-}
+
+}  // namespace AprilTags
