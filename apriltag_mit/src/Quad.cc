@@ -9,24 +9,14 @@
 namespace AprilTags {
 
 Quad::Quad(const std::vector<std::pair<float, float>> &p,
-           const std::pair<float, float> &opticalCenter)
-    : quadPoints(p), segments(), obs_perimeter(), homography(opticalCenter) {
-#ifdef STABLE_H
+           const std::pair<float, float> &optical_center)
+    : quadPoints(p), segments(), obs_perimeter(), homography(optical_center) {
   std::vector<std::pair<float, float>> srcPts;
   srcPts.push_back(std::make_pair(-1, -1));
   srcPts.push_back(std::make_pair(1, -1));
   srcPts.push_back(std::make_pair(1, 1));
   srcPts.push_back(std::make_pair(-1, 1));
   homography.setCorrespondences(srcPts, p);
-#else
-  homography.addCorrespondence(-1, -1, quadPoints[0].first,
-                               quadPoints[0].second);
-  homography.addCorrespondence(1, -1, quadPoints[1].first,
-                               quadPoints[1].second);
-  homography.addCorrespondence(1, 1, quadPoints[2].first, quadPoints[2].second);
-  homography.addCorrespondence(-1, 1, quadPoints[3].first,
-                               quadPoints[3].second);
-#endif
 
 #ifdef INTERPOLATE
   p0 = Eigen::Vector2f(p[0].first, p[0].second);

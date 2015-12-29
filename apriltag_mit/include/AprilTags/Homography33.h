@@ -41,13 +41,8 @@ class Homography33 {
   //! Constructor
   Homography33(const std::pair<float, float> &opticalCenter);
 
-#ifdef STABLE_H
-  void setCorrespondences(const std::vector<std::pair<float, float> > &srcPts,
-                          const std::vector<std::pair<float, float> > &dstPts);
-#else
-  void addCorrespondence(float worldx, float worldy, float imagex,
-                         float imagey);
-#endif
+  void setCorrespondences(const std::vector<std::pair<float, float>> &srcPts,
+                          const std::vector<std::pair<float, float>> &dstPts);
 
   //! Note that the returned H matrix does not reflect cxy.
   Eigen::Matrix3d &getH();
@@ -56,16 +51,14 @@ class Homography33 {
 
   void compute();
 
-  std::pair<float, float> project(float worldx, float worldy);
+  //  std::pair<float, float> project(float worldx, float worldy);
 
  private:
   std::pair<float, float> cxy;
   Eigen::Matrix<double, 9, 9> fA;
   Eigen::Matrix3d H;
   bool valid;
-#ifdef STABLE_H
-  std::vector<std::pair<float, float> > srcPts, dstPts;
-#endif
+  std::vector<std::pair<float, float>> srcPts, dstPts;
 };
 
 #endif  // APRILTAGS_HOMOGRAPHY33_H_

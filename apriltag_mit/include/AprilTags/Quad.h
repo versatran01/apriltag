@@ -34,7 +34,7 @@ class Quad {
   /*! (x,y) are the optical center of the camera, which is
    *   needed to correctly compute the homography. */
   Quad(const std::vector<std::pair<float, float>>& p,
-       const std::pair<float, float>& opticalCenter);
+       const std::pair<float, float>& optical_center);
 
   //! Interpolate given that the lower left corner of the lower left cell is at
   //(-1,-1) and the upper right corner of the upper right cell is at (1,1).
