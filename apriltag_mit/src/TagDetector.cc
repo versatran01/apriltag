@@ -157,9 +157,9 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
   // 4-connectivity.
   // NOTE: This is the most time consuming part!
   TimerUs t_cluster("cluster");
-  UnionFindSimple uf(im_segment.width() * im_segment.height());
-
   const size_t num_pixels = width * height;
+  UnionFindSimple uf(num_pixels);
+
   vector<Edge> edges(num_pixels * 4);
   size_t num_edges = 0;
 
@@ -185,12 +185,13 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
         if (mag0 < Edge::kMinMag) {
           continue;
         }
-        mag_max[y * width + x] = mag0;
-        mag_min[y * width + x] = mag0;
+        const int id = y * width + x;
+        mag_max[id] = mag0;
+        mag_min[id] = mag0;
 
         const auto theta0 = im_theta.get(x, y);
-        theta_min[y * width + x] = theta0;
-        theta_max[y * width + x] = theta0;
+        theta_min[id] = theta0;
+        theta_max[id] = theta0;
 
         // Calculates then adds edges to 'vector<Edge> edges'
         Edge::calcEdges(theta0, x, y, im_theta, im_mag, edges, num_edges);
@@ -411,8 +412,8 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
       for (int ix = 0; ix < tag_family_.dimension_bits(); ix++) {
         float x = (black_border_ + ix + 0.5f) / dd;
         std::pair<float, float> pxy = quad.interpolate01(x, y);
-        int irx = (int)(pxy.first + 0.5);
-        int iry = (int)(pxy.second + 0.5);
+        int irx = static_cast<int>(pxy.first + 0.5);
+        int iry = static_cast<int>(pxy.second + 0.5);
         if (irx < 0 || irx >= width || iry < 0 || iry >= height) {
           bad = true;
           continue;
@@ -453,15 +454,15 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
       float best_dist = FLT_MAX;
       for (int i = 0; i < 4; i++) {
         float const dist =
-            AprilTags::MathUtil::Distance2D(bottomLeft, quad.quadPoints[i]);
+            AprilTags::MathUtil::Distance2D(bottomLeft, quad.p[i]);
         if (dist < best_dist) {
           best_dist = dist;
           best_rot = i;
         }
       }
 
-      for (int i = 0; i < 4; i++) {
-        const auto p = quad.quadPoints[(i + best_rot) % 4];
+      for (size_t i = 0; i < 4; ++i) {
+        const auto p = quad.p[(i + best_rot) % 4];
         td.p[i] = cv::Point2f(p.first, p.second);
       }
 

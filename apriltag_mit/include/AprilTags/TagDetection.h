@@ -82,9 +82,6 @@ struct TagDetection {
    */
   Eigen::Matrix3d H;
 
-  //! The homography is relative to image center, whose coordinates are below.
-  std::pair<float, float> hxy;
-
   //! Interpolate point given (x,y) is in tag coordinate space from (-1,-1) to
   //(1,1).
   std::pair<float, float> interpolate(float x, float y) const;
@@ -94,7 +91,7 @@ struct TagDetection {
 
   //! Scale this tag
   // TODO: Also need to scale homography?
-  void scaleTag(float scale);
+  void ScaleTag(float scale);
 
   //! Orientation in the xy plane
   //  float getXYOrientation() const;

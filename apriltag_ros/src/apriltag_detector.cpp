@@ -109,7 +109,7 @@ ApriltagVec ApriltagDetectorMit::DetectImpl(const cv::Mat& image) {
   // Handle decimation
   if (decimate_ > 1) {
     for (mit::TagDetection& td : detections) {
-      td.scaleTag(decimate_);
+      td.ScaleTag(decimate_);
     }
   }
 

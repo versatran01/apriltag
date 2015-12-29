@@ -21,10 +21,9 @@ namespace AprilTags {
 
 std::pair<float, float> TagDetection::interpolate(float x, float y) const {
   float z = H(2, 0) * x + H(2, 1) * y + H(2, 2);
-  if (z == 0)
-    return std::pair<float, float>(0, 0);  // prevents returning a pair with a
-                                           // -NaN, for which gcc 4.4 flubs
-                                           // isnan
+  // prevents returning a pair with -NaN, for which gcc 4.4 flubs isnan
+  if (z == 0) return std::pair<float, float>(0, 0);
+
   float newx = (H(0, 0) * x + H(0, 1) * y + H(0, 2)) / z;
   float newy = (H(1, 0) * x + H(1, 1) * y + H(1, 2)) / z;
   return std::pair<float, float>(newx, newy);
@@ -50,7 +49,7 @@ bool TagDetection::OverlapsTooMuch(const TagDetection &other) const {
   return (dist < radius);
 }
 
-void TagDetection::scaleTag(float scale) {
+void TagDetection::ScaleTag(float scale) {
   cxy.x *= scale;
   cxy.y *= scale;
   for (cv::Point2f &c : p) {

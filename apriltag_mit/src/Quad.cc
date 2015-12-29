@@ -9,7 +9,7 @@
 namespace AprilTags {
 
 Quad::Quad(const std::vector<std::pair<float, float>> &p)
-    : quadPoints(p), segments(), obs_perimeter(), homography() {
+    : p(p), segments(), obs_perimeter(), homography() {
   std::vector<std::pair<float, float>> srcPts;
   srcPts.push_back(std::make_pair(-1, -1));
   srcPts.push_back(std::make_pair(1, -1));
