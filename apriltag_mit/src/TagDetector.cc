@@ -14,7 +14,6 @@
 #include "AprilTags/GLine2D.h"
 #include "AprilTags/GLineSegment2D.h"
 #include "AprilTags/Gridder.h"
-#include "AprilTags/Homography33.h"
 #include "AprilTags/MathUtil.h"
 #include "AprilTags/Segment.h"
 #include "AprilTags/TagFamily.h"

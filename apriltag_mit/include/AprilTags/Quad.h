@@ -5,9 +5,9 @@
 #include <vector>
 
 #include <Eigen/Dense>
-
-#include "AprilTags/Homography33.h"
 #include <opencv2/core/core.hpp>
+
+#define INTERPOLATE
 
 namespace AprilTags {
 
@@ -61,12 +61,6 @@ class Quad {
    *  preferred over others. */
   float obs_perimeter;
 
-  //! Given that the whole quad spans from (0,0) to (1,1) in "quad space",
-  // compute the pixel coordinates for a given point within that quad.
-  /*!  Note that for most of the Quad's existence, we will not know the correct
-   * orientation of the tag. */
-  Homography33 homography;
-
   //! Searches through a vector of Segments to form Quads.
   /*  @param quads any discovered quads will be added to this list
    *  @param path  the segments currently part of the search
@@ -76,12 +70,15 @@ class Quad {
   static void search(std::vector<Segment*>& path, Segment& parent, int depth,
                      std::vector<Quad>& quads);
 
-#ifdef INTERPOLATE
  private:
   Eigen::Vector2f p0, p3, p01, p32;
-#endif
 };
 
+/**
+ * @brief CalcHomography
+ * @param p
+ * @return
+ */
 cv::Matx33f CalcHomography(const std::vector<std::pair<float, float>>& p);
 
 }  // namespace AprilTags

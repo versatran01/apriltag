@@ -10,42 +10,25 @@
 namespace AprilTags {
 
 Quad::Quad(const std::vector<std::pair<float, float>> &p)
-    : p(p), segments(), obs_perimeter(), homography() {
-  std::vector<std::pair<float, float>> srcPts;
-  srcPts.push_back(std::make_pair(-1, -1));
-  srcPts.push_back(std::make_pair(1, -1));
-  srcPts.push_back(std::make_pair(1, 1));
-  srcPts.push_back(std::make_pair(-1, 1));
-  homography.setCorrespondences(srcPts, p);
-
-#ifdef INTERPOLATE
+    : p(p), segments(), obs_perimeter() {
   p0 = Eigen::Vector2f(p[0].first, p[0].second);
   p3 = Eigen::Vector2f(p[3].first, p[3].second);
   p01 = (Eigen::Vector2f(p[1].first, p[1].second) - p0);
   p32 = (Eigen::Vector2f(p[2].first, p[2].second) - p3);
-#endif
 }
 
 std::pair<float, float> Quad::interpolate(float x, float y) const {
-#ifdef INTERPOLATE
   Eigen::Vector2f r1 = p0 + p01 * (x + 1.) / 2.;
   Eigen::Vector2f r2 = p3 + p32 * (x + 1.) / 2.;
   Eigen::Vector2f r = r1 + (r2 - r1) * (y + 1) / 2;
   return std::pair<float, float>(r(0), r(1));
-#else
-  return homography.project(x, y);
-#endif
 }
 
 cv::Point2f Quad::interpolate(const cv::Point2f &p) {
-#ifdef INTERPOLATE
   Eigen::Vector2f r1 = p0 + p01 * (p.x + 1.) / 2.;
   Eigen::Vector2f r2 = p3 + p32 * (p.x + 1.) / 2.;
   Eigen::Vector2f r = r1 + (r2 - r1) * (p.y + 1) / 2;
   return cv::Point2f(r(0), r(1));
-#else
-  return homography.project(p.x, p.y);
-#endif
 }
 
 std::pair<float, float> Quad::interpolate01(float x, float y) const {
