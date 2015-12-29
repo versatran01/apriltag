@@ -66,8 +66,8 @@ cv::Point2f Quad::interpolate01(const cv::Point2f &p) {
   return interpolate(cv::Point2f(2 * p.x - 1, 2 * p.y - 1));
 }
 
-void Quad::search(const FloatImage &image, std::vector<Segment *> &path,
-                  Segment &parent, int depth, std::vector<Quad> &quads,
+void Quad::search(std::vector<Segment *> &path, Segment &parent, int depth,
+                  std::vector<Quad> &quads,
                   const std::pair<float, float> &opticalCenter) {
   // cout << "Searching segment " << parent.getId() << ", depth=" << depth << ",
   // #children=" << parent.children.size() << endl;
@@ -176,7 +176,7 @@ void Quad::search(const FloatImage &image, std::vector<Segment *> &path,
       continue;
     }
     path[depth + 1] = &child;
-    search(image, path, child, depth + 1, quads, opticalCenter);
+    search(path, child, depth + 1, quads, opticalCenter);
   }
 }
 

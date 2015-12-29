@@ -73,14 +73,14 @@ void TagDetector::CalcPolar(const FloatImage &image, FloatImage &im_mag,
 }
 
 std::vector<Quad> TagDetector::SearchQuads(
-    std::vector<Segment> &segments, const FloatImage &image,
+    std::vector<Segment> &segments,
     const std::pair<float, float> &optical_center) const {
   vector<Quad> quads;
 
   vector<Segment *> tmp(5);
   for (size_t i = 0; i < segments.size(); i++) {
     tmp[0] = &segments[i];
-    Quad::search(image, tmp, segments[i], 0, quads, optical_center);
+    Quad::search(tmp, segments[i], 0, quads, optical_center);
   }
 
   return quads;
@@ -369,7 +369,7 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
   //============================================================================
   // To see if any form a loop of length 4.
   TimerUs t_quad("Quad");
-  auto quads = SearchQuads(segments, im_orig, optical_center);
+  auto quads = SearchQuads(segments, optical_center);
   t_quad.stop();
   t_quad.report();
 
@@ -382,12 +382,13 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
   TimerUs t_decode("Decode");
   std::vector<TagDetection> detections;
 
+  const int dd = 2 * black_border_ + tag_family_.dimension_bits();
+
   for (size_t qi = 0; qi < quads.size(); ++qi) {
     Quad &quad = quads[qi];
 
     // Find a threshold
-    GrayModel blackModel, whiteModel;
-    const int dd = 2 * black_border_ + tag_family_.dimension_bits();
+    GrayModel black_model, white_model;
 
     for (int iy = -1; iy <= dd; iy++) {
       float y = (iy + 0.5f) / dd;
@@ -399,9 +400,9 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
         if (irx < 0 || irx >= width || iry < 0 || iry >= height) continue;
         float v = im_decode.get(irx, iry);
         if (iy == -1 || iy == dd || ix == -1 || ix == dd)
-          whiteModel.addObservation(x, y, v);
+          white_model.addObservation(x, y, v);
         else if (iy == 0 || iy == (dd - 1) || ix == 0 || ix == (dd - 1))
-          blackModel.addObservation(x, y, v);
+          black_model.addObservation(x, y, v);
       }
     }
 
@@ -419,7 +420,7 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
           continue;
         }
         float threshold =
-            (blackModel.interpolate(x, y) + whiteModel.interpolate(x, y)) *
+            (black_model.interpolate(x, y) + white_model.interpolate(x, y)) *
             0.5f;
         float v = im_decode.get(irx, iry);
         tag_code = tag_code << 1;

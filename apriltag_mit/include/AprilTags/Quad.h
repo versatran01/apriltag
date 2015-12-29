@@ -74,8 +74,8 @@ class Quad {
    *  @param parent the first segment in the quad
    *  @param depth how deep in the search are we?
    */
-  static void search(const FloatImage& image, std::vector<Segment*>& path,
-                     Segment& parent, int depth, std::vector<Quad>& quads,
+  static void search(std::vector<Segment*>& path, Segment& parent, int depth,
+                     std::vector<Quad>& quads,
                      const std::pair<float, float>& opticalCenter);
 
 #ifdef INTERPOLATE

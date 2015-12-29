@@ -43,7 +43,7 @@ class TagDetector {
                  FloatImage& im_theta) const;
 
   std::vector<Quad> SearchQuads(
-      std::vector<Segment>& segments, const FloatImage& image,
+      std::vector<Segment>& segments,
       const std::pair<float, float>& optical_center) const;
 
   /**
