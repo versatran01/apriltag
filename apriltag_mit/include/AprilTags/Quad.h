@@ -56,7 +56,7 @@ class Quad {
    *  may not have been directly observed but rather inferred by
    *  intersecting segments. Quads with more observed perimeter are
    *  preferred over others. */
-  float observedPerimeter;
+  float obs_perimeter;
 
   //! Given that the whole quad spans from (0,0) to (1,1) in "quad space",
   // compute the pixel coordinates for a given point within that quad.

@@ -28,6 +28,8 @@ class FloatImage {
   int width() const { return image_.cols; }
   int height() const { return image_.rows; }
   int num_pixels() const { return image_.cols * image_.rows; }
+  cv::Mat& mat() { return image_; }
+  const cv::Mat& mat() const { return image_; }
 
   void FilterGaussian(int ksize, float sigma);
 };

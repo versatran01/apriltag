@@ -12,10 +12,7 @@ const float Quad::maxQuadAspectRatio = 32;
 
 Quad::Quad(const std::vector<std::pair<float, float> > &p,
            const std::pair<float, float> &opticalCenter)
-    : quadPoints(p),
-      segments(),
-      observedPerimeter(),
-      homography(opticalCenter) {
+    : quadPoints(p), segments(), obs_perimeter(), homography(opticalCenter) {
 #ifdef STABLE_H
   std::vector<std::pair<float, float> > srcPts;
   srcPts.push_back(std::make_pair(-1, -1));
@@ -84,7 +81,7 @@ void Quad::search(const FloatImage &fImage, std::vector<Segment *> &path,
     if (path[4] == path[0]) {
       // the 4 corners of the quad as computed by the intersection of segments.
       std::vector<std::pair<float, float> > p(4);
-      float calculatedPerimeter = 0;
+      float calc_perimeter = 0;
       bool bad = false;
       for (int i = 0; i < 4; i++) {
         // compute intersections between all the lines. This will give us
@@ -96,7 +93,7 @@ void Quad::search(const FloatImage &fImage, std::vector<Segment *> &path,
             std::make_pair(path[i + 1]->getX1(), path[i + 1]->getY1()));
 
         p[i] = linea.intersectionWith(lineb);
-        calculatedPerimeter += path[i]->getLength();
+        calc_perimeter += path[i]->getLength();
 
         // no intersection? Occurs when the lines are almost parallel.
         if (p[i].first == -1) bad = true;
@@ -137,23 +134,21 @@ void Quad::search(const FloatImage &fImage, std::vector<Segment *> &path,
             d2 < Quad::minimumEdgeLength || d3 < Quad::minimumEdgeLength ||
             d4 < Quad::minimumEdgeLength || d5 < Quad::minimumEdgeLength) {
           bad = true;
-          // cout << "tagsize too small" << endl;
         }
 
         // check aspect ratio
-        float dmax = max(max(d0, d1), max(d2, d3));
-        float dmin = min(min(d0, d1), min(d2, d3));
+        float dmax = std::max(std::max(d0, d1), std::max(d2, d3));
+        float dmin = std::min(std::min(d0, d1), std::min(d2, d3));
 
         if (dmax > dmin * Quad::maxQuadAspectRatio) {
           bad = true;
-          // cout << "aspect ratio too extreme" << endl;
         }
       }
 
       if (!bad) {
         Quad q(p, opticalCenter);
         q.segments = path;
-        q.observedPerimeter = calculatedPerimeter;
+        q.obs_perimeter = calc_perimeter;
         quads.push_back(q);
       }
     }

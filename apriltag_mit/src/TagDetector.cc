@@ -6,6 +6,7 @@
 #include <iostream>
 
 #include <Eigen/Dense>
+#include <opencv2/imgproc/imgproc.hpp>
 
 #include "AprilTags/Edge.h"
 #include "AprilTags/FloatImage.h"
@@ -40,10 +41,9 @@ int TagDetector::CalcFilterSize(float sigma) const {
   return static_cast<int>(std::max(3.0f, 3 * sigma)) | 1;
 }
 
-// TODO: This FloatImage class is stupid, it induces so many unnecessary copies
-void TagDetector::Preprocess(const FloatImage &im_orig, FloatImage &im_decode,
+void TagDetector::Preprocess(const FloatImage &image, FloatImage &im_decode,
                              FloatImage &im_segment) const {
-  im_decode = im_orig;
+  im_decode = image;
   if (decode_sigma_ > 0) {
     const auto filter_size = CalcFilterSize(decode_sigma_);
     im_decode.FilterGaussian(filter_size, decode_sigma_);
@@ -51,15 +51,25 @@ void TagDetector::Preprocess(const FloatImage &im_orig, FloatImage &im_decode,
 
   if (segment_sigma_ > 0) {
     if (segment_sigma_ == decode_sigma_) {
-      im_segment = im_decode;
+      im_segment.mat() = im_decode.mat();
     } else {
       const auto filter_size = CalcFilterSize(segment_sigma_);
-      im_segment = im_orig;
+      // Copy
+      im_segment = image;
       im_segment.FilterGaussian(filter_size, segment_sigma_);
     }
   } else {
-    im_segment = im_orig;
+    im_segment.mat() = image.mat();
   }
+}
+
+void TagDetector::CalcPolar(const FloatImage &image, FloatImage &im_mag,
+                            FloatImage &im_theta) const {
+  cv::Mat Ix, Iy;
+  // Need to scale the gradient magnitude
+  cv::Scharr(image.mat(), Ix, CV_32F, 1, 0, 1 / 16.0);
+  cv::Scharr(image.mat(), Iy, CV_32F, 0, 1, 1 / 16.0);
+  cv::cartToPolar(Ix, Iy, im_mag.mat(), im_theta.mat());
 }
 
 std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
@@ -81,21 +91,26 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
   // break up segments, causing us to miss Quads. It is useful to do a Gaussian
   // low pass on this step even if we don't want it for encoding.
 
-  FloatImage fimTheta(im_segment.width(), im_segment.height());
-  FloatImage fimMag(im_segment.width(), im_segment.height());
+  // Note that in Kaess' original code, mag is Ix^2 + Iy^2, so we need to modify
+  // Edge::minMag to reflect this change accordingly
+  FloatImage im_mag, im_theta;
+  CalcPolar(im_segment, im_mag, im_theta);
 
-  for (int y = 1; y < im_segment.height() - 1; y++) {
-    for (int x = 1; x < im_segment.width() - 1; x++) {
-      float Ix = im_segment.get(x + 1, y) - im_segment.get(x - 1, y);
-      float Iy = im_segment.get(x, y + 1) - im_segment.get(x, y - 1);
+  //  FloatImage im_theta(im_segment.width(), im_segment.height());
+  //  FloatImage im_mag(im_segment.width(), im_segment.height());
 
-      float mag = Ix * Ix + Iy * Iy;
-      float theta = atan2(Iy, Ix);
+  //  for (int y = 1; y < im_segment.height() - 1; y++) {
+  //    for (int x = 1; x < im_segment.width() - 1; x++) {
+  //      float Ix = im_segment.get(x + 1, y) - im_segment.get(x - 1, y);
+  //      float Iy = im_segment.get(x, y + 1) - im_segment.get(x, y - 1);
 
-      fimTheta.set(x, y, theta);
-      fimMag.set(x, y, mag);
-    }
-  }
+  //      float mag = Ix * Ix + Iy * Iy;
+  //      float theta = atan2(Iy, Ix);
+
+  //      im_theta.set(x, y, theta);
+  //      im_mag.set(x, y, mag);
+  //    }
+  //  }
 
   //================================================================
   // Step three. Extract edges by grouping pixels with similar
@@ -124,17 +139,17 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
 
     for (int y = 0; y + 1 < height; y++) {
       for (int x = 0; x + 1 < width; x++) {
-        float mag0 = fimMag.get(x, y);
+        float mag0 = im_mag.get(x, y);
         if (mag0 < Edge::minMag) continue;
         mmax[y * width + x] = mag0;
         mmin[y * width + x] = mag0;
 
-        float theta0 = fimTheta.get(x, y);
+        float theta0 = im_theta.get(x, y);
         tmin[y * width + x] = theta0;
         tmax[y * width + x] = theta0;
 
         // Calculates then adds edges to 'vector<Edge> edges'
-        Edge::calcEdges(theta0, x, y, fimTheta, fimMag, edges, nEdges);
+        Edge::calcEdges(theta0, x, y, im_theta, im_mag, edges, nEdges);
 
         // XXX Would 8 connectivity help for rotated tags?
         // Probably not much, so long as input filtering hasn't been disabled.
@@ -166,7 +181,7 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
         it = clusters.find(rep);
       }
       vector<XYW> &points = it->second;
-      points.push_back(XYW(x, y, fimMag.get(x, y)));
+      points.push_back(XYW(x, y, im_mag.get(x, y)));
     }
   }
 
@@ -203,8 +218,8 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
     for (size_t i = 0; i < points.size(); i++) {
       XYW xyw = points[i];
 
-      float theta = fimTheta.get((int)xyw.x, (int)xyw.y);
-      float mag = fimMag.get((int)xyw.x, (int)xyw.y);
+      float theta = im_theta.get((int)xyw.x, (int)xyw.y);
+      float mag = im_mag.get((int)xyw.x, (int)xyw.y);
 
       // err *should* be +M_PI/2 for the correct winding, but if we
       // got the wrong winding, it'll be around -M_PI/2.
@@ -251,18 +266,18 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
 
   // Now, find child segments that begin where each parent segment ends.
   for (unsigned i = 0; i < segments.size(); i++) {
-    Segment &parentseg = segments[i];
+    Segment &parent_seg = segments[i];
 
     // compute length of the line segment
-    GLine2D parentLine(
-        std::pair<float, float>(parentseg.getX0(), parentseg.getY0()),
-        std::pair<float, float>(parentseg.getX1(), parentseg.getY1()));
+    GLine2D parent_line(
+        std::pair<float, float>(parent_seg.getX0(), parent_seg.getY0()),
+        std::pair<float, float>(parent_seg.getX1(), parent_seg.getY1()));
 
     Gridder<Segment>::iterator iter = gridder.find(
-        parentseg.getX1(), parentseg.getY1(), 0.5f * parentseg.getLength());
+        parent_seg.getX1(), parent_seg.getY1(), 0.5f * parent_seg.getLength());
     while (iter.hasNext()) {
       Segment &child = iter.next();
-      if (MathUtil::mod2pi(child.getTheta() - parentseg.getTheta()) > 0) {
+      if (MathUtil::mod2pi(child.getTheta() - parent_seg.getTheta()) > 0) {
         continue;
       }
 
@@ -270,22 +285,22 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
       GLine2D childLine(std::pair<float, float>(child.getX0(), child.getY0()),
                         std::pair<float, float>(child.getX1(), child.getY1()));
 
-      std::pair<float, float> p = parentLine.intersectionWith(childLine);
+      std::pair<float, float> p = parent_line.intersectionWith(childLine);
       if (p.first == -1) {
         continue;
       }
 
-      float parentDist = MathUtil::Distance2D(
-          p, std::pair<float, float>(parentseg.getX1(), parentseg.getY1()));
-      float childDist = MathUtil::Distance2D(
+      float parent_dist = MathUtil::Distance2D(
+          p, std::pair<float, float>(parent_seg.getX1(), parent_seg.getY1()));
+      float child_dist = MathUtil::Distance2D(
           p, std::pair<float, float>(child.getX0(), child.getY0()));
 
-      if (max(parentDist, childDist) > parentseg.getLength()) {
+      if (max(parent_dist, child_dist) > parent_seg.getLength()) {
         continue;
       }
 
       // everything's OK, this child is a reasonable successor.
-      parentseg.children.push_back(&child);
+      parent_seg.children.push_back(&child);
     }
   }
 
@@ -396,7 +411,7 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
       if (td.good) {
         const auto c = quad.interpolate01(0.5f, 0.5f);
         td.cxy = cv::Point2f(c.first, c.second);
-        td.obs_perimeter = quad.observedPerimeter;
+        td.obs_perimeter = quad.obs_perimeter;
         detections.push_back(td);
       }
     }

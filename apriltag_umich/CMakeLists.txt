@@ -40,7 +40,8 @@ list(REMOVE_ITEM C_FILES ${PROJECT_SOURCE_DIR}/src/apriltag_demo.c)
 add_library(${PROJECT_NAME} SHARED ${C_FILES})
 target_link_libraries(${PROJECT_NAME} ${CMAKE_THREAD_LIBS_INIT})
 
-if(CATKIN_ENABLE_TESTING)
+#if(CATKIN_ENABLE_TESTING)
+if(FALSE)
     include_directories(${catkin_INCLUDE_DIRS})
     catkin_add_gtest(test_${PROJECT_NAME} test/test_${PROJECT_NAME}.cpp)
     target_link_libraries(test_${PROJECT_NAME}

@@ -26,6 +26,9 @@ class TagDetector {
   void Preprocess(const FloatImage& image, FloatImage& im_decode,
                   FloatImage& im_segment) const;
 
+  void CalcPolar(const FloatImage& image, FloatImage& im_mag,
+                 FloatImage& im_theta) const;
+
   /**
    * @brief black_border_ Number of bits of black border of the tag
    */
