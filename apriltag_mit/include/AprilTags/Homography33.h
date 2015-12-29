@@ -45,16 +45,16 @@ class Homography33 {
                           const std::vector<std::pair<float, float>> &dstPts);
 
   //! Note that the returned H matrix does not reflect cxy.
-  Eigen::Matrix3d &getH();
+  const Eigen::Matrix3d &getH() const;
 
-  void compute();
+  void compute() const;
 
   //  std::pair<float, float> project(float worldx, float worldy);
 
  private:
   Eigen::Matrix<double, 9, 9> fA;
-  Eigen::Matrix3d H;
-  bool valid;
+  mutable Eigen::Matrix3d H;
+  mutable bool valid;
   std::vector<std::pair<float, float>> srcPts, dstPts;
 };
 

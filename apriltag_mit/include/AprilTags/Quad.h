@@ -37,13 +37,13 @@ class Quad {
 
   //! Interpolate given that the lower left corner of the lower left cell is at
   //(-1,-1) and the upper right corner of the upper right cell is at (1,1).
-  std::pair<float, float> interpolate(float x, float y);
+  std::pair<float, float> interpolate(float x, float y) const;
 
   cv::Point2f interpolate(const cv::Point2f& p);
 
   //! Same as interpolate, except that the coordinates are interpreted between 0
   // and 1, instead of -1 and 1.
-  std::pair<float, float> interpolate01(float x, float y);
+  std::pair<float, float> interpolate01(float x, float y) const;
 
   cv::Point2f interpolate01(const cv::Point2f& p);
 
@@ -81,6 +81,8 @@ class Quad {
   Eigen::Vector2f p0, p3, p01, p32;
 #endif
 };
+
+cv::Matx33f CalcHomography(const std::vector<std::pair<float, float>>& p);
 
 }  // namespace AprilTags
 

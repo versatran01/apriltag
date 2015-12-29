@@ -80,7 +80,8 @@ struct TagDetection {
    * orientation
    *  of the target.
    */
-  Eigen::Matrix3d H;
+  cv::Matx33f H;
+  //  Eigen::Matrix3d H;
 
   //! Interpolate point given (x,y) is in tag coordinate space from (-1,-1) to
   //(1,1).

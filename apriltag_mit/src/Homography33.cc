@@ -9,7 +9,7 @@ Homography33::Homography33() : fA(), H(), valid(false) {
   H.setZero();
 }
 
-Eigen::Matrix3d &Homography33::getH() {
+const Eigen::Matrix3d &Homography33::getH() const {
   compute();
   return H;
 }
@@ -22,7 +22,7 @@ void Homography33::setCorrespondences(
   dstPts = dPts;
 }
 
-void Homography33::compute() {
+void Homography33::compute() const {
   if (valid) return;
 
   std::vector<cv::Point2f> sPts;

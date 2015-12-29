@@ -1,5 +1,6 @@
 #include <Eigen/Dense>
 
+#include <opencv2/calib3d/calib3d.hpp>
 #include "AprilTags/FloatImage.h"
 #include "AprilTags/MathUtil.h"
 #include "AprilTags/GLine2D.h"
@@ -25,7 +26,7 @@ Quad::Quad(const std::vector<std::pair<float, float>> &p)
 #endif
 }
 
-std::pair<float, float> Quad::interpolate(float x, float y) {
+std::pair<float, float> Quad::interpolate(float x, float y) const {
 #ifdef INTERPOLATE
   Eigen::Vector2f r1 = p0 + p01 * (x + 1.) / 2.;
   Eigen::Vector2f r2 = p3 + p32 * (x + 1.) / 2.;
@@ -47,7 +48,7 @@ cv::Point2f Quad::interpolate(const cv::Point2f &p) {
 #endif
 }
 
-std::pair<float, float> Quad::interpolate01(float x, float y) {
+std::pair<float, float> Quad::interpolate01(float x, float y) const {
   return interpolate(2 * x - 1, 2 * y - 1);
 }
 
@@ -166,6 +167,16 @@ void Quad::search(std::vector<Segment *> &path, Segment &parent, int depth,
     path[depth + 1] = &child;
     search(path, child, depth + 1, quads);
   }
+}
+
+cv::Matx33f CalcHomography(const std::vector<std::pair<float, float>> &p) {
+  std::vector<cv::Point2f> obj_pts = {{-1, -1}, {1, -1}, {1, 1}, {-1, 1}};
+  std::vector<cv::Point2f> img_pts = {{p[0].first, p[0].second},
+                                      {p[1].first, p[1].second},
+                                      {p[2].first, p[2].second},
+                                      {p[3].first, p[3].second}};
+  const auto H = cv::findHomography(obj_pts, img_pts);
+  return cv::Matx33f(H.clone().ptr<float>());
 }
 
 }  // namespace

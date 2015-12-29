@@ -368,7 +368,7 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
   //============================================================================
   // To see if any form a loop of length 4.
   TimerUs t_quad("Quad");
-  auto quads = SearchQuads(segments);
+  const auto quads = SearchQuads(segments);
   t_quad.stop();
   t_quad.report();
 
@@ -384,7 +384,7 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
   const int dd = 2 * black_border_ + tag_family_.dimension_bits();
 
   for (size_t qi = 0; qi < quads.size(); ++qi) {
-    Quad &quad = quads[qi];
+    const Quad &quad = quads[qi];
 
     // Find a threshold
     GrayModel black_model, white_model;
@@ -431,19 +431,16 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
       auto td = tag_family_.Decode(tag_code);
 
       // compute the homography (and rotate it appropriately)
-      td.H = quad.homography.getH();
+      td.H = CalcHomography(quad.p);
 
       float c = std::cos(td.num_rotations * (float)M_PI / 2);
       float s = std::sin(td.num_rotations * (float)M_PI / 2);
-      Eigen::Matrix3d R;
-      R.setZero();
+      cv::Matx33f R = cv::Matx33f::zeros();
       R(0, 0) = R(1, 1) = c;
       R(0, 1) = -s;
       R(1, 0) = s;
       R(2, 2) = 1;
-      Eigen::Matrix3d tmp;
-      tmp = td.H * R;
-      td.H = tmp;
+      td.H = td.H * R;
 
       // Rotate points in detection according to decoded
       // orientation.  Thus the order of the points in the
