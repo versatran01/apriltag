@@ -23,11 +23,31 @@ class TagDetector {
 
   int CalcFilterSize(float sigma) const;
 
+  /**
+   * @brief Preprocess Step 1
+   * @param image
+   * @param im_decode
+   * @param im_segment
+   */
   void Preprocess(const FloatImage& image, FloatImage& im_decode,
                   FloatImage& im_segment) const;
 
+  /**
+   * @brief CalcPolar Step 2
+   * @param image
+   * @param im_mag
+   * @param im_theta
+   */
   void CalcPolar(const FloatImage& image, FloatImage& im_mag,
                  FloatImage& im_theta) const;
+
+  /**
+   * @brief ResolveOverlap Step 9
+   * @param detections
+   * @return
+   */
+  std::vector<TagDetection> ResolveOverlap(
+      const std::vector<TagDetection>& detections) const;
 
   /**
    * @brief black_border_ Number of bits of black border of the tag

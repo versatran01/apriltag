@@ -74,6 +74,43 @@ void TagDetector::CalcPolar(const FloatImage &image, FloatImage &im_mag,
   cv::cartToPolar(Ix, Iy, im_mag.mat(), im_theta.mat());
 }
 
+std::vector<TagDetection> TagDetector::ResolveOverlap(
+    const std::vector<TagDetection> &detections) const {
+  std::vector<TagDetection> good_detections;
+  good_detections.reserve(detections.size());
+
+  for (const TagDetection &td : detections) {
+    bool new_tag = true;
+
+    for (TagDetection &gtd : good_detections) {
+      // Tags have different id and they don't overlap too much
+      if (td.id != gtd.id || !td.OverlapsTooMuch(gtd)) {
+        continue;
+      }
+
+      // There's a conflict. We must pick one to keep.
+      new_tag = false;
+
+      // This detection is worse than the overlap one... just don't use it.
+      if (td.hamming_distance > gtd.hamming_distance) {
+        continue;
+      }
+
+      // Otherwise, keep the new one if it either has strictly *lower* error, or
+      // greater perimeter.
+      if (td.hamming_distance < gtd.hamming_distance ||
+          td.obs_perimeter > gtd.obs_perimeter)
+        gtd = td;
+    }
+
+    if (new_tag) {
+      good_detections.push_back(td);
+    }
+  }
+
+  return good_detections;
+}
+
 std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
   int width = image.cols;
   int height = image.rows;
@@ -435,53 +472,22 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
   t_decode.stop();
   t_decode.report();
 
-  //================================================================
-  // Step nine: Some quads may be detected more than once, due to
+  // ===========================================================================
+  // Step 9: Resolve overlapped tags.
+  // ===========================================================================
+  // Some quads may be detected more than once, due to
   // partial occlusion and our aggressive attempts to recover from
   // broken lines. When two quads (with the same id) overlap, we will
   // keep the one with the lowest error, and if the error is the same,
   // the one with the greatest observed perimeter.
-
-  TimerUs t_step9("step9");
-  std::vector<TagDetection> good_td;
-
   // NOTE: allow multiple non-overlapping detections of the same target.
 
-  for (vector<TagDetection>::const_iterator it = detections.begin();
-       it != detections.end(); it++) {
-    const TagDetection &thisTagDetection = *it;
-
-    bool newFeature = true;
-
-    for (unsigned int odidx = 0; odidx < good_td.size(); odidx++) {
-      TagDetection &otherTagDetection = good_td[odidx];
-
-      if (thisTagDetection.id != otherTagDetection.id ||
-          !thisTagDetection.OverlapsTooMuch(otherTagDetection))
-        continue;
-
-      // There's a conflict.  We must pick one to keep.
-      newFeature = false;
-
-      // This detection is worse than the previous one... just don't use it.
-      if (thisTagDetection.hamming_distance >
-          otherTagDetection.hamming_distance)
-        continue;
-
-      // Otherwise, keep the new one if it either has strictly *lower* error, or
-      // greater perimeter.
-      if (thisTagDetection.hamming_distance <
-              otherTagDetection.hamming_distance ||
-          thisTagDetection.obs_perimeter > otherTagDetection.obs_perimeter)
-        good_td[odidx] = thisTagDetection;
-    }
-
-    if (newFeature) good_td.push_back(thisTagDetection);
-  }
-
+  TimerUs t_step9("step9");
+  const auto good_detections = ResolveOverlap(detections);
   t_step9.stop();
   t_step9.report();
-  return good_td;
+
+  return good_detections;
 }
 
 }  // namespace
