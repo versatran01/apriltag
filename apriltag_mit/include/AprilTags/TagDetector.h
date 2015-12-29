@@ -6,6 +6,7 @@
 #include "AprilTags/TagDetection.h"
 #include "AprilTags/TagFamily.h"
 #include "AprilTags/FloatImage.h"
+#include "AprilTags/Quad.h"
 
 namespace AprilTags {
 
@@ -40,6 +41,10 @@ class TagDetector {
    */
   void CalcPolar(const FloatImage& image, FloatImage& im_mag,
                  FloatImage& im_theta) const;
+
+  std::vector<Quad> SearchQuads(
+      std::vector<Segment>& segments, const FloatImage& image,
+      const std::pair<float, float>& optical_center) const;
 
   /**
    * @brief ResolveOverlap Step 9

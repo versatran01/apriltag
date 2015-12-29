@@ -10,14 +10,12 @@
 
 #include "AprilTags/Edge.h"
 #include "AprilTags/FloatImage.h"
-#include "AprilTags/Gaussian.h"
 #include "AprilTags/GrayModel.h"
 #include "AprilTags/GLine2D.h"
 #include "AprilTags/GLineSegment2D.h"
 #include "AprilTags/Gridder.h"
 #include "AprilTags/Homography33.h"
 #include "AprilTags/MathUtil.h"
-#include "AprilTags/Quad.h"
 #include "AprilTags/Segment.h"
 #include "AprilTags/TagFamily.h"
 #include "AprilTags/UnionFindSimple.h"
@@ -72,6 +70,20 @@ void TagDetector::CalcPolar(const FloatImage &image, FloatImage &im_mag,
   cv::Scharr(image.mat(), Ix, CV_32F, 1, 0, 1 / 16.0);
   cv::Scharr(image.mat(), Iy, CV_32F, 0, 1, 1 / 16.0);
   cv::cartToPolar(Ix, Iy, im_mag.mat(), im_theta.mat());
+}
+
+std::vector<Quad> TagDetector::SearchQuads(
+    std::vector<Segment> &segments, const FloatImage &image,
+    const std::pair<float, float> &optical_center) const {
+  vector<Quad> quads;
+
+  vector<Segment *> tmp(5);
+  for (size_t i = 0; i < segments.size(); i++) {
+    tmp[0] = &segments[i];
+    Quad::search(image, tmp, segments[i], 0, quads, optical_center);
+  }
+
+  return quads;
 }
 
 std::vector<TagDetection> TagDetector::ResolveOverlap(
@@ -132,10 +144,10 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
   // This step is quite sensitive to noise, since a few bad theta estimates will
   // break up segments, causing us to miss Quads. It is useful to do a Gaussian
   // low pass on this step even if we don't want if for encoding.
+  // NOTE: in Kaess' original code, mag is Ix^2 + Iy^2, so we need to modify
+  // Edge::kMinMag to reflect this change accordingly
   TimerUs t_calc_polar("CalcPolar");
   FloatImage im_mag, im_theta;
-  // Note that in Kaess' original code, mag is Ix^2 + Iy^2, so we need to modify
-  // Edge::kMinMag to reflect this change accordingly
   CalcPolar(im_segment, im_mag, im_theta);
   t_calc_polar.stop();
   t_calc_polar.report();
@@ -352,18 +364,12 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
   t_gridder.stop();
   t_gridder.report();
 
-  //================================================================
-  // Step seven: Search all connected segments to see if any form a loop of
-  // length 4.
-  // Add those to the quads list.
+  //============================================================================
+  // Step 7: Search all connected segments for quads.
+  //============================================================================
+  // To see if any form a loop of length 4.
   TimerUs t_quad("Quad");
-  vector<Quad> quads;
-
-  vector<Segment *> tmp(5);
-  for (size_t i = 0; i < segments.size(); i++) {
-    tmp[0] = &segments[i];
-    Quad::search(im_orig, tmp, segments[i], 0, quads, optical_center);
-  }
+  auto quads = SearchQuads(segments, im_orig, optical_center);
   t_quad.stop();
   t_quad.report();
 
@@ -482,7 +488,7 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
   // the one with the greatest observed perimeter.
   // NOTE: allow multiple non-overlapping detections of the same target.
 
-  TimerUs t_step9("step9");
+  TimerUs t_step9("ResolveOverlap");
   const auto good_detections = ResolveOverlap(detections);
   t_step9.stop();
   t_step9.report();

@@ -8,13 +8,11 @@
 
 namespace AprilTags {
 
-const float Quad::maxQuadAspectRatio = 32;
-
-Quad::Quad(const std::vector<std::pair<float, float> > &p,
+Quad::Quad(const std::vector<std::pair<float, float>> &p,
            const std::pair<float, float> &opticalCenter)
     : quadPoints(p), segments(), obs_perimeter(), homography(opticalCenter) {
 #ifdef STABLE_H
-  std::vector<std::pair<float, float> > srcPts;
+  std::vector<std::pair<float, float>> srcPts;
   srcPts.push_back(std::make_pair(-1, -1));
   srcPts.push_back(std::make_pair(1, -1));
   srcPts.push_back(std::make_pair(1, 1));
@@ -68,7 +66,7 @@ cv::Point2f Quad::interpolate01(const cv::Point2f &p) {
   return interpolate(cv::Point2f(2 * p.x - 1, 2 * p.y - 1));
 }
 
-void Quad::search(const FloatImage &fImage, std::vector<Segment *> &path,
+void Quad::search(const FloatImage &image, std::vector<Segment *> &path,
                   Segment &parent, int depth, std::vector<Quad> &quads,
                   const std::pair<float, float> &opticalCenter) {
   // cout << "Searching segment " << parent.getId() << ", depth=" << depth << ",
@@ -80,23 +78,25 @@ void Quad::search(const FloatImage &fImage, std::vector<Segment *> &path,
     // Is the first segment the same as the last segment (i.e., a loop?)
     if (path[4] == path[0]) {
       // the 4 corners of the quad as computed by the intersection of segments.
-      std::vector<std::pair<float, float> > p(4);
+      std::vector<std::pair<float, float>> p(4);
       float calc_perimeter = 0;
       bool bad = false;
       for (int i = 0; i < 4; i++) {
         // compute intersections between all the lines. This will give us
         // sub-pixel accuracy for the corners of the quad.
-        GLine2D linea(std::make_pair(path[i]->getX0(), path[i]->getY0()),
-                      std::make_pair(path[i]->getX1(), path[i]->getY1()));
-        GLine2D lineb(
+        GLine2D line_a(std::make_pair(path[i]->getX0(), path[i]->getY0()),
+                       std::make_pair(path[i]->getX1(), path[i]->getY1()));
+        GLine2D line_b(
             std::make_pair(path[i + 1]->getX0(), path[i + 1]->getY0()),
             std::make_pair(path[i + 1]->getX1(), path[i + 1]->getY1()));
 
-        p[i] = linea.intersectionWith(lineb);
+        p[i] = line_a.intersectionWith(line_b);
         calc_perimeter += path[i]->getLength();
 
         // no intersection? Occurs when the lines are almost parallel.
-        if (p[i].first == -1) bad = true;
+        if (p[i].first == -1) {
+          bad = true;
+        }
       }
       // cout << "bad = " << bad << endl;
       // eliminate quads that don't form a simply connected loop, i.e., those
@@ -130,9 +130,9 @@ void Quad::search(const FloatImage &fImage, std::vector<Segment *> &path,
         float d5 = MathUtil::Distance2D(p[1], p[3]);
 
         // check sizes
-        if (d0 < Quad::minimumEdgeLength || d1 < Quad::minimumEdgeLength ||
-            d2 < Quad::minimumEdgeLength || d3 < Quad::minimumEdgeLength ||
-            d4 < Quad::minimumEdgeLength || d5 < Quad::minimumEdgeLength) {
+        if (d0 < Quad::kMinEdgeLength || d1 < Quad::kMinEdgeLength ||
+            d2 < Quad::kMinEdgeLength || d3 < Quad::kMinEdgeLength ||
+            d4 < Quad::kMinEdgeLength || d5 < Quad::kMinEdgeLength) {
           bad = true;
         }
 
@@ -140,7 +140,7 @@ void Quad::search(const FloatImage &fImage, std::vector<Segment *> &path,
         float dmax = std::max(std::max(d0, d1), std::max(d2, d3));
         float dmin = std::min(std::min(d0, d1), std::min(d2, d3));
 
-        if (dmax > dmin * Quad::maxQuadAspectRatio) {
+        if (dmax > dmin * Quad::kMaxQuadAspectRatio) {
           bad = true;
         }
       }
@@ -176,7 +176,7 @@ void Quad::search(const FloatImage &fImage, std::vector<Segment *> &path,
       continue;
     }
     path[depth + 1] = &child;
-    search(fImage, path, child, depth + 1, quads, opticalCenter);
+    search(image, path, child, depth + 1, quads, opticalCenter);
   }
 }
 

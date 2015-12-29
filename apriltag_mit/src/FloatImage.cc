@@ -1,6 +1,4 @@
 #include "AprilTags/FloatImage.h"
-#include "AprilTags/Gaussian.h"
-#include <iostream>
 #include <opencv2/imgproc/imgproc.hpp>
 
 namespace AprilTags {

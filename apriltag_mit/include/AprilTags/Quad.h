@@ -20,11 +20,15 @@ using std::max;
 //! Represents four segments that form a loop, and might be a tag.
 class Quad {
  public:
-  static const int minimumEdgeLength = 6;  //!< Minimum size of a tag (in
-  // pixels) as measured along edges and
-  // diagonals
-  static float const
-      maxQuadAspectRatio;  //!< Early pruning of quads with insane ratios.
+  /**
+   * @brief kMinEdgeLength Minimum size of a tag (in pixels) as measured along
+   * edges and diagonals
+   */
+  static const int kMinEdgeLength = 6;
+  /**
+   * @brief kMaxQuadAspectRatio Early pruning of quads with insane ratios
+   */
+  static constexpr float kMaxQuadAspectRatio = 32.0;
 
   //! Constructor
   /*! (x,y) are the optical center of the camera, which is
@@ -70,7 +74,7 @@ class Quad {
    *  @param parent the first segment in the quad
    *  @param depth how deep in the search are we?
    */
-  static void search(const FloatImage& fImage, std::vector<Segment*>& path,
+  static void search(const FloatImage& image, std::vector<Segment*>& path,
                      Segment& parent, int depth, std::vector<Quad>& quads,
                      const std::pair<float, float>& opticalCenter);
 
