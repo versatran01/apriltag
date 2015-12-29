@@ -25,6 +25,8 @@
 
 #include "AprilTags/TagDetector.h"
 
+#include "AprilTags/timer.h"
+
 namespace AprilTags {
 
 using namespace std;
@@ -66,7 +68,7 @@ void TagDetector::Preprocess(const FloatImage &image, FloatImage &im_decode,
 void TagDetector::CalcPolar(const FloatImage &image, FloatImage &im_mag,
                             FloatImage &im_theta) const {
   cv::Mat Ix, Iy;
-  // Need to scale the gradient magnitude
+  // Need to scale the gradient magnitude, because Scharr is 3, 10, 3
   cv::Scharr(image.mat(), Ix, CV_32F, 1, 0, 1 / 16.0);
   cv::Scharr(image.mat(), Iy, CV_32F, 0, 1, 1 / 16.0);
   cv::cartToPolar(Ix, Iy, im_mag.mat(), im_theta.mat());
@@ -78,48 +80,41 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
   FloatImage im_orig(image);
   std::pair<int, int> optical_center(width / 2, height / 2);
 
-  /**
-   * Step 1: Preprocess image
-   */
-
+  // ===========================================================================
+  // Step 1: Preprocess image
+  // ===========================================================================
+  TimerUs t_preprocess("Preprocess");
   FloatImage im_decode, im_segment;
   Preprocess(im_orig, im_decode, im_segment);
+  t_preprocess.stop();
+  t_preprocess.report();
+
+  // ===========================================================================
+  // Step 2: Compute local gradients and store magnitude and direction
+  // ===========================================================================
+  // This step is quite sensitive to noise, since a few bad theta estimates will
+  // break up segments, causing us to miss Quads. It is useful to do a Gaussian
+  // low pass on this step even if we don't want if for encoding.
+  TimerUs t_calc_polar("CalcPolar");
+  FloatImage im_mag, im_theta;
+  // Note that in Kaess' original code, mag is Ix^2 + Iy^2, so we need to modify
+  // Edge::kMinMag to reflect this change accordingly
+  CalcPolar(im_segment, im_mag, im_theta);
+  t_calc_polar.stop();
+  t_calc_polar.report();
 
   //============================================================================
-  // Step two: Compute the local gradient. We store the direction and magnitude.
-  // This step is quite sensitve to noise, since a few bad theta estimates will
-  // break up segments, causing us to miss Quads. It is useful to do a Gaussian
-  // low pass on this step even if we don't want it for encoding.
-
-  // Note that in Kaess' original code, mag is Ix^2 + Iy^2, so we need to modify
-  // Edge::minMag to reflect this change accordingly
-  FloatImage im_mag, im_theta;
-  CalcPolar(im_segment, im_mag, im_theta);
-
-  //  FloatImage im_theta(im_segment.width(), im_segment.height());
-  //  FloatImage im_mag(im_segment.width(), im_segment.height());
-
-  //  for (int y = 1; y < im_segment.height() - 1; y++) {
-  //    for (int x = 1; x < im_segment.width() - 1; x++) {
-  //      float Ix = im_segment.get(x + 1, y) - im_segment.get(x - 1, y);
-  //      float Iy = im_segment.get(x, y + 1) - im_segment.get(x, y - 1);
-
-  //      float mag = Ix * Ix + Iy * Iy;
-  //      float theta = atan2(Iy, Ix);
-
-  //      im_theta.set(x, y, theta);
-  //      im_mag.set(x, y, mag);
-  //    }
-  //  }
-
-  //================================================================
-  // Step three. Extract edges by grouping pixels with similar
-  // thetas together. This is a greedy algorithm: we start with
-  // the most similar pixels.  We use 4-connectivity.
+  // Step three. Extract edges by grouping pixels with similar thetas together.
+  //============================================================================
+  // This is a greedy algorithm: we start with the most similar pixels. We use
+  // 4-connectivity.
+  // NOTE: This is the most time consuming part!
+  TimerUs t_cluster("cluster");
   UnionFindSimple uf(im_segment.width() * im_segment.height());
 
-  vector<Edge> edges(width * height * 4);
-  size_t nEdges = 0;
+  const size_t num_pixels = width * height;
+  vector<Edge> edges(num_pixels * 4);
+  size_t num_edges = 0;
 
   // Bounds on the thetas assigned to this group. Note that because
   // theta is periodic, these are defined such that the average
@@ -131,51 +126,58 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
     // size), could be a problem elsewhere for bigger images... so store on heap
 
     // do all the memory in one big block, exception safe
-    vector<float> storage(width * height * 4);
-    float *tmin = &storage[width * height * 0];
-    float *tmax = &storage[width * height * 1];
-    float *mmin = &storage[width * height * 2];
-    float *mmax = &storage[width * height * 3];
+    vector<float> storage(num_pixels * 4);
+    float *theta_min = &storage[num_pixels * 0];
+    float *theta_max = &storage[num_pixels * 1];
+    float *mag_min = &storage[num_pixels * 2];
+    float *mag_max = &storage[num_pixels * 3];
 
     for (int y = 0; y + 1 < height; y++) {
       for (int x = 0; x + 1 < width; x++) {
-        float mag0 = im_mag.get(x, y);
-        if (mag0 < Edge::minMag) continue;
-        mmax[y * width + x] = mag0;
-        mmin[y * width + x] = mag0;
+        const auto mag0 = im_mag.get(x, y);
+        if (mag0 < Edge::kMinMag) {
+          continue;
+        }
+        mag_max[y * width + x] = mag0;
+        mag_min[y * width + x] = mag0;
 
-        float theta0 = im_theta.get(x, y);
-        tmin[y * width + x] = theta0;
-        tmax[y * width + x] = theta0;
+        const auto theta0 = im_theta.get(x, y);
+        theta_min[y * width + x] = theta0;
+        theta_max[y * width + x] = theta0;
 
         // Calculates then adds edges to 'vector<Edge> edges'
-        Edge::calcEdges(theta0, x, y, im_theta, im_mag, edges, nEdges);
+        Edge::calcEdges(theta0, x, y, im_theta, im_mag, edges, num_edges);
 
         // XXX Would 8 connectivity help for rotated tags?
         // Probably not much, so long as input filtering hasn't been disabled.
       }
     }
 
-    edges.resize(nEdges);
+    edges.resize(num_edges);
     std::stable_sort(edges.begin(), edges.end());
-    Edge::mergeEdges(edges, uf, tmin, tmax, mmin, mmax);
+    Edge::mergeEdges(edges, uf, theta_min, theta_max, mag_min, mag_max);
   }
+  t_cluster.stop();
+  t_cluster.report();
 
-  //================================================================
-  // Step four: Loop over the pixels again, collecting statistics for each
-  // cluster.
+  // ===========================================================================
+  // Step 4: Loop over pixels to collect stattistics for each cluster
+  // ===========================================================================
   // We will soon fit lines (segments) to these points.
 
-  map<int, vector<XYW> > clusters;
-  for (int y = 0; y + 1 < im_segment.height(); y++) {
-    for (int x = 0; x + 1 < im_segment.width(); x++) {
-      if (uf.getSetSize(y * im_segment.width() + x) <
-          Segment::minimumSegmentSize)
+  TimerUs t_step4("step4");
+
+  map<int, vector<XYW>> clusters;
+  for (int y = 0; y < height - 1; ++y) {
+    for (int x = 0; x < width - 1; ++x) {
+      const int id = y * width + x;
+      if (uf.getSetSize(id) < Segment::kMinSegmentPixels) {
         continue;
+      }
 
-      int rep = (int)uf.getRepresentative(y * im_segment.width() + x);
+      int rep = uf.getRepresentative(id);
 
-      map<int, vector<XYW> >::iterator it = clusters.find(rep);
+      map<int, vector<XYW>>::iterator it = clusters.find(rep);
       if (it == clusters.end()) {
         clusters[rep] = vector<XYW>();
         it = clusters.find(rep);
@@ -184,11 +186,14 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
       points.push_back(XYW(x, y, im_mag.get(x, y)));
     }
   }
+  t_step4.stop();
+  t_step4.report();
 
   //================================================================
   // Step five: Loop over the clusters, fitting lines (which we call Segments).
+  TimerUs t_fit_line("FitLine");
   std::vector<Segment> segments;  // used in Step six
-  std::map<int, std::vector<XYW> >::const_iterator clustersItr;
+  std::map<int, std::vector<XYW>>::const_iterator clustersItr;
   for (clustersItr = clusters.begin(); clustersItr != clusters.end();
        clustersItr++) {
     std::vector<XYW> points = clustersItr->second;
@@ -251,10 +256,14 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
 
     segments.push_back(seg);
   }
+  t_fit_line.stop();
+  t_fit_line.report();
 
+  // ===========================================================================
   // Step six: For each segment, find segments that begin where this segment
   // ends. (We will chain segments together next...) The gridder accelerates the
   // search by building (essentially) a 2D hash table.
+  TimerUs t_gridder("Gridder");
   Gridder<Segment> gridder(0, 0, width, height, 10);
 
   // add every segment to the hash table according to the position of the
@@ -303,27 +312,34 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
       parent_seg.children.push_back(&child);
     }
   }
+  t_gridder.stop();
+  t_gridder.report();
 
   //================================================================
   // Step seven: Search all connected segments to see if any form a loop of
   // length 4.
   // Add those to the quads list.
+  TimerUs t_quad("Quad");
   vector<Quad> quads;
 
   vector<Segment *> tmp(5);
-  for (unsigned int i = 0; i < segments.size(); i++) {
+  for (size_t i = 0; i < segments.size(); i++) {
     tmp[0] = &segments[i];
     Quad::search(im_orig, tmp, segments[i], 0, quads, optical_center);
   }
+  t_quad.stop();
+  t_quad.report();
 
-  //================================================================
-  // Step eight. Decode the quads. For each quad, we first estimate a
-  // threshold color to decide between 0 and 1. Then, we read off the
-  // bits and see if they make sense.
+  //============================================================================
+  // Step 8: Decode the quads.
+  //============================================================================
+  // For each quad, we first estimate a threshold color to decide between 0 and
+  // 1. Then, we read off the bits and see if they make sense.
 
+  TimerUs t_decode("Decode");
   std::vector<TagDetection> detections;
 
-  for (unsigned int qi = 0; qi < quads.size(); qi++) {
+  for (size_t qi = 0; qi < quads.size(); ++qi) {
     Quad &quad = quads[qi];
 
     // Find a threshold
@@ -416,6 +432,8 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
       }
     }
   }
+  t_decode.stop();
+  t_decode.report();
 
   //================================================================
   // Step nine: Some quads may be detected more than once, due to
@@ -424,6 +442,7 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
   // keep the one with the lowest error, and if the error is the same,
   // the one with the greatest observed perimeter.
 
+  TimerUs t_step9("step9");
   std::vector<TagDetection> good_td;
 
   // NOTE: allow multiple non-overlapping detections of the same target.
@@ -460,6 +479,8 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
     if (newFeature) good_td.push_back(thisTagDetection);
   }
 
+  t_step9.stop();
+  t_step9.report();
   return good_td;
 }
 

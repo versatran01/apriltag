@@ -5,33 +5,32 @@
 
 namespace AprilTags {
 
-//float const Edge::minMag = 0.004f;
-float const Edge::minMag = 0.063f;
-float const Edge::maxEdgeCost = 30.f * float(M_PI) / 180.f;
-int const Edge::WEIGHT_SCALE = 100;
-float const Edge::thetaThresh = 100;
-float const Edge::magThresh = 1200;
+// float const Edge::minMag = 0.004f;
+float const Edge::kMinMag = 0.06f;
+float const Edge::kMaxEdgeCost = 30.f * float(M_PI) / 180.f;
+int const Edge::kWeightScale = 100;
+float const Edge::kThetaThresh = 100;
+float const Edge::kMagThresh = 1200;
 
 int Edge::edgeCost(float theta0, float theta1, float mag1) {
-  if (mag1 < minMag)  // mag0 was checked by the main routine so no need to
-                      // recheck here
-    return -1;
+  // mag0 was checked by the main routine so no need to recheck here
+  if (mag1 < kMinMag) return -1;
 
-  const float thetaErr = std::abs(MathUtil::mod2pi(theta1 - theta0));
-  if (thetaErr > maxEdgeCost) return -1;
+  const float theta_diff = std::abs(MathUtil::mod2pi(theta1 - theta0));
+  if (theta_diff > kMaxEdgeCost) return -1;
 
-  const float normErr = thetaErr / maxEdgeCost;
-  return (int)(normErr * WEIGHT_SCALE);
+  const float norm_diff = theta_diff / kMaxEdgeCost;
+  return static_cast<int>(norm_diff * kWeightScale);
 }
 
-void Edge::calcEdges(float theta0, int x, int y, const FloatImage &theta,
+void Edge::calcEdges(float theta0, int x, int y, const FloatImage &im_theta,
                      const FloatImage &mag, std::vector<Edge> &edges,
                      size_t &nEdges) {
-  int width = theta.width();
+  int width = im_theta.width();
   int thisPixel = y * width + x;
 
   // horizontal edge
-  int cost1 = edgeCost(theta0, theta.get(x + 1, y), mag.get(x + 1, y));
+  int cost1 = edgeCost(theta0, im_theta.get(x + 1, y), mag.get(x + 1, y));
   if (cost1 >= 0) {
     edges[nEdges].cost = cost1;
     edges[nEdges].pixelIdxA = thisPixel;
@@ -40,7 +39,7 @@ void Edge::calcEdges(float theta0, int x, int y, const FloatImage &theta,
   }
 
   // vertical edge
-  int cost2 = edgeCost(theta0, theta.get(x, y + 1), mag.get(x, y + 1));
+  int cost2 = edgeCost(theta0, im_theta.get(x, y + 1), mag.get(x, y + 1));
   if (cost2 >= 0) {
     edges[nEdges].cost = cost2;
     edges[nEdges].pixelIdxA = thisPixel;
@@ -49,7 +48,8 @@ void Edge::calcEdges(float theta0, int x, int y, const FloatImage &theta,
   }
 
   // downward diagonal edge
-  int cost3 = edgeCost(theta0, theta.get(x + 1, y + 1), mag.get(x + 1, y + 1));
+  int cost3 =
+      edgeCost(theta0, im_theta.get(x + 1, y + 1), mag.get(x + 1, y + 1));
   if (cost3 >= 0) {
     edges[nEdges].cost = cost3;
     edges[nEdges].pixelIdxA = thisPixel;
@@ -58,7 +58,7 @@ void Edge::calcEdges(float theta0, int x, int y, const FloatImage &theta,
   }
 
   // updward diagonal edge
-  int cost4 = (x == 0) ? -1 : edgeCost(theta0, theta.get(x - 1, y + 1),
+  int cost4 = (x == 0) ? -1 : edgeCost(theta0, im_theta.get(x - 1, y + 1),
                                        mag.get(x - 1, y + 1));
   if (cost4 >= 0) {
     edges[nEdges].cost = cost4;
@@ -73,7 +73,7 @@ void Edge::mergeEdges(std::vector<Edge> &edges, UnionFindSimple &uf,
   //  for (size_t i = 0; i < edges.size(); i++) {
   //    int ida = edges[i].pixelIdxA;
   //    int idb = edges[i].pixelIdxB;
-  for (const Edge &e : edges) {
+  for (Edge &e : edges) {
     int ida = e.pixelIdxA;
     int idb = e.pixelIdxB;
 
@@ -109,9 +109,9 @@ void Edge::mergeEdges(std::vector<Edge> &edges, UnionFindSimple &uf,
 
     // merge these two clusters?
     float costab = (tmaxab - tminab);
-    if (costab <= (min(costa, costb) + Edge::thetaThresh / (sza + szb)) &&
+    if (costab <= (min(costa, costb) + kThetaThresh / (sza + szb)) &&
         (mmaxab - mminab) <= min(mmax[ida] - mmin[ida], mmax[idb] - mmin[idb]) +
-                                 Edge::magThresh / (sza + szb)) {
+                                 kMagThresh / (sza + szb)) {
       int idab = uf.connectNodes(ida, idb);
 
       tmin[idab] = tminab;

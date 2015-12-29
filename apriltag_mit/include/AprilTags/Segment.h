@@ -15,7 +15,7 @@ class Segment {
    * @brief minimumSegmentSize
    * Minimum number of pixels in a segment before we'll fit a line to it
    */
-  static int const minimumSegmentSize = 4;
+  static int const kMinSegmentPixels = 4;
 
   /**
    * @brief minimumLineLength

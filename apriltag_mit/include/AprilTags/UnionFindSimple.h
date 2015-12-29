@@ -16,14 +16,11 @@ class UnionFindSimple {
  public:
   explicit UnionFindSimple(int maxId) : data(maxId) { init(); }
 
-  int getSetSize(int thisId) { return data[getRepresentative(thisId)].size; }
+  int getSetSize(int id) { return data[getRepresentative(id)].size; }
 
   int getRepresentative(int thisId);
 
   //! Returns the id of the merged node.
-  /** @param aId
-   *  @param bId
-   */
   int connectNodes(int aId, int bId);
 
   void printDataVector() const;
