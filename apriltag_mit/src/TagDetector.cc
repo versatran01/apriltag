@@ -73,14 +73,13 @@ void TagDetector::CalcPolar(const FloatImage &image, FloatImage &im_mag,
 }
 
 std::vector<Quad> TagDetector::SearchQuads(
-    std::vector<Segment> &segments,
-    const std::pair<float, float> &optical_center) const {
+    std::vector<Segment> &segments) const {
   vector<Quad> quads;
 
   vector<Segment *> tmp(5);
   for (size_t i = 0; i < segments.size(); i++) {
     tmp[0] = &segments[i];
-    Quad::search(tmp, segments[i], 0, quads, optical_center);
+    Quad::search(tmp, segments[i], 0, quads);
   }
 
   return quads;
@@ -127,7 +126,6 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
   int width = image.cols;
   int height = image.rows;
   FloatImage im_orig(image);
-  std::pair<int, int> optical_center(width / 2, height / 2);
 
   // ===========================================================================
   // Step 1: Preprocess image
@@ -369,7 +367,7 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
   //============================================================================
   // To see if any form a loop of length 4.
   TimerUs t_quad("Quad");
-  auto quads = SearchQuads(segments, optical_center);
+  auto quads = SearchQuads(segments);
   t_quad.stop();
   t_quad.report();
 
@@ -433,7 +431,6 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
 
       // compute the homography (and rotate it appropriately)
       td.H = quad.homography.getH();
-      td.hxy = quad.homography.getCXY();
 
       float c = std::cos(td.num_rotations * (float)M_PI / 2);
       float s = std::sin(td.num_rotations * (float)M_PI / 2);

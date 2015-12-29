@@ -42,9 +42,7 @@ class TagDetector {
   void CalcPolar(const FloatImage& image, FloatImage& im_mag,
                  FloatImage& im_theta) const;
 
-  std::vector<Quad> SearchQuads(
-      std::vector<Segment>& segments,
-      const std::pair<float, float>& optical_center) const;
+  std::vector<Quad> SearchQuads(std::vector<Segment>& segments) const;
 
   /**
    * @brief ResolveOverlap Step 9

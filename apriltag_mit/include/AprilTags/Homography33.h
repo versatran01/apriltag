@@ -39,7 +39,7 @@
 class Homography33 {
  public:
   //! Constructor
-  Homography33(const std::pair<float, float> &opticalCenter);
+  Homography33();
 
   void setCorrespondences(const std::vector<std::pair<float, float>> &srcPts,
                           const std::vector<std::pair<float, float>> &dstPts);
@@ -47,14 +47,11 @@ class Homography33 {
   //! Note that the returned H matrix does not reflect cxy.
   Eigen::Matrix3d &getH();
 
-  const std::pair<float, float> getCXY() const { return cxy; }
-
   void compute();
 
   //  std::pair<float, float> project(float worldx, float worldy);
 
  private:
-  std::pair<float, float> cxy;
   Eigen::Matrix<double, 9, 9> fA;
   Eigen::Matrix3d H;
   bool valid;

@@ -4,8 +4,7 @@
 
 #include "AprilTags/Homography33.h"
 
-Homography33::Homography33(const std::pair<float, float> &opticalCenter)
-    : cxy(opticalCenter), fA(), H(), valid(false) {
+Homography33::Homography33() : fA(), H(), valid(false) {
   fA.setZero();
   H.setZero();
 }
@@ -16,8 +15,8 @@ Eigen::Matrix3d &Homography33::getH() {
 }
 
 void Homography33::setCorrespondences(
-    const std::vector<std::pair<float, float> > &sPts,
-    const std::vector<std::pair<float, float> > &dPts) {
+    const std::vector<std::pair<float, float>> &sPts,
+    const std::vector<std::pair<float, float>> &dPts) {
   valid = false;
   srcPts = sPts;
   dstPts = dPts;
@@ -32,8 +31,7 @@ void Homography33::compute() {
     sPts.push_back(cv::Point2f(srcPts[i].first, srcPts[i].second));
   }
   for (int i = 0; i < 4; i++) {
-    dPts.push_back(cv::Point2f(dstPts[i].first - cxy.first,
-                               dstPts[i].second - cxy.second));
+    dPts.push_back(cv::Point2f(dstPts[i].first, dstPts[i].second));
   }
   cv::Mat homography = cv::findHomography(sPts, dPts);
   for (int c = 0; c < 3; c++) {

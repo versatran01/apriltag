@@ -8,9 +8,8 @@
 
 namespace AprilTags {
 
-Quad::Quad(const std::vector<std::pair<float, float>> &p,
-           const std::pair<float, float> &optical_center)
-    : quadPoints(p), segments(), obs_perimeter(), homography(optical_center) {
+Quad::Quad(const std::vector<std::pair<float, float>> &p)
+    : quadPoints(p), segments(), obs_perimeter(), homography() {
   std::vector<std::pair<float, float>> srcPts;
   srcPts.push_back(std::make_pair(-1, -1));
   srcPts.push_back(std::make_pair(1, -1));
@@ -57,8 +56,7 @@ cv::Point2f Quad::interpolate01(const cv::Point2f &p) {
 }
 
 void Quad::search(std::vector<Segment *> &path, Segment &parent, int depth,
-                  std::vector<Quad> &quads,
-                  const std::pair<float, float> &opticalCenter) {
+                  std::vector<Quad> &quads) {
   // cout << "Searching segment " << parent.getId() << ", depth=" << depth << ",
   // #children=" << parent.children.size() << endl;
   // terminal depth occurs when we've found four segments.
@@ -136,7 +134,7 @@ void Quad::search(std::vector<Segment *> &path, Segment &parent, int depth,
       }
 
       if (!bad) {
-        Quad q(p, opticalCenter);
+        Quad q(p);
         q.segments = path;
         q.obs_perimeter = calc_perimeter;
         quads.push_back(q);
@@ -166,7 +164,7 @@ void Quad::search(std::vector<Segment *> &path, Segment &parent, int depth,
       continue;
     }
     path[depth + 1] = &child;
-    search(path, child, depth + 1, quads, opticalCenter);
+    search(path, child, depth + 1, quads);
   }
 }
 

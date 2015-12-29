@@ -33,8 +33,7 @@ class Quad {
   //! Constructor
   /*! (x,y) are the optical center of the camera, which is
    *   needed to correctly compute the homography. */
-  Quad(const std::vector<std::pair<float, float>>& p,
-       const std::pair<float, float>& optical_center);
+  Quad(const std::vector<std::pair<float, float>>& p);
 
   //! Interpolate given that the lower left corner of the lower left cell is at
   //(-1,-1) and the upper right corner of the upper right cell is at (1,1).
@@ -75,8 +74,7 @@ class Quad {
    *  @param depth how deep in the search are we?
    */
   static void search(std::vector<Segment*>& path, Segment& parent, int depth,
-                     std::vector<Quad>& quads,
-                     const std::pair<float, float>& opticalCenter);
+                     std::vector<Quad>& quads);
 
 #ifdef INTERPOLATE
  private:

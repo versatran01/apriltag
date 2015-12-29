@@ -25,8 +25,8 @@ std::pair<float, float> TagDetection::interpolate(float x, float y) const {
     return std::pair<float, float>(0, 0);  // prevents returning a pair with a
                                            // -NaN, for which gcc 4.4 flubs
                                            // isnan
-  float newx = (H(0, 0) * x + H(0, 1) * y + H(0, 2)) / z + hxy.first;
-  float newy = (H(1, 0) * x + H(1, 1) * y + H(1, 2)) / z + hxy.second;
+  float newx = (H(0, 0) * x + H(0, 1) * y + H(0, 2)) / z;
+  float newy = (H(1, 0) * x + H(1, 1) * y + H(1, 2)) / z;
   return std::pair<float, float>(newx, newy);
 }
 
