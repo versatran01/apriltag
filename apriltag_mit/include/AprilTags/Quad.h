@@ -1,10 +1,6 @@
 #ifndef APRILTAGS_QUAD_H_
 #define APRILTAGS_QUAD_H_
 
-#include <utility>
-#include <vector>
-
-#include <Eigen/Dense>
 #include <opencv2/core/core.hpp>
 
 #define INTERPOLATE
@@ -13,9 +9,6 @@ namespace AprilTags {
 
 class FloatImage;
 class Segment;
-
-using std::min;
-using std::max;
 
 //! Represents four segments that form a loop, and might be a tag.
 class Quad {
@@ -30,26 +23,19 @@ class Quad {
    */
   static constexpr float kMaxQuadAspectRatio = 32.0;
 
-  //! Constructor
-  /*! (x,y) are the optical center of the camera, which is
-   *   needed to correctly compute the homography. */
-  Quad(const std::vector<std::pair<float, float>>& p);
+  Quad(const std::vector<cv::Point2f>& p);
 
   //! Interpolate given that the lower left corner of the lower left cell is at
   //(-1,-1) and the upper right corner of the upper right cell is at (1,1).
-  std::pair<float, float> interpolate(float x, float y) const;
-
-  cv::Point2f interpolate(const cv::Point2f& p);
+  cv::Point2f interpolate(const cv::Point2f& p) const;
 
   //! Same as interpolate, except that the coordinates are interpreted between 0
   // and 1, instead of -1 and 1.
-  std::pair<float, float> interpolate01(float x, float y) const;
-
-  cv::Point2f interpolate01(const cv::Point2f& p);
+  cv::Point2f interpolate01(const cv::Point2f& p) const;
 
   //! Points for the quad (in pixel coordinates), in counter clockwise order.
   // These points are the intersections of segments.
-  std::vector<std::pair<float, float>> p;
+  std::vector<cv::Point2f> p;
 
   //! Segments composing this quad
   std::vector<Segment*> segments;
@@ -71,7 +57,7 @@ class Quad {
                      std::vector<Quad>& quads);
 
  private:
-  Eigen::Vector2f p0, p3, p01, p32;
+  cv::Point2f p0_, p3_, p01_, p32_;
 };
 
 /**
@@ -79,7 +65,7 @@ class Quad {
  * @param p
  * @return
  */
-cv::Matx33f CalcHomography(const std::vector<std::pair<float, float>>& p);
+cv::Matx33f CalcHomography(const std::vector<cv::Point2f>& p);
 
 }  // namespace AprilTags
 

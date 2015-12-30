@@ -22,10 +22,11 @@ struct TagDetection {
         obs_code(obs_code),
         code(code),
         hamming_distance(hamming_distance),
-        num_rotations(num_rotations) {}
+        num_rotations(num_rotations) {
+    p.resize(4);
+  }
 
   unsigned id;
-
   bool good = false;
 
   /**
@@ -61,7 +62,7 @@ struct TagDetection {
    * The points travel counter-clockwise around the target, alwasy starting from
    * the same corner of the tag
    */
-  cv::Point2f p[4];
+  std::vector<cv::Point2f> p;
 
   /**
    * @brief obs_perimeter length of the observed perimeter
@@ -70,64 +71,37 @@ struct TagDetection {
    */
   float obs_perimeter;
 
-  //! A 3x3 homography that computes pixel coordinates from tag-relative
-  // coordinates.
-  /*  Both the input and output coordinates are 2D homogeneous vectors, with y =
-   * Hx.
-   *  'y' are pixel coordinates, 'x' are tag-relative coordinates. Tag
-   * coordinates span
-   *  from (-1,-1) to (1,1). The orientation of the homography reflects the
-   * orientation
-   *  of the target.
+  /**
+   * @brief H Homography
+   * y = Hx, y are pixel coordinates, x are tag-relative coordinates
+   * from (-1,-1) to (1, 1)
    */
   cv::Matx33f H;
-  //  Eigen::Matrix3d H;
 
-  //! Interpolate point given (x,y) is in tag coordinate space from (-1,-1) to
-  //(1,1).
-  std::pair<float, float> interpolate(float x, float y) const;
+  /**
+   * @brief interpolate
+   * @param p
+   * @return
+   */
+  cv::Point2f interpolate(const cv::Point2f& p) const;
 
-  //! Used to eliminate redundant tags
+  /**
+   * @brief OverlapsTooMuch Determines whether two tags overlap too much
+   * @param other
+   * @return
+   */
   bool OverlapsTooMuch(const TagDetection& other) const;
 
-  //! Scale this tag
-  // TODO: Also need to scale homography?
+  /**
+   * @brief ScaleTag
+   * @param scale
+   */
   void ScaleTag(float scale);
-
-  //! Orientation in the xy plane
-  //  float getXYOrientation() const;
-
-  //! Relative pose of tag with respect to the camera
-  /* Returns the relative location and orientation of the tag using a
-     4x4 homogeneous transformation matrix (see Hartley&Zisserman,
-     Multi-View Geometry, 2003). Requires knowledge of physical tag
-     size (side length of black square in meters) as well as camera
-     calibration (focal length and principal point); Result is in
-     camera frame (z forward, x right, y down)
-  */
-  //  Eigen::Matrix4d getRelativeTransform(double tag_size, double fx, double
-  //  fy,
-  //                                       double px, double py) const;
-
-  //! Recover rotation matrix and translation vector of April tag relative to
-  // camera.
-  // Result is in object frame (x forward, y left, z up)
-  //  void getRelativeTranslationRotation(double tag_size, double fx, double fy,
-  //                                      double px, double py,
-  //                                      Eigen::Vector3d& trans,
-  //                                      Eigen::Matrix3d& rot) const;
-
-  //! Better version
-  //  Eigen::Matrix4d getRelativeH(double tag_size, const cv::Matx33d& K,
-  //                               const cv::Mat_<double>& D) const;
-  //  void getRelativeQT(double tag_size, const cv::Matx33d& K,
-  //                     const cv::Mat_<double>& D, Eigen::Quaterniond& quat,
-  //                     Eigen::Vector3d& trans) const;
-  //  void getRelativeRT(double tag_size, const cv::Matx33d& K,
-  //                     const cv::Mat_<double>& D, cv::Mat& rvec,
-  //                     cv::Mat& tvec) const;
 };
 
-}  /// namespace AprilTags
+float TagPerimeter(const std::vector<cv::Point2f>& p);
+float TagRadius(const std::vector<cv::Point2f>& p);
+
+}  // namespace AprilTags
 
 #endif  // APRILTAGS_TAGDETECTION_H_

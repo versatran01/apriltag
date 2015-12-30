@@ -42,6 +42,11 @@ class TagDetector {
   void CalcPolar(const FloatImage& image, FloatImage& im_mag,
                  FloatImage& im_theta) const;
 
+  /**
+   * @brief SearchQuads Step 7
+   * @param segments
+   * @return
+   */
   std::vector<Quad> SearchQuads(std::vector<Segment>& segments) const;
 
   /**

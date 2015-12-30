@@ -1,7 +1,4 @@
-#include <Eigen/Dense>
-
 #include <opencv2/calib3d/calib3d.hpp>
-#include "AprilTags/FloatImage.h"
 #include "AprilTags/MathUtil.h"
 #include "AprilTags/GLine2D.h"
 #include "AprilTags/Quad.h"
@@ -9,34 +6,26 @@
 
 namespace AprilTags {
 
-Quad::Quad(const std::vector<std::pair<float, float>> &p)
-    : p(p), segments(), obs_perimeter() {
-  p0 = Eigen::Vector2f(p[0].first, p[0].second);
-  p3 = Eigen::Vector2f(p[3].first, p[3].second);
-  p01 = (Eigen::Vector2f(p[1].first, p[1].second) - p0);
-  p32 = (Eigen::Vector2f(p[2].first, p[2].second) - p3);
+Quad::Quad(const std::vector<cv::Point2f> &p)
+    : p(p),
+      segments(),
+      obs_perimeter(),
+      p0_(p[0]),
+      p3_(p[3]),
+      p01_(p[1] - p[0]),
+      p32_(p[2] - p[3]) {}
+
+cv::Point2f Quad::interpolate(const cv::Point2f &p) const {
+  const float kx = (p.x + 1) / 2;
+  const float ky = (p.y + 1) / 2;
+  const auto r1 = p0_ + p01_ * kx;
+  const auto r2 = p3_ + p32_ * kx;
+  const auto r = r1 + (r2 - r1) * ky;
+  return r;
 }
 
-std::pair<float, float> Quad::interpolate(float x, float y) const {
-  Eigen::Vector2f r1 = p0 + p01 * (x + 1.) / 2.;
-  Eigen::Vector2f r2 = p3 + p32 * (x + 1.) / 2.;
-  Eigen::Vector2f r = r1 + (r2 - r1) * (y + 1) / 2;
-  return std::pair<float, float>(r(0), r(1));
-}
-
-cv::Point2f Quad::interpolate(const cv::Point2f &p) {
-  Eigen::Vector2f r1 = p0 + p01 * (p.x + 1.) / 2.;
-  Eigen::Vector2f r2 = p3 + p32 * (p.x + 1.) / 2.;
-  Eigen::Vector2f r = r1 + (r2 - r1) * (p.y + 1) / 2;
-  return cv::Point2f(r(0), r(1));
-}
-
-std::pair<float, float> Quad::interpolate01(float x, float y) const {
-  return interpolate(2 * x - 1, 2 * y - 1);
-}
-
-cv::Point2f Quad::interpolate01(const cv::Point2f &p) {
-  return interpolate(cv::Point2f(2 * p.x - 1, 2 * p.y - 1));
+cv::Point2f Quad::interpolate01(const cv::Point2f &p) const {
+  return interpolate(2 * p - cv::Point2f(1, 1));
 }
 
 void Quad::search(std::vector<Segment *> &path, Segment &parent, int depth,
@@ -53,7 +42,7 @@ void Quad::search(std::vector<Segment *> &path, Segment &parent, int depth,
       std::vector<std::pair<float, float>> p(4);
       float calc_perimeter = 0;
       bool bad = false;
-      for (int i = 0; i < 4; i++) {
+      for (size_t i = 0; i < 4; i++) {
         // compute intersections between all the lines. This will give us
         // sub-pixel accuracy for the corners of the quad.
         GLine2D line_a(std::make_pair(path[i]->getX0(), path[i]->getY0()),
@@ -118,10 +107,15 @@ void Quad::search(std::vector<Segment *> &path, Segment &parent, int depth,
       }
 
       if (!bad) {
-        Quad q(p);
-        q.segments = path;
-        q.obs_perimeter = calc_perimeter;
-        quads.push_back(q);
+        std::vector<cv::Point2f> pcv = {{p[0].first, p[0].second},
+                                        {p[1].first, p[1].second},
+                                        {p[2].first, p[2].second},
+                                        {p[3].first, p[3].second}};
+
+        Quad quad(pcv);
+        quad.segments = path;
+        quad.obs_perimeter = calc_perimeter;
+        quads.push_back(quad);
       }
     }
     return;
@@ -152,13 +146,9 @@ void Quad::search(std::vector<Segment *> &path, Segment &parent, int depth,
   }
 }
 
-cv::Matx33f CalcHomography(const std::vector<std::pair<float, float>> &p) {
+cv::Matx33f CalcHomography(const std::vector<cv::Point2f> &p) {
   std::vector<cv::Point2f> obj_pts = {{-1, -1}, {1, -1}, {1, 1}, {-1, 1}};
-  std::vector<cv::Point2f> img_pts = {{p[0].first, p[0].second},
-                                      {p[1].first, p[1].second},
-                                      {p[2].first, p[2].second},
-                                      {p[3].first, p[3].second}};
-  const auto H = cv::findHomography(obj_pts, img_pts);
+  const auto H = cv::findHomography(obj_pts, p);
   return cv::Matx33f(H.clone().ptr<float>());
 }
 

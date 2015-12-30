@@ -366,7 +366,7 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
   // Step 7: Search all connected segments for quads.
   //============================================================================
   // To see if any form a loop of length 4.
-  TimerUs t_quad("Quad");
+  TimerUs t_quad("SearchQuads");
   const auto quads = SearchQuads(segments);
   t_quad.stop();
   t_quad.report();
@@ -392,9 +392,9 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
       float y = (iy + 0.5f) / dd;
       for (int ix = -1; ix <= dd; ix++) {
         float x = (ix + 0.5f) / dd;
-        std::pair<float, float> pxy = quad.interpolate01(x, y);
-        int irx = (int)(pxy.first + 0.5);
-        int iry = (int)(pxy.second + 0.5);
+        const auto pxy = quad.interpolate01({x, y});
+        int irx = (int)(pxy.x + 0.5);
+        int iry = (int)(pxy.y + 0.5);
         if (irx < 0 || irx >= width || iry < 0 || iry >= height) continue;
         float v = im_decode.get(irx, iry);
         if (iy == -1 || iy == dd || ix == -1 || ix == dd)
@@ -410,9 +410,9 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
       float y = (black_border_ + iy + 0.5f) / dd;
       for (int ix = 0; ix < tag_family_.dimension_bits(); ix++) {
         float x = (black_border_ + ix + 0.5f) / dd;
-        std::pair<float, float> pxy = quad.interpolate01(x, y);
-        int irx = static_cast<int>(pxy.first + 0.5);
-        int iry = static_cast<int>(pxy.second + 0.5);
+        const auto pxy = quad.interpolate01({x, y});
+        int irx = static_cast<int>(pxy.x + 0.5);
+        int iry = static_cast<int>(pxy.y + 0.5);
         if (irx < 0 || irx >= width || iry < 0 || iry >= height) {
           bad = true;
           continue;
@@ -441,16 +441,15 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
       R(2, 2) = 1;
       td.H = td.H * R;
 
-      // Rotate points in detection according to decoded
-      // orientation.  Thus the order of the points in the
-      // detection object can be used to determine the
-      // orientation of the target.
-      std::pair<float, float> bottomLeft = td.interpolate(-1, -1);
+      // Rotate points in detection according to decoded orientation. Thus the
+      // order of the points in the detection object can be used to determine
+      // the orientation of the target.
+
+      const auto bl = td.interpolate({-1, -1});
       int best_rot = -1;
       float best_dist = FLT_MAX;
-      for (int i = 0; i < 4; i++) {
-        float const dist =
-            AprilTags::MathUtil::Distance2D(bottomLeft, quad.p[i]);
+      for (size_t i = 0; i < 4; ++i) {
+        const float dist = Distance2D(bl, quad.p[i]);
         if (dist < best_dist) {
           best_dist = dist;
           best_rot = i;
@@ -458,13 +457,11 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
       }
 
       for (size_t i = 0; i < 4; ++i) {
-        const auto p = quad.p[(i + best_rot) % 4];
-        td.p[i] = cv::Point2f(p.first, p.second);
+        td.p[i] = quad.p[(i + best_rot) % 4];
       }
 
       if (td.good) {
-        const auto c = quad.interpolate01(0.5f, 0.5f);
-        td.cxy = cv::Point2f(c.first, c.second);
+        td.cxy = quad.interpolate01({0.5f, 0.5f});
         td.obs_perimeter = quad.obs_perimeter;
         detections.push_back(td);
       }
