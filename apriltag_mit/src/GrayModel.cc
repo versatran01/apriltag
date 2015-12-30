@@ -107,8 +107,5 @@ bool IsInsideInnerBorder(int x, int y, int l) {
   return (y >= 1 && y < (l - 1) && x >= 1 && x < (l - 1));
 }
 
-bool IsInsideImage(int x, int y, int w, int h) {
-  return (x >= 0 && x < w && y >= 0 && y < h);
-}
 
 }  // namespace AprilTags

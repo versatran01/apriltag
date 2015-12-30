@@ -28,6 +28,9 @@ class FloatImage {
   cv::Mat image_;
 };
 
+bool IsInsideImage(int x, int y, int w, int h);
+bool IsInsideImage(int x, int y, const FloatImage& image);
+
 }  // namespace AprilTags
 
 #endif  // APRILTAGS_FLOATIMAGE_H_

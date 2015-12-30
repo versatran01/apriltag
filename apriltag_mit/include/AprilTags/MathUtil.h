@@ -10,6 +10,20 @@
 
 namespace AprilTags {
 
+template <typename T>
+constexpr T Pi() {
+  static_assert(std::is_floating_point<T>::value,
+                "Type must be floating point");
+  return static_cast<T>(M_PI);
+}
+
+template <typename T>
+constexpr T Pi_2() {
+  static_assert(std::is_floating_point<T>::value,
+                "Type must be floating point");
+  return static_cast<T>(M_PI / 2);
+}
+
 static float Distance2D(const cv::Point2f& p0, const cv::Point2f& p1) {
   const auto dx = p0.x - p1.x;
   const auto dy = p0.y - p1.y;

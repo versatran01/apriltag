@@ -24,8 +24,44 @@ cv::Point2f Quad::interpolate(const cv::Point2f &p) const {
   return r;
 }
 
-cv::Point2f Quad::interpolate01(const cv::Point2f &p) const {
+cv::Point2f Quad::Interpolate01(const cv::Point2f &p) const {
   return interpolate(2 * p - cv::Point2f(1, 1));
+}
+
+GrayModel Quad::MakeGrayModel(const FloatImage &image,
+                              unsigned length_bits) const {
+  GrayModel model;
+  const int lb = length_bits;
+
+  // Only need to loop through the boundary
+  for (int yb = -1; yb <= lb; ++yb) {
+    // Convert to normalized coordinates 01
+    const float yn = (yb + 0.5f) / lb;
+    for (int xb = -1; xb <= lb; ++xb) {
+      // Skip if inside quad boundary
+      if (IsInsideInnerBorder(xb, yb, lb)) continue;
+
+      const float xn = (xb + 0.5f) / lb;
+      // Convert to image coordinates
+      const auto pi = Interpolate01({xn, yn});
+      int xi = pi.x + 0.5;
+      int yi = pi.y + 0.5;
+
+      // Skip if outside image
+      if (!IsInsideImage(xi, yi, image)) continue;
+
+      const float v = image.get(xi, yi);
+      if (IsOnOutterBorder(xb, yb, lb)) {
+        model.AddWhiteObs(xn, yn, v);
+      } else if (IsOnInnerBorder(xb, yb, lb)) {
+        model.AddBlackObs(xn, yn, v);
+      }
+    }
+  }
+
+  // Don't forget to Fit the model
+  model.Fit();
+  return model;
 }
 
 void Quad::search(std::vector<Segment *> &path, Segment &parent, int depth,

@@ -2,8 +2,8 @@
 #define APRILTAGS_QUAD_H_
 
 #include <opencv2/core/core.hpp>
-
-#define INTERPOLATE
+#include "AprilTags/GrayModel.h"
+#include "AprilTags/FloatImage.h"
 
 namespace AprilTags {
 
@@ -25,36 +25,53 @@ class Quad {
 
   Quad(const std::vector<cv::Point2f>& p);
 
-  //! Interpolate given that the lower left corner of the lower left cell is at
-  //(-1,-1) and the upper right corner of the upper right cell is at (1,1).
+  /**
+   * @brief interpolate Interpolate given that the lower left corner of the
+   * lower left cell is (-1, -1) and the upper right corner of the upper right
+   * cell is at (1,1)
+   * @param p
+   * @return
+   */
   cv::Point2f interpolate(const cv::Point2f& p) const;
 
-  //! Same as interpolate, except that the coordinates are interpreted between 0
-  // and 1, instead of -1 and 1.
-  cv::Point2f interpolate01(const cv::Point2f& p) const;
+  /**
+   * @brief interpolate01 Interpolate between 0~1 instead of -1~1
+   * @param p
+   * @return
+   */
+  cv::Point2f Interpolate01(const cv::Point2f& p) const;
 
-  //! Points for the quad (in pixel coordinates), in counter clockwise order.
-  // These points are the intersections of segments.
+  /**
+   * @brief p Points for the quad in pixel coordinates, in couter clockwise
+   * order. These points are the intersectiosn of segments
+   */
   std::vector<cv::Point2f> p;
 
-  //! Segments composing this quad
+  /**
+   * @brief segments Segments composing this quad
+   */
   std::vector<Segment*> segments;
 
-  //! Total length (in pixels) of the actual perimeter observed for the quad.
-  /*! This is in contrast to the geometric perimeter, some of which
-   *  may not have been directly observed but rather inferred by
-   *  intersecting segments. Quads with more observed perimeter are
-   *  preferred over others. */
+  /**
+   * @brief obs_perimeter Total length in pixels of the acutal perimeter
+   * observed for the quad.
+   * This is in contrast to the geometric perimeter, some of which may not have
+   * been directly observed but rather inferred by tintersecting segments. Quads
+   * with more observed perimeter are preferred over others.
+   */
   float obs_perimeter;
 
-  //! Searches through a vector of Segments to form Quads.
-  /*  @param quads any discovered quads will be added to this list
-   *  @param path  the segments currently part of the search
-   *  @param parent the first segment in the quad
-   *  @param depth how deep in the search are we?
+  /**
+   * @brief search Searches through a vector of segments to form Quads
+   * @param path
+   * @param parent
+   * @param depth
+   * @param quads
    */
   static void search(std::vector<Segment*>& path, Segment& parent, int depth,
                      std::vector<Quad>& quads);
+
+  GrayModel MakeGrayModel(const FloatImage& image, unsigned length_bits) const;
 
  private:
   cv::Point2f p0_, p3_, p01_, p32_;

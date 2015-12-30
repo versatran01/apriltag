@@ -51,7 +51,6 @@ class GrayModel {
 bool IsOnOutterBorder(int x, int y, int l, bool black_corner = true);
 bool IsOnInnerBorder(int x, int y, int l);
 bool IsInsideInnerBorder(int x, int y, int l);
-bool IsInsideImage(int x, int y, int w, int h);
 
 }  // namespace AprilTags
 

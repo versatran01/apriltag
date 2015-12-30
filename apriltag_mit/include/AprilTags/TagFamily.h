@@ -1,14 +1,14 @@
 #ifndef APRILTAGS_TAGFAMILY_H_
 #define APRILTAGS_TAGFAMILY_H_
 
-#include <climits>
 #include <cmath>
-#include <stdio.h>
 #include <vector>
-#include <map>
 
 #include "AprilTags/TagCodes.h"
 #include "AprilTags/TagDetection.h"
+#include "AprilTags/Quad.h"
+#include "AprilTags/GrayModel.h"
+#include "AprilTags/FloatImage.h"
 
 namespace AprilTags {
 
@@ -35,7 +35,24 @@ class TagFamily {
    */
   TagDetection Decode(code_t obs_code) const;
 
+  /**
+   * @brief DecodeQuade
+   * @param quad
+   * @return
+   */
+  TagDetection DecodeQuad(const Quad& quad, const FloatImage& image,
+                          unsigned black_border) const;
+
   bool IsGood(unsigned id, unsigned hamming_distance) const;
+
+  /**
+   * @brief MakeGrayModel
+   * @param quad
+   * @param image
+   * @return
+   */
+  GrayModel MakeGrayModel(const Quad& quad, const FloatImage& image,
+                          unsigned black_border) const;
 
  private:
   /**

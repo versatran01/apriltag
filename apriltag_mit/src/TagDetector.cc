@@ -88,121 +88,16 @@ std::vector<Quad> TagDetector::SearchQuads(
   return quads;
 }
 
-GrayModel TagDetector::MakeGrayModel(const Quad &quad,
-                                     const FloatImage &image) const {
-  const int width = image.width();
-  const int height = image.height();
-
-  GrayModel gray_model;
-
-  const int lb = QuadLengthBits();
-
-  // Only need to loop through the boundary
-  for (int yb = -1; yb <= lb; ++yb) {
-    // Convert to normalized coordinates 01
-    const float yn = (yb + 0.5f) / lb;
-    for (int xb = -1; xb <= lb; ++xb) {
-      // Skip if inside quad boundary
-      if (IsInsideInnerBorder(xb, yb, lb)) continue;
-
-      const float xn = (xb + 0.5f) / lb;
-      // Convert to image coordinates
-      const auto pi = quad.interpolate01({xn, yn});
-      int xi = pi.x + 0.5;
-      int yi = pi.y + 0.5;
-
-      // Skip if outside image
-      if (!IsInsideImage(xi, yi, width, height)) continue;
-
-      const float v = image.get(xi, yi);
-      if (IsOnOutterBorder(xb, yb, lb)) {
-        gray_model.AddWhiteObs(xn, yn, v);
-      } else if (IsOnInnerBorder(xb, yb, lb)) {
-        gray_model.AddBlackObs(xn, yn, v);
-      }
-    }
-  }
-
-  // Don't forget this
-  gray_model.Fit();
-  return gray_model;
-}
-
 std::vector<TagDetection> TagDetector::DecodeQuads(
     const std::vector<Quad> &quads, const FloatImage &image) const {
-  const int width = image.width();
-  const int height = image.height();
-
   std::vector<TagDetection> detections;
 
   for (const Quad &quad : quads) {
-    // Make black and white models
-    // TODO: Make this const
-    const auto gray_model = MakeGrayModel(quad, image);
-    const int lb = QuadLengthBits();
-
-    bool bad = false;
-    code_t tag_code = 0;
-
-    for (int yb = tag_family_.dimension_bits() - 1; yb >= 0; yb--) {
-      float yn = (black_border_ + yb + 0.5f) / lb;
-      for (int xb = 0; xb < tag_family_.dimension_bits(); xb++) {
-        float xn = (black_border_ + xb + 0.5f) / lb;
-        const auto pi = quad.interpolate01({xn, yn});
-        int xi = pi.x + 0.5;
-        int yi = pi.y + 0.5;
-
-        if (!IsInsideImage(xi, yi, width, height)) {
-          bad = true;
-          continue;
-        }
-        const float threshold = gray_model.CalcThreshold(xn, yn);
-        float v = image.get(xi, yi);
-        tag_code = tag_code << 1;
-        if (v > threshold) {
-          tag_code |= 1;
-        }
-      }
-    }
-
-    if (!bad) {
-      auto td = tag_family_.Decode(tag_code);
-
-      // compute the homography (and rotate it appropriately)
-      td.H = CalcHomography(quad.p);
-
-      float c = std::cos(td.num_rotations * (float)M_PI / 2);
-      float s = std::sin(td.num_rotations * (float)M_PI / 2);
-      cv::Matx33f R = cv::Matx33f::zeros();
-      R(0, 0) = R(1, 1) = c;
-      R(0, 1) = -s;
-      R(1, 0) = s;
-      R(2, 2) = 1;
-      td.H = td.H * R;
-
-      // Rotate points in detection according to decoded orientation. Thus the
-      // order of the points in the detection object can be used to determine
-      // the orientation of the target.
-      const auto bl = td.interpolate({-1, -1});
-      int best_rot = -1;
-      float best_dist = FLT_MAX;
-      for (size_t i = 0; i < 4; ++i) {
-        const float dist = Distance2D(bl, quad.p[i]);
-        if (dist < best_dist) {
-          best_dist = dist;
-          best_rot = i;
-        }
-      }
-
-      for (size_t i = 0; i < 4; ++i) {
-        td.p[i] = quad.p[(i + best_rot) % 4];
-      }
-
-      if (td.good) {
-        td.cxy = quad.interpolate01({0.5f, 0.5f});
-        td.obs_perimeter = quad.obs_perimeter;
-        detections.push_back(td);
-      }
+    auto td = tag_family_.DecodeQuad(quad, image, black_border());
+    if (td.good) {
+      td.cxy = quad.Interpolate01({0.5f, 0.5f});
+      td.obs_perimeter = quad.obs_perimeter;
+      detections.push_back(td);
     }
   }
 

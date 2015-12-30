@@ -1,27 +1,8 @@
 #include <iostream>
-
-#include "AprilTags/TagFamily.h"
 #include <numeric>
 
-/**
-
-// example of instantiation of tag family:
-
 #include "AprilTags/TagFamily.h"
-#include "AprilTags/Tag36h11.h"
-TagFamily *tag36h11 = new TagFamily(tagCodes36h11);
-
-// available tag families:
-
-#include "AprilTags/Tag16h5.h"
-#include "AprilTags/Tag16h5_other.h"
-#include "AprilTags/Tag25h7.h"
-#include "AprilTags/Tag25h9.h"
-#include "AprilTags/Tag36h11.h"
-#include "AprilTags/Tag36h11_other.h"
-#include "AprilTags/Tag36h9.h"
-
-*/
+#include "AprilTags/MathUtil.h"
 
 namespace AprilTags {
 
@@ -80,6 +61,74 @@ TagDetection TagFamily::Decode(code_t obs_code) const {
 
   return TagDetection(best_id, IsGood(best_id, best_hamming), obs_code,
                       Code(best_id), best_hamming, best_rotation);
+}
+
+TagDetection TagFamily::DecodeQuad(const Quad &quad, const FloatImage &image,
+                                   unsigned black_border) const {
+  const int lb = 2 * black_border + dimension_bits();
+  const auto gray_model = quad.MakeGrayModel(image, lb);
+
+  bool bad = false;
+  code_t tag_code = 0;
+
+  for (int yb = dimension_bits() - 1; yb >= 0; yb--) {
+    float yn = (black_border + yb + 0.5f) / lb;
+    for (int xb = 0; xb < dimension_bits(); xb++) {
+      float xn = (black_border + xb + 0.5f) / lb;
+
+      const auto pi = quad.Interpolate01({xn, yn});
+      int xi = pi.x + 0.5;
+      int yi = pi.y + 0.5;
+
+      if (!IsInsideImage(xi, yi, image)) {
+        bad = true;
+        continue;
+      }
+      const float threshold = gray_model.CalcThreshold(xn, yn);
+      float v = image.get(xi, yi);
+      tag_code = tag_code << 1;
+      if (v > threshold) {
+        tag_code |= 1;
+      }
+    }
+  }
+
+  if (!bad) {
+    auto td = Decode(tag_code);
+
+    // compute the homography (and rotate it appropriately)
+    td.H = CalcHomography(quad.p);
+
+    float c = std::cos(td.num_rotations * Pi_2<float>());
+    float s = std::sin(td.num_rotations * Pi_2<float>());
+    auto R = cv::Matx33f::zeros();
+    R(0, 0) = R(1, 1) = c;
+    R(0, 1) = -s;
+    R(1, 0) = s;
+    R(2, 2) = 1;
+    td.H = td.H * R;
+
+    // Rotate points in detection according to decoded orientation. Thus the
+    // order of the points in the detection object can be used to determine
+    // the orientation of the target.
+    const auto bl = td.Project({-1, -1});
+    int best_rot = -1;
+    float best_dist = FLT_MAX;
+    for (size_t i = 0; i < 4; ++i) {
+      const float dist = Distance2D(bl, quad.p[i]);
+      if (dist < best_dist) {
+        best_dist = dist;
+        best_rot = i;
+      }
+    }
+
+    for (size_t i = 0; i < 4; ++i) {
+      td.p[i] = quad.p[(i + best_rot) % 4];
+    }
+    return td;
+  } else {
+    return TagDetection();
+  }
 }
 
 code_t Rotate90Cwise(code_t w, int d) {

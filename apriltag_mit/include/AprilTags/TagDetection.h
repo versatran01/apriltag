@@ -1,13 +1,10 @@
 #ifndef APRILTAGS_TAGDETECTION_H_
 #define APRILTAGS_TAGDETECTION_H_
 
-#include <Eigen/Dense>
+#include <vector>
 #include <opencv2/core/core.hpp>
 
 #include "AprilTags/TagCodes.h"
-
-#include <utility>
-#include <vector>
 
 namespace AprilTags {
 
@@ -83,7 +80,7 @@ struct TagDetection {
    * @param p
    * @return
    */
-  cv::Point2f interpolate(const cv::Point2f& p) const;
+  cv::Point2f Project(const cv::Point2f& p) const;
 
   /**
    * @brief OverlapsTooMuch Determines whether two tags overlap too much

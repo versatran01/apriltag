@@ -17,7 +17,7 @@ float TagRadius(const std::vector<cv::Point2f> &p) {
   return TagPerimeter(p) / 8.0f;
 }
 
-cv::Point2f TagDetection::interpolate(const cv::Point2f &p) const {
+cv::Point2f TagDetection::Project(const cv::Point2f &p) const {
   float z = H(2, 0) * p.x + H(2, 1) * p.y + H(2, 2);
   // prevents returning a pair with -NaN, for which gcc 4.4 flubs isnan
   if (z == 0.0) return {0, 0};

@@ -59,13 +59,6 @@ class TagDetector {
    */
   std::vector<TagDetection> DecodeQuads(const std::vector<Quad>& quads,
                                         const FloatImage& image) const;
-  /**
-   * @brief MakeGrayModel Step 8.1
-   * @param quad
-   * @param image
-   * @return
-   */
-  GrayModel MakeGrayModel(const Quad& quad, const FloatImage& image) const;
 
   /**
    * @brief ResolveOverlap Step 9
