@@ -16,14 +16,14 @@ class GrayModel {
  public:
   GrayModel();
 
-  void addObservation(float x, float y, float gray);
+  void AddObservation(float x, float y, float gray);
 
-  inline int getNumObservations() { return nobs; }
+  int NumObservations() const { return nobs; }
 
-  float interpolate(float x, float y);
+  float Interpolate(float x, float y);
 
  private:
-  void compute();
+  void Compute();
 
   // We're solving Av = b.
   //

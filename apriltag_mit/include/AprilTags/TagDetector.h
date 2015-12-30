@@ -50,6 +50,14 @@ class TagDetector {
   std::vector<Quad> SearchQuads(std::vector<Segment>& segments) const;
 
   /**
+   * @brief DecodeQuads Step 8
+   * @param quads
+   * @return
+   */
+  std::vector<TagDetection> DecodeQuads(const std::vector<Quad>& quads,
+                                        const FloatImage& image) const;
+
+  /**
    * @brief ResolveOverlap Step 9
    * @param detections
    * @return

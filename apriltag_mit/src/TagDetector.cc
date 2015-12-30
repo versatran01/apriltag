@@ -84,6 +84,105 @@ std::vector<Quad> TagDetector::SearchQuads(
   return quads;
 }
 
+std::vector<TagDetection> TagDetector::DecodeQuads(
+    const std::vector<Quad> &quads, const FloatImage &image) const {
+  const int width = image.width();
+  const int height = image.height();
+
+  std::vector<TagDetection> detections;
+
+  const int dd = 2 * black_border_ + tag_family_.dimension_bits();
+
+  for (const Quad &quad : quads) {
+    // Find a threshold
+    GrayModel black_model, white_model;
+
+    for (int iy = -1; iy <= dd; iy++) {
+      float y = (iy + 0.5f) / dd;
+      for (int ix = -1; ix <= dd; ix++) {
+        float x = (ix + 0.5f) / dd;
+        const auto pxy = quad.interpolate01({x, y});
+        int irx = pxy.x + 0.5;
+        int iry = pxy.y + 0.5;
+        if (irx < 0 || irx >= width || iry < 0 || iry >= height) {
+          // Skip if outside image
+          continue;
+        }
+        float v = image.get(irx, iry);
+        if (iy == -1 || iy == dd || ix == -1 || ix == dd)
+          white_model.AddObservation(x, y, v);
+        else if (iy == 0 || iy == (dd - 1) || ix == 0 || ix == (dd - 1))
+          black_model.AddObservation(x, y, v);
+      }
+    }
+
+    bool bad = false;
+    code_t tag_code = 0;
+    for (int iy = tag_family_.dimension_bits() - 1; iy >= 0; iy--) {
+      float y = (black_border_ + iy + 0.5f) / dd;
+      for (int ix = 0; ix < tag_family_.dimension_bits(); ix++) {
+        float x = (black_border_ + ix + 0.5f) / dd;
+        const auto pxy = quad.interpolate01({x, y});
+        int irx = pxy.x + 0.5;
+        int iry = pxy.y + 0.5;
+        if (irx < 0 || irx >= width || iry < 0 || iry >= height) {
+          bad = true;
+          continue;
+        }
+        float threshold =
+            (black_model.Interpolate(x, y) + white_model.Interpolate(x, y)) / 2;
+        float v = image.get(irx, iry);
+        tag_code = tag_code << 1;
+        if (v > threshold) {
+          tag_code |= 1;
+        }
+      }
+    }
+
+    if (!bad) {
+      auto td = tag_family_.Decode(tag_code);
+
+      // compute the homography (and rotate it appropriately)
+      td.H = CalcHomography(quad.p);
+
+      float c = std::cos(td.num_rotations * (float)M_PI / 2);
+      float s = std::sin(td.num_rotations * (float)M_PI / 2);
+      cv::Matx33f R = cv::Matx33f::zeros();
+      R(0, 0) = R(1, 1) = c;
+      R(0, 1) = -s;
+      R(1, 0) = s;
+      R(2, 2) = 1;
+      td.H = td.H * R;
+
+      // Rotate points in detection according to decoded orientation. Thus the
+      // order of the points in the detection object can be used to determine
+      // the orientation of the target.
+      const auto bl = td.interpolate({-1, -1});
+      int best_rot = -1;
+      float best_dist = FLT_MAX;
+      for (size_t i = 0; i < 4; ++i) {
+        const float dist = Distance2D(bl, quad.p[i]);
+        if (dist < best_dist) {
+          best_dist = dist;
+          best_rot = i;
+        }
+      }
+
+      for (size_t i = 0; i < 4; ++i) {
+        td.p[i] = quad.p[(i + best_rot) % 4];
+      }
+
+      if (td.good) {
+        td.cxy = quad.interpolate01({0.5f, 0.5f});
+        td.obs_perimeter = quad.obs_perimeter;
+        detections.push_back(td);
+      }
+    }
+  }
+
+  return detections;
+}
+
 std::vector<TagDetection> TagDetector::ResolveOverlap(
     const std::vector<TagDetection> &detections) const {
   std::vector<TagDetection> good_detections;
@@ -366,10 +465,10 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
   // Step 7: Search all connected segments for quads.
   //============================================================================
   // To see if any form a loop of length 4.
-  TimerUs t_quad("SearchQuads");
+  TimerUs t_step7("SearchQuads");
   const auto quads = SearchQuads(segments);
-  t_quad.stop();
-  t_quad.report();
+  t_step7.stop();
+  t_step7.report();
 
   //============================================================================
   // Step 8: Decode the quads.
@@ -377,98 +476,10 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
   // For each quad, we first estimate a threshold color to decide between 0 and
   // 1. Then, we read off the bits and see if they make sense.
 
-  TimerUs t_decode("Decode");
-  std::vector<TagDetection> detections;
-
-  const int dd = 2 * black_border_ + tag_family_.dimension_bits();
-
-  for (size_t qi = 0; qi < quads.size(); ++qi) {
-    const Quad &quad = quads[qi];
-
-    // Find a threshold
-    GrayModel black_model, white_model;
-
-    for (int iy = -1; iy <= dd; iy++) {
-      float y = (iy + 0.5f) / dd;
-      for (int ix = -1; ix <= dd; ix++) {
-        float x = (ix + 0.5f) / dd;
-        const auto pxy = quad.interpolate01({x, y});
-        int irx = (int)(pxy.x + 0.5);
-        int iry = (int)(pxy.y + 0.5);
-        if (irx < 0 || irx >= width || iry < 0 || iry >= height) continue;
-        float v = im_decode.get(irx, iry);
-        if (iy == -1 || iy == dd || ix == -1 || ix == dd)
-          white_model.addObservation(x, y, v);
-        else if (iy == 0 || iy == (dd - 1) || ix == 0 || ix == (dd - 1))
-          black_model.addObservation(x, y, v);
-      }
-    }
-
-    bool bad = false;
-    code_t tag_code = 0;
-    for (int iy = tag_family_.dimension_bits() - 1; iy >= 0; iy--) {
-      float y = (black_border_ + iy + 0.5f) / dd;
-      for (int ix = 0; ix < tag_family_.dimension_bits(); ix++) {
-        float x = (black_border_ + ix + 0.5f) / dd;
-        const auto pxy = quad.interpolate01({x, y});
-        int irx = static_cast<int>(pxy.x + 0.5);
-        int iry = static_cast<int>(pxy.y + 0.5);
-        if (irx < 0 || irx >= width || iry < 0 || iry >= height) {
-          bad = true;
-          continue;
-        }
-        float threshold =
-            (black_model.interpolate(x, y) + white_model.interpolate(x, y)) *
-            0.5f;
-        float v = im_decode.get(irx, iry);
-        tag_code = tag_code << 1;
-        if (v > threshold) tag_code |= 1;
-      }
-    }
-
-    if (!bad) {
-      auto td = tag_family_.Decode(tag_code);
-
-      // compute the homography (and rotate it appropriately)
-      td.H = CalcHomography(quad.p);
-
-      float c = std::cos(td.num_rotations * (float)M_PI / 2);
-      float s = std::sin(td.num_rotations * (float)M_PI / 2);
-      cv::Matx33f R = cv::Matx33f::zeros();
-      R(0, 0) = R(1, 1) = c;
-      R(0, 1) = -s;
-      R(1, 0) = s;
-      R(2, 2) = 1;
-      td.H = td.H * R;
-
-      // Rotate points in detection according to decoded orientation. Thus the
-      // order of the points in the detection object can be used to determine
-      // the orientation of the target.
-
-      const auto bl = td.interpolate({-1, -1});
-      int best_rot = -1;
-      float best_dist = FLT_MAX;
-      for (size_t i = 0; i < 4; ++i) {
-        const float dist = Distance2D(bl, quad.p[i]);
-        if (dist < best_dist) {
-          best_dist = dist;
-          best_rot = i;
-        }
-      }
-
-      for (size_t i = 0; i < 4; ++i) {
-        td.p[i] = quad.p[(i + best_rot) % 4];
-      }
-
-      if (td.good) {
-        td.cxy = quad.interpolate01({0.5f, 0.5f});
-        td.obs_perimeter = quad.obs_perimeter;
-        detections.push_back(td);
-      }
-    }
-  }
-  t_decode.stop();
-  t_decode.report();
+  TimerUs t_step8("DecodeQuads");
+  const auto detections = DecodeQuads(quads, im_decode);
+  t_step8.stop();
+  t_step8.report();
 
   // ===========================================================================
   // Step 9: Resolve overlapped tags.
