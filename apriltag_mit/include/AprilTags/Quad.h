@@ -4,6 +4,7 @@
 #include <opencv2/core/core.hpp>
 #include "AprilTags/GrayModel.h"
 #include "AprilTags/FloatImage.h"
+#include "AprilTags/TagCodes.h"
 
 namespace AprilTags {
 
@@ -32,7 +33,7 @@ class Quad {
    * @param p
    * @return
    */
-  cv::Point2f interpolate(const cv::Point2f& p) const;
+  cv::Point2f Interpolate(const cv::Point2f& p) const;
 
   /**
    * @brief interpolate01 Interpolate between 0~1 instead of -1~1
@@ -68,21 +69,19 @@ class Quad {
    * @param depth
    * @param quads
    */
-  static void search(std::vector<Segment*>& path, Segment& parent, int depth,
+  static void Search(std::vector<Segment*>& path, Segment& parent, int depth,
                      std::vector<Quad>& quads);
 
-  GrayModel MakeGrayModel(const FloatImage& image, unsigned length_bits) const;
+  code_t ToTagCode(const FloatImage& image, unsigned dimension_bits,
+                   unsigned black_border) const;
 
  private:
+  GrayModel MakeGrayModel(const FloatImage& image, unsigned length_bits) const;
+  code_t DecodePayload(const FloatImage& image, const GrayModel& model,
+                       unsigned dimension_bits, unsigned black_border) const;
+
   cv::Point2f p0_, p3_, p01_, p32_;
 };
-
-/**
- * @brief CalcHomography
- * @param p
- * @return
- */
-cv::Matx33f CalcHomography(const std::vector<cv::Point2f>& p);
 
 }  // namespace AprilTags
 

@@ -19,7 +19,7 @@ struct TagDetection {
         obs_code(obs_code),
         code(code),
         hamming_distance(hamming_distance),
-        num_rotations(num_rotations) {
+        num_rot(num_rotations) {
     p.resize(4);
   }
 
@@ -45,7 +45,7 @@ struct TagDetection {
    * @brief num_rotations Number of 90 degree rotations clockwise required to
    * align the code
    */
-  unsigned num_rotations;
+  unsigned num_rot;
 
   /////////////// Fields below are filled in by TagDetector ///////////////
 
@@ -82,6 +82,8 @@ struct TagDetection {
    */
   cv::Point2f Project(const cv::Point2f& p) const;
 
+  void RotatePoints(const std::vector<cv::Point2f>& quad_p);
+
   /**
    * @brief OverlapsTooMuch Determines whether two tags overlap too much
    * @param other
@@ -98,6 +100,8 @@ struct TagDetection {
 
 float TagPerimeter(const std::vector<cv::Point2f>& p);
 float TagRadius(const std::vector<cv::Point2f>& p);
+
+cv::Matx33f CalcHomography(const std::vector<cv::Point2f>& p);
 
 }  // namespace AprilTags
 

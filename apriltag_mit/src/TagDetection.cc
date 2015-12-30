@@ -27,6 +27,32 @@ cv::Point2f TagDetection::Project(const cv::Point2f &p) const {
   return cv::Point2f(x, y);
 }
 
+void TagDetection::RotatePoints(const std::vector<cv::Point2f> &quad_p) {
+  // Compute the homography (and rotate it appropriately)
+  // NOTE: since homography is not needed, we disable it here
+
+  //  H = CalcHomography(quad_p);
+
+  //  float c = std::cos(num_rot * Pi_2<float>());
+  //  float s = std::sin(num_rot * Pi_2<float>());
+  //  auto R = cv::Matx33f::zeros();
+  //  R(0, 0) = R(1, 1) = c;
+  //  R(0, 1) = -s;
+  //  R(1, 0) = s;
+  //  R(2, 2) = 1;
+  //  H = H * R;
+
+  // Rotate points in detection according to decoded orientation. Thus the
+  // order of the points in the detection object can be used to determine
+  // the orientation of the target.
+  // NOTE: since we already get the rotation from matching the code, we simply
+  // rotate points here, instead of comparing distance as Kaess did in his
+  // original code
+  for (size_t i = 0; i < 4; ++i) {
+    p[i] = quad_p[(i + num_rot) % 4];
+  }
+}
+
 bool TagDetection::OverlapsTooMuch(const TagDetection &other) const {
   // Compute a sort of "radius" of the two targets. We'll do this by
   // computing the average length of the edges of the quads
@@ -45,6 +71,18 @@ void TagDetection::ScaleTag(float scale) {
   for (cv::Point2f &c : p) {
     c *= scale;
   }
+}
+
+cv::Matx33f CalcHomography(const std::vector<cv::Point2f> &p) {
+  std::vector<cv::Point2f> obj_pts = {{-1, -1}, {1, -1}, {1, 1}, {-1, 1}};
+  const auto Hd = cv::findHomography(obj_pts, p);
+  cv::Matx33f Hf;
+  for (size_t c = 0; c < 3; ++c) {
+    for (size_t r = 0; r < 3; ++r) {
+      Hf(r, c) = Hd.at<double>(r, c);
+    }
+  }
+  return Hf;
 }
 
 }  // namespace AprilTags

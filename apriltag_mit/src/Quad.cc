@@ -15,7 +15,7 @@ Quad::Quad(const std::vector<cv::Point2f> &p)
       p01_(p[1] - p[0]),
       p32_(p[2] - p[3]) {}
 
-cv::Point2f Quad::interpolate(const cv::Point2f &p) const {
+cv::Point2f Quad::Interpolate(const cv::Point2f &p) const {
   const float kx = (p.x + 1) / 2;
   const float ky = (p.y + 1) / 2;
   const auto r1 = p0_ + p01_ * kx;
@@ -25,7 +25,7 @@ cv::Point2f Quad::interpolate(const cv::Point2f &p) const {
 }
 
 cv::Point2f Quad::Interpolate01(const cv::Point2f &p) const {
-  return interpolate(2 * p - cv::Point2f(1, 1));
+  return Interpolate(2 * p - cv::Point2f(1, 1));
 }
 
 GrayModel Quad::MakeGrayModel(const FloatImage &image,
@@ -64,7 +64,44 @@ GrayModel Quad::MakeGrayModel(const FloatImage &image,
   return model;
 }
 
-void Quad::search(std::vector<Segment *> &path, Segment &parent, int depth,
+code_t Quad::DecodePayload(const FloatImage &image, const GrayModel &model,
+                           unsigned dimension_bits,
+                           unsigned black_border) const {
+  code_t code = 0;
+  const int lb = 2 * black_border + dimension_bits;
+
+  for (int yb = dimension_bits - 1; yb >= 0; yb--) {
+    float yn = (black_border + yb + 0.5f) / lb;
+    for (int xb = 0; xb < dimension_bits; xb++) {
+      float xn = (black_border + xb + 0.5f) / lb;
+
+      const auto pi = Interpolate01({xn, yn});
+      int xi = pi.x + 0.5;
+      int yi = pi.y + 0.5;
+
+      if (!IsInsideImage(xi, yi, image)) {
+        return 0;
+      }
+
+      const float threshold = model.CalcThreshold(xn, yn);
+      float v = image.get(xi, yi);
+      code = code << 1;
+      if (v > threshold) {
+        code |= 1;
+      }
+    }
+  }
+  return code;
+}
+
+code_t Quad::ToTagCode(const FloatImage &image, unsigned dimension_bits,
+                       unsigned black_border) const {
+  const int lb = 2 * black_border + dimension_bits;
+  const auto model = MakeGrayModel(image, lb);
+  return DecodePayload(image, model, dimension_bits, black_border);
+}
+
+void Quad::Search(std::vector<Segment *> &path, Segment &parent, int depth,
                   std::vector<Quad> &quads) {
   // cout << "Searching segment " << parent.getId() << ", depth=" << depth << ",
   // #children=" << parent.children.size() << endl;
@@ -178,20 +215,8 @@ void Quad::search(std::vector<Segment *> &path, Segment &parent, int depth,
       continue;
     }
     path[depth + 1] = &child;
-    search(path, child, depth + 1, quads);
+    Search(path, child, depth + 1, quads);
   }
-}
-
-cv::Matx33f CalcHomography(const std::vector<cv::Point2f> &p) {
-  std::vector<cv::Point2f> obj_pts = {{-1, -1}, {1, -1}, {1, 1}, {-1, 1}};
-  const auto Hd = cv::findHomography(obj_pts, p);
-  cv::Matx33f Hf;
-  for (size_t c = 0; c < 3; ++c) {
-    for (size_t r = 0; r < 3; ++r) {
-      Hf(r, c) = Hd.at<double>(r, c);
-    }
-  }
-  return Hf;
 }
 
 }  // namespace

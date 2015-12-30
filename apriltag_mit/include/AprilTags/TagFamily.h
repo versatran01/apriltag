@@ -81,7 +81,7 @@ class TagFamily {
  *  5 4 3  ==>  1 4 7 ==>  3 4 5    (rotate90 applied twice)
  *  2 1 0       0 3 6      6 7 8
  */
-code_t Rotate90Cwise(code_t w, int d);
+code_t Rotate90DegCwise(code_t w, int d);
 
 unsigned HammingDistance(code_t a, code_t b);
 
