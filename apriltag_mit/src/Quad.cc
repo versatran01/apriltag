@@ -148,8 +148,14 @@ void Quad::search(std::vector<Segment *> &path, Segment &parent, int depth,
 
 cv::Matx33f CalcHomography(const std::vector<cv::Point2f> &p) {
   std::vector<cv::Point2f> obj_pts = {{-1, -1}, {1, -1}, {1, 1}, {-1, 1}};
-  const auto H = cv::findHomography(obj_pts, p);
-  return cv::Matx33f(H.clone().ptr<float>());
+  const auto Hd = cv::findHomography(obj_pts, p);
+  cv::Matx33f Hf;
+  for (size_t c = 0; c < 3; ++c) {
+    for (size_t r = 0; r < 3; ++r) {
+      Hf(r, c) = Hd.at<double>(r, c);
+    }
+  }
+  return Hf;
 }
 
 }  // namespace
