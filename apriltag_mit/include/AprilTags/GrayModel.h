@@ -6,38 +6,52 @@
 
 namespace AprilTags {
 
-//! Fits a grayscale model over an area of pixels.
-/*! The model is of the form: c1*x + c2*y + c3*x*y + c4 = value
- *
- * We use this model to compute spatially-varying thresholds for
- * reading bits.
+/**
+ * @brief The GrayModel class
+ * I(x, y) = A*x + B*y + C*xy + D
  */
-class GrayModel {
+
+class IntensityModel {
  public:
-  GrayModel();
+  IntensityModel();
 
-  void AddObservation(float x, float y, float gray);
-
-  int NumObservations() const { return nobs; }
-
-  float Interpolate(float x, float y);
+  void AddObservation(float x, float y, float v);
+  float Predict(float x, float y) const;
+  void Fit();
 
  private:
-  void Compute();
-
   // We're solving Av = b.
   //
   // For each observation, we add a row to A of the form [x y xy 1]
-  // and to b of the form gray*[x y xy 1].  v is the vector [c1 c2 c3 c4].
+  // and to b of the form gray*[x y xy 1].  v is the vector [A B C D].
   //
   // The least-squares solution to the system is v = inv(A'A)A'b
 
-  Eigen::Matrix4d A;
-  Eigen::Vector4d v;
-  Eigen::Vector4d b;
-  int nobs;
-  bool dirty;  //!< True if we've added an observation and need to recompute v
+  Eigen::Matrix4d A_;
+  Eigen::Vector4d c_;
+  Eigen::Vector4d b_;
+  int num_obs_;
+  bool dirty_;  //!< True if we've added an observation and need to recompute v
 };
+
+class GrayModel {
+ public:
+  GrayModel() = default;
+
+  void AddBlackObs(float x, float y, float v);
+  void AddWhiteObs(float x, float y, float v);
+
+  void Fit();
+  float CalcThreshold(float x, float y) const;
+
+ private:
+  IntensityModel black_model_, white_model_;
+};
+
+bool IsOnOutterBorder(int x, int y, int l, bool black_corner = true);
+bool IsOnInnerBorder(int x, int y, int l);
+bool IsInsideInnerBorder(int x, int y, int l);
+bool IsInsideImage(int x, int y, int w, int h);
 
 }  // namespace AprilTags
 

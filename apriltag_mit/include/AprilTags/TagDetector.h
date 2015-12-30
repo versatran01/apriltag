@@ -7,6 +7,7 @@
 #include "AprilTags/TagFamily.h"
 #include "AprilTags/FloatImage.h"
 #include "AprilTags/Quad.h"
+#include "AprilTags/GrayModel.h"
 
 namespace AprilTags {
 
@@ -23,6 +24,8 @@ class TagDetector {
   const TagFamily tag_family_;
 
   int CalcFilterSize(float sigma) const;
+
+  int QuadLengthBits() const;
 
   /**
    * @brief Preprocess Step 1
@@ -56,6 +59,13 @@ class TagDetector {
    */
   std::vector<TagDetection> DecodeQuads(const std::vector<Quad>& quads,
                                         const FloatImage& image) const;
+  /**
+   * @brief MakeGrayModel Step 8.1
+   * @param quad
+   * @param image
+   * @return
+   */
+  GrayModel MakeGrayModel(const Quad& quad, const FloatImage& image) const;
 
   /**
    * @brief ResolveOverlap Step 9
@@ -68,7 +78,7 @@ class TagDetector {
   /**
    * @brief black_border_ Number of bits of black border of the tag
    */
-  int black_border_ = 1;
+  unsigned black_border_ = 1;
 
   /**
    * @brief decode_sigma_ Gaussian smoothing kernel applied to image

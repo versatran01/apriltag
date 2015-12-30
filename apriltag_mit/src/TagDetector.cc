@@ -40,6 +40,10 @@ int TagDetector::CalcFilterSize(float sigma) const {
   return static_cast<int>(std::max(3.0f, 3 * sigma)) | 1;
 }
 
+int TagDetector::QuadLengthBits() const {
+  return 2 * black_border_ + tag_family_.dimension_bits();
+}
+
 void TagDetector::Preprocess(const FloatImage &image, FloatImage &im_decode,
                              FloatImage &im_segment) const {
   im_decode = image;
@@ -84,6 +88,46 @@ std::vector<Quad> TagDetector::SearchQuads(
   return quads;
 }
 
+GrayModel TagDetector::MakeGrayModel(const Quad &quad,
+                                     const FloatImage &image) const {
+  const int width = image.width();
+  const int height = image.height();
+
+  GrayModel gray_model;
+
+  const int lb = QuadLengthBits();
+
+  // Only need to loop through the boundary
+  for (int yb = -1; yb <= lb; ++yb) {
+    // Convert to normalized coordinates 01
+    const float yn = (yb + 0.5f) / lb;
+    for (int xb = -1; xb <= lb; ++xb) {
+      // Skip if inside quad boundary
+      if (IsInsideInnerBorder(xb, yb, lb)) continue;
+
+      const float xn = (xb + 0.5f) / lb;
+      // Convert to image coordinates
+      const auto pi = quad.interpolate01({xn, yn});
+      int xi = pi.x + 0.5;
+      int yi = pi.y + 0.5;
+
+      // Skip if outside image
+      if (!IsInsideImage(xi, yi, width, height)) continue;
+
+      const float v = image.get(xi, yi);
+      if (IsOnOutterBorder(xb, yb, lb)) {
+        gray_model.AddWhiteObs(xn, yn, v);
+      } else if (IsOnInnerBorder(xb, yb, lb)) {
+        gray_model.AddBlackObs(xn, yn, v);
+      }
+    }
+  }
+
+  // Don't forget this
+  gray_model.Fit();
+  return gray_model;
+}
+
 std::vector<TagDetection> TagDetector::DecodeQuads(
     const std::vector<Quad> &quads, const FloatImage &image) const {
   const int width = image.width();
@@ -91,47 +135,29 @@ std::vector<TagDetection> TagDetector::DecodeQuads(
 
   std::vector<TagDetection> detections;
 
-  const int dd = 2 * black_border_ + tag_family_.dimension_bits();
-
   for (const Quad &quad : quads) {
-    // Find a threshold
-    GrayModel black_model, white_model;
-
-    for (int iy = -1; iy <= dd; iy++) {
-      float y = (iy + 0.5f) / dd;
-      for (int ix = -1; ix <= dd; ix++) {
-        float x = (ix + 0.5f) / dd;
-        const auto pxy = quad.interpolate01({x, y});
-        int irx = pxy.x + 0.5;
-        int iry = pxy.y + 0.5;
-        if (irx < 0 || irx >= width || iry < 0 || iry >= height) {
-          // Skip if outside image
-          continue;
-        }
-        float v = image.get(irx, iry);
-        if (iy == -1 || iy == dd || ix == -1 || ix == dd)
-          white_model.AddObservation(x, y, v);
-        else if (iy == 0 || iy == (dd - 1) || ix == 0 || ix == (dd - 1))
-          black_model.AddObservation(x, y, v);
-      }
-    }
+    // Make black and white models
+    // TODO: Make this const
+    const auto gray_model = MakeGrayModel(quad, image);
+    const int lb = QuadLengthBits();
 
     bool bad = false;
     code_t tag_code = 0;
-    for (int iy = tag_family_.dimension_bits() - 1; iy >= 0; iy--) {
-      float y = (black_border_ + iy + 0.5f) / dd;
-      for (int ix = 0; ix < tag_family_.dimension_bits(); ix++) {
-        float x = (black_border_ + ix + 0.5f) / dd;
-        const auto pxy = quad.interpolate01({x, y});
-        int irx = pxy.x + 0.5;
-        int iry = pxy.y + 0.5;
-        if (irx < 0 || irx >= width || iry < 0 || iry >= height) {
+
+    for (int yb = tag_family_.dimension_bits() - 1; yb >= 0; yb--) {
+      float yn = (black_border_ + yb + 0.5f) / lb;
+      for (int xb = 0; xb < tag_family_.dimension_bits(); xb++) {
+        float xn = (black_border_ + xb + 0.5f) / lb;
+        const auto pi = quad.interpolate01({xn, yn});
+        int xi = pi.x + 0.5;
+        int yi = pi.y + 0.5;
+
+        if (!IsInsideImage(xi, yi, width, height)) {
           bad = true;
           continue;
         }
-        float threshold =
-            (black_model.Interpolate(x, y) + white_model.Interpolate(x, y)) / 2;
-        float v = image.get(irx, iry);
+        const float threshold = gray_model.CalcThreshold(xn, yn);
+        float v = image.get(xi, yi);
         tag_code = tag_code << 1;
         if (v > threshold) {
           tag_code |= 1;
