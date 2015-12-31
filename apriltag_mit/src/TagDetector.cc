@@ -1,24 +1,16 @@
 #include <algorithm>
 #include <cmath>
 #include <climits>
-#include <map>
-#include <vector>
-#include <iostream>
 
-#include <Eigen/Dense>
 #include <opencv2/imgproc/imgproc.hpp>
 
 #include "AprilTags/Edge.h"
-#include "AprilTags/FloatImage.h"
 #include "AprilTags/GrayModel.h"
 #include "AprilTags/Line2D.h"
 #include "AprilTags/LineSegment2D.h"
 #include "AprilTags/Gridder.h"
 #include "AprilTags/MathUtil.h"
 #include "AprilTags/Segment.h"
-#include "AprilTags/TagFamily.h"
-#include "AprilTags/UnionFindSimple.h"
-#include "AprilTags/XYW.h"
 
 #include "AprilTags/TagDetector.h"
 
@@ -69,6 +61,36 @@ void TagDetector::CalcPolar(const FloatImage &image, FloatImage &im_mag,
   cv::Scharr(image.mat(), Ix, CV_32F, 1, 0, 1 / 16.0);
   cv::Scharr(image.mat(), Iy, CV_32F, 0, 1, 1 / 16.0);
   cv::cartToPolar(Ix, Iy, im_mag.mat(), im_theta.mat());
+}
+
+std::map<int, std::vector<XYW>> TagDetector::ClusterPixels(
+    UnionFindSimple &uf, const FloatImage &im_mag) const {
+  const int height = im_mag.height();
+  const int width = im_mag.width();
+
+  std::map<int, std::vector<XYW>> clusters;
+
+  for (int y = 0; y < height - 1; ++y) {
+    for (int x = 0; x < width - 1; ++x) {
+      const int id = y * width + x;
+
+      if (uf.getSetSize(id) < Segment::kMinSegmentPixels) {
+        continue;
+      }
+
+      int rep = uf.getRepresentative(id);
+
+      map<int, vector<XYW>>::iterator it = clusters.find(rep);
+      if (it == clusters.end()) {
+        clusters[rep] = vector<XYW>();
+        it = clusters.find(rep);
+      }
+      vector<XYW> &points = it->second;
+      points.push_back(XYW(x, y, im_mag.get(x, y)));
+    }
+  }
+
+  return clusters;
 }
 
 std::vector<Segment> TagDetector::FitLines(
@@ -339,26 +361,7 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
   // We will soon fit lines (segments) to these points.
 
   TimerUs t_step4("ClusterPixels");
-
-  map<int, vector<XYW>> clusters;
-  for (int y = 0; y < height - 1; ++y) {
-    for (int x = 0; x < width - 1; ++x) {
-      const int id = y * width + x;
-      if (uf.getSetSize(id) < Segment::kMinSegmentPixels) {
-        continue;
-      }
-
-      int rep = uf.getRepresentative(id);
-
-      map<int, vector<XYW>>::iterator it = clusters.find(rep);
-      if (it == clusters.end()) {
-        clusters[rep] = vector<XYW>();
-        it = clusters.find(rep);
-      }
-      vector<XYW> &points = it->second;
-      points.push_back(XYW(x, y, im_mag.get(x, y)));
-    }
-  }
+  const auto clusters = ClusterPixels(uf, im_mag);
   t_step4.stop();
   t_step4.report();
 
