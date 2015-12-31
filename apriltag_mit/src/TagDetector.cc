@@ -63,6 +63,62 @@ void TagDetector::CalcPolar(const FloatImage &image, FloatImage &im_mag,
   cv::cartToPolar(Ix, Iy, im_mag.mat(), im_theta.mat());
 }
 
+UnionFind TagDetector::ExtractEdges(const FloatImage &im_mag,
+                                    const FloatImage &im_theta) const {
+  const int width = im_mag.width();
+  const int height = im_mag.height();
+  const size_t num_pixels = width * height;
+  UnionFind uf(num_pixels);
+
+  std::vector<Edge> edges(num_pixels * 4);
+  size_t num_edges = 0;
+
+  // Bounds on the thetas assigned to this group. Note that because
+  // theta is periodic, these are defined such that the average
+  // value is contained *within* the interval.
+  {
+    // limit scope of storage
+    // Previously all this was on the stack, but this is 1.2MB for 320x240
+    // images That's already a problem for OS X (default 512KB thread stack
+    // size), could be a problem elsewhere for bigger images... so store on heap
+
+    // do all the memory in one big block, exception safe
+    std::vector<float> storage(num_pixels * 4);
+    float *theta_min = &storage[num_pixels * 0];
+    float *theta_max = &storage[num_pixels * 1];
+    float *mag_min = &storage[num_pixels * 2];
+    float *mag_max = &storage[num_pixels * 3];
+
+    for (int y = 0; y + 1 < height; y++) {
+      for (int x = 0; x + 1 < width; x++) {
+        const auto mag0 = im_mag.get(x, y);
+        if (mag0 < Edge::kMinMag) {
+          continue;
+        }
+        const int id = y * width + x;
+        mag_max[id] = mag0;
+        mag_min[id] = mag0;
+
+        const auto theta0 = im_theta.get(x, y);
+        theta_min[id] = theta0;
+        theta_max[id] = theta0;
+
+        // Calculates then adds edges to 'vector<Edge> edges'
+        Edge::CalcEdges(theta0, x, y, im_theta, im_mag, edges, num_edges);
+
+        // XXX Would 8 connectivity help for rotated tags?
+        // Probably not much, so long as input filtering hasn't been disabled.
+      }
+    }
+
+    edges.resize(num_edges);
+    std::stable_sort(edges.begin(), edges.end());
+    Edge::MergeEdges(edges, uf, theta_min, theta_max, mag_min, mag_max);
+  }
+
+  return uf;
+}
+
 std::map<int, std::vector<XYW>> TagDetector::ClusterPixels(
     UnionFind &uf, const FloatImage &im_mag) const {
   const int height = im_mag.height();
@@ -174,8 +230,8 @@ void TagDetector::ChainSegments(std::vector<Segment> &segments,
     // compute length of the line segment
     Line2D parent_line(parent_seg);
 
-    Gridder<Segment>::iterator iter = gridder.find(
-        parent_seg.x1(), parent_seg.y1(), 0.5f * parent_seg.length());
+    auto iter = gridder.find(parent_seg.x1(), parent_seg.y1(),
+                             0.5f * parent_seg.length());
 
     while (iter.hasNext()) {
       Segment &child_seg = iter.next();
@@ -270,8 +326,6 @@ std::vector<TagDetection> TagDetector::ResolveOverlap(
 }
 
 std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
-  int width = image.cols;
-  int height = image.rows;
   FloatImage im_orig(image);
 
   // ===========================================================================
@@ -304,54 +358,7 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
   // 4-connectivity.
   // NOTE: This is the most time consuming part!
   TimerUs t_step3("ExtractEdges");
-  const size_t num_pixels = width * height;
-  UnionFind uf(num_pixels);
-
-  vector<Edge> edges(num_pixels * 4);
-  size_t num_edges = 0;
-
-  // Bounds on the thetas assigned to this group. Note that because
-  // theta is periodic, these are defined such that the average
-  // value is contained *within* the interval.
-  {
-    // limit scope of storage
-    // Previously all this was on the stack, but this is 1.2MB for 320x240
-    // images That's already a problem for OS X (default 512KB thread stack
-    // size), could be a problem elsewhere for bigger images... so store on heap
-
-    // do all the memory in one big block, exception safe
-    vector<float> storage(num_pixels * 4);
-    float *theta_min = &storage[num_pixels * 0];
-    float *theta_max = &storage[num_pixels * 1];
-    float *mag_min = &storage[num_pixels * 2];
-    float *mag_max = &storage[num_pixels * 3];
-
-    for (int y = 0; y + 1 < height; y++) {
-      for (int x = 0; x + 1 < width; x++) {
-        const auto mag0 = im_mag.get(x, y);
-        if (mag0 < Edge::kMinMag) {
-          continue;
-        }
-        const int id = y * width + x;
-        mag_max[id] = mag0;
-        mag_min[id] = mag0;
-
-        const auto theta0 = im_theta.get(x, y);
-        theta_min[id] = theta0;
-        theta_max[id] = theta0;
-
-        // Calculates then adds edges to 'vector<Edge> edges'
-        Edge::CalcEdges(theta0, x, y, im_theta, im_mag, edges, num_edges);
-
-        // XXX Would 8 connectivity help for rotated tags?
-        // Probably not much, so long as input filtering hasn't been disabled.
-      }
-    }
-
-    edges.resize(num_edges);
-    std::stable_sort(edges.begin(), edges.end());
-    Edge::MergeEdges(edges, uf, theta_min, theta_max, mag_min, mag_max);
-  }
+  auto uf = ExtractEdges(im_mag, im_theta);
   t_step3.stop();
   t_step3.report();
 

@@ -45,6 +45,21 @@ class TagDetector {
   void CalcPolar(const FloatImage& image, FloatImage& im_mag,
                  FloatImage& im_theta) const;
 
+  /**
+   * @brief ExtractEdges Step 3
+   * @param im_mag
+   * @param im_theta
+   * @return
+   */
+  UnionFind ExtractEdges(const FloatImage& im_mag,
+                         const FloatImage& im_theta) const;
+
+  /**
+   * @brief ClusterPixels Step 4
+   * @param uf
+   * @param im_mag
+   * @return
+   */
   std::map<int, std::vector<XYW>> ClusterPixels(UnionFind& uf,
                                                 const FloatImage& im_mag) const;
 
