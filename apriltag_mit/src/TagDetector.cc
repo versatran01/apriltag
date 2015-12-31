@@ -97,9 +97,12 @@ void TagDetector::ChainSegments(std::vector<Segment> &segments,
 
     Gridder<Segment>::iterator iter = gridder.find(
         parent_seg.x1(), parent_seg.y1(), 0.5f * parent_seg.length());
+
     while (iter.hasNext()) {
       Segment &child_seg = iter.next();
-      if (MathUtil::mod2pi(child_seg.theta() - parent_seg.theta()) > 0) {
+
+      // We only look for
+      if (mod2pi(child_seg.theta() - parent_seg.theta()) > 0) {
         continue;
       }
 
@@ -344,7 +347,7 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
 
       // err *should* be +M_PI/2 for the correct winding, but if we
       // got the wrong winding, it'll be around -M_PI/2.
-      float err = MathUtil::mod2pi(theta - seg.theta());
+      float err = mod2pi(theta - seg.theta());
 
       if (err < 0)
         noflip += mag;

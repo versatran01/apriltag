@@ -16,7 +16,7 @@ int Edge::edgeCost(float theta0, float theta1, float mag1) {
   // mag0 was checked by the main routine so no need to recheck here
   if (mag1 < kMinMag) return -1;
 
-  const float theta_diff = std::abs(MathUtil::mod2pi(theta1 - theta0));
+  const float theta_diff = std::abs(mod2pi(theta1 - theta0));
   if (theta_diff > kMaxEdgeCost) return -1;
 
   const float norm_diff = theta_diff / kMaxEdgeCost;
@@ -93,8 +93,8 @@ void Edge::mergeEdges(std::vector<Edge> &edges, UnionFindSimple &uf,
 
     // bshift will be a multiple of 2pi that aligns the spans of 'b' with 'a'
     // so that we can properly take the union of them.
-    float bshift = MathUtil::mod2pi((tmina + tmaxa) / 2, (tminb + tmaxb) / 2) -
-                   (tminb + tmaxb) / 2;
+    float bshift =
+        mod2pi((tmina + tmaxa) / 2, (tminb + tmaxb) / 2) - (tminb + tmaxb) / 2;
 
     float tminab = min(tmina, tminb + bshift);
     float tmaxab = max(tmaxa, tmaxb + bshift);

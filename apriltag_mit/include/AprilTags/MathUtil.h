@@ -23,6 +23,22 @@ constexpr T Pi_2() {
   return static_cast<T>(M_PI / 2);
 }
 
+//! Returns a result in [-Pi, Pi]
+static inline float mod2pi(float theta) {
+  const float twopi = 2 * Pi<float>();
+  const float twopi_inv = 1.f / (2.f * Pi<float>());
+
+  float abs_theta = std::abs(theta);
+  float q = abs_theta * twopi_inv + 0.5f;
+  int qi = (int)q;
+  float r = abs_theta - qi * twopi;
+  return (theta < 0) ? -r : r;
+}
+
+//! Returns a value of v wrapped such that ref and v differ by no more than
+//+/- Pi
+static inline float mod2pi(float ref, float v) { return ref + mod2pi(v - ref); }
+
 static inline float Distance2D(const cv::Point2f& p0, const cv::Point2f& p1) {
   const auto dx = p0.x - p1.x;
   const auto dy = p0.y - p1.y;
@@ -40,23 +56,6 @@ class MathUtil {
     float dx = p0.first - p1.first;
     float dy = p0.second - p1.second;
     return std::sqrt(dx * dx + dy * dy);
-  }
-
-  //! Returns a result in [-Pi, Pi]
-  static inline float mod2pi(float vin) {
-    const float twopi = 2 * (float)M_PI;
-    const float twopi_inv = 1.f / (2.f * (float)M_PI);
-    float absv = std::abs(vin);
-    float q = absv * twopi_inv + 0.5f;
-    int qi = (int)q;
-    float r = absv - qi * twopi;
-    return (vin < 0) ? -r : r;
-  }
-
-  //! Returns a value of v wrapped such that ref and v differ by no more than
-  //+/- Pi
-  static inline float mod2pi(float ref, float v) {
-    return ref + mod2pi(v - ref);
   }
 };
 

@@ -146,12 +146,12 @@ void Quad::Search(std::vector<Segment *> &path, Segment &parent, int depth,
 
         //  double ttheta = fmod(t1-t0, 2*M_PI) + fmod(t2-t1, 2*M_PI) +
         //    fmod(t3-t2, 2*M_PI) + fmod(t0-t3, 2*M_PI);
-        float ttheta = MathUtil::mod2pi(t1 - t0) + MathUtil::mod2pi(t2 - t1) +
-                       MathUtil::mod2pi(t3 - t2) + MathUtil::mod2pi(t0 - t3);
+        float total_theta = mod2pi(t1 - t0) + mod2pi(t2 - t1) +
+                            mod2pi(t3 - t2) + mod2pi(t0 - t3);
         // cout << "ttheta=" << ttheta << endl;
         // the magic value is -2*PI. It should be exact,
         // but we allow for (lots of) numeric imprecision.
-        if (ttheta < -7 || ttheta > -5) bad = true;
+        if (total_theta < -7 || total_theta > -5) bad = true;
       }
 
       if (!bad) {
