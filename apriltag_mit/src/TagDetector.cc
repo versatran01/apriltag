@@ -331,6 +331,8 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
   // ===========================================================================
   // Step 1: Preprocess image
   // ===========================================================================
+  // Small Gaussian blur
+
   TimerUs t_step1("Preprocess");
   FloatImage im_decode, im_segment;
   Preprocess(im_orig, im_decode, im_segment);
@@ -345,6 +347,7 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
   // low pass on this step even if we don't want if for encoding.
   // NOTE: in Kaess' original code, mag is Ix^2 + Iy^2, so we need to modify
   // Edge::kMinMag to reflect this change accordingly
+
   TimerUs t_step2("CalcPolar");
   FloatImage im_mag, im_theta;
   CalcPolar(im_segment, im_mag, im_theta);
@@ -352,11 +355,12 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
   t_step2.report();
 
   //============================================================================
-  // Step three. Extract edges by grouping pixels with similar thetas together.
+  // Step 3: Extract edges by grouping pixels with similar thetas together.
   //============================================================================
   // This is a greedy algorithm: we start with the most similar pixels. We use
   // 4-connectivity.
   // NOTE: This is the most time consuming part!
+
   TimerUs t_step3("ExtractEdges");
   auto uf = ExtractEdges(im_mag, im_theta);
   t_step3.stop();
@@ -431,4 +435,4 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
   return good_detections;
 }
 
-}  // namespace
+}  // namespace AprilTags
