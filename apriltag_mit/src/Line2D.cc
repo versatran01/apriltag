@@ -1,39 +1,39 @@
-#include "AprilTags/GLine2D.h"
+#include "AprilTags/Line2D.h"
 
 namespace AprilTags {
 
-GLine2D::GLine2D()
+Line2D::Line2D()
     : dx(0), dy(0), p(0, 0), didNormalizeSlope(false), didNormalizeP(false) {}
 
-GLine2D::GLine2D(float slope, float b)
+Line2D::Line2D(float slope, float b)
     : dx(1),
       dy(slope),
       p(0, b),
       didNormalizeSlope(false),
       didNormalizeP(false) {}
 
-GLine2D::GLine2D(float dX, float dY, const std::pair<float, float> &pt)
+Line2D::Line2D(float dX, float dY, const std::pair<float, float> &pt)
     : dx(dX), dy(dY), p(pt), didNormalizeSlope(false), didNormalizeP(false) {}
 
-GLine2D::GLine2D(const std::pair<float, float> &p1,
-                 const std::pair<float, float> &p2)
+Line2D::Line2D(const std::pair<float, float> &p1,
+               const std::pair<float, float> &p2)
     : dx(p2.first - p1.first),
       dy(p2.second - p1.second),
       p(p1),
       didNormalizeSlope(false),
       didNormalizeP(false) {}
 
-float GLine2D::getLineCoordinate(const std::pair<float, float> &pt) {
+float Line2D::getLineCoordinate(const std::pair<float, float> &pt) {
   normalizeSlope();
   return pt.first * dx + pt.second * dy;
 }
 
-std::pair<float, float> GLine2D::getPointOfCoordinate(float coord) {
+std::pair<float, float> Line2D::getPointOfCoordinate(float coord) {
   normalizeP();
   return std::pair<float, float>(p.first + coord * dx, p.second + coord * dy);
 }
 
-std::pair<float, float> GLine2D::intersectionWith(const GLine2D &line) const {
+std::pair<float, float> Line2D::IntersectionWidth(const Line2D &line) const {
   float m00 = dx;
   float m01 = -line.getDx();
   float m10 = dy;
@@ -59,7 +59,7 @@ std::pair<float, float> GLine2D::intersectionWith(const GLine2D &line) const {
   return std::pair<float, float>(dx * x00 + p.first, dy * x00 + p.second);
 }
 
-GLine2D GLine2D::lsqFitXYW(const std::vector<XYW> &xyweights) {
+Line2D Line2D::lsqFitXYW(const std::vector<XYW> &xyweights) {
   float Cxx = 0, Cyy = 0, Cxy = 0, Ex = 0, Ey = 0, mXX = 0, mYY = 0, mXY = 0,
         mX = 0, mY = 0;
   float n = 0;
@@ -93,10 +93,10 @@ GLine2D GLine2D::lsqFitXYW(const std::vector<XYW> &xyweights) {
   std::pair<float, float> pts = std::pair<float, float>(Ex, Ey);
 
   // compute line parameters
-  return GLine2D(-std::sin(phi), std::cos(phi), pts);
+  return Line2D(-std::sin(phi), std::cos(phi), pts);
 }
 
-void GLine2D::normalizeSlope() {
+void Line2D::normalizeSlope() {
   if (!didNormalizeSlope) {
     float mag = std::sqrt(dx * dx + dy * dy);
     dx /= mag;
@@ -105,7 +105,7 @@ void GLine2D::normalizeSlope() {
   }
 }
 
-void GLine2D::normalizeP() {
+void Line2D::normalizeP() {
   if (!didNormalizeP) {
     normalizeSlope();
     // we already have a point (P) on the line, and we know the line vector U

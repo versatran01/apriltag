@@ -4,7 +4,6 @@
 #include <cmath>
 #include <cfloat>
 #include <cstdlib>
-#include <ostream>
 #include <utility>
 #include <opencv2/core/core.hpp>
 
@@ -24,7 +23,7 @@ constexpr T Pi_2() {
   return static_cast<T>(M_PI / 2);
 }
 
-static float Distance2D(const cv::Point2f& p0, const cv::Point2f& p1) {
+static inline float Distance2D(const cv::Point2f& p0, const cv::Point2f& p1) {
   const auto dx = p0.x - p1.x;
   const auto dy = p0.y - p1.y;
   return std::sqrt(dx * dx + dy * dy);

@@ -1,6 +1,6 @@
 #include <opencv2/calib3d/calib3d.hpp>
 #include "AprilTags/MathUtil.h"
-#include "AprilTags/GLine2D.h"
+#include "AprilTags/Line2D.h"
 #include "AprilTags/Quad.h"
 #include "AprilTags/Segment.h"
 
@@ -51,7 +51,7 @@ GrayModel Quad::MakeGrayModel(const FloatImage &image,
       if (!IsInsideImage(xi, yi, image)) continue;
 
       const float v = image.get(xi, yi);
-      if (IsOnOutterBorder(xb, yb, lb)) {
+      if (IsOnOuterBorder(xb, yb, lb)) {
         model.AddWhiteObs(xn, yn, v);
       } else if (IsOnInnerBorder(xb, yb, lb)) {
         model.AddBlackObs(xn, yn, v);
@@ -118,14 +118,13 @@ void Quad::Search(std::vector<Segment *> &path, Segment &parent, int depth,
       for (size_t i = 0; i < 4; i++) {
         // compute intersections between all the lines. This will give us
         // sub-pixel accuracy for the corners of the quad.
-        GLine2D line_a(std::make_pair(path[i]->getX0(), path[i]->getY0()),
-                       std::make_pair(path[i]->getX1(), path[i]->getY1()));
-        GLine2D line_b(
-            std::make_pair(path[i + 1]->getX0(), path[i + 1]->getY0()),
-            std::make_pair(path[i + 1]->getX1(), path[i + 1]->getY1()));
+        Line2D line_a(std::make_pair(path[i]->x0(), path[i]->y0()),
+                      std::make_pair(path[i]->x1(), path[i]->y1()));
+        Line2D line_b(std::make_pair(path[i + 1]->x0(), path[i + 1]->y0()),
+                      std::make_pair(path[i + 1]->x1(), path[i + 1]->y1()));
 
-        p[i] = line_a.intersectionWith(line_b);
-        calc_perimeter += path[i]->getLength();
+        p[i] = line_a.IntersectionWidth(line_b);
+        calc_perimeter += path[i]->length();
 
         // no intersection? Occurs when the lines are almost parallel.
         if (p[i].first == -1) {
@@ -209,7 +208,7 @@ void Quad::Search(std::vector<Segment *> &path, Segment &parent, int depth,
     // points, we can eliminate the redundant detections by
     // requiring that the first corner have the lowest
     // value. We're arbitrarily going to use theta...
-    if (child.getTheta() > path[0]->getTheta()) {
+    if (child.theta() > path[0]->theta()) {
       // cout << "theta failed: " << child.getTheta() << " > " <<
       // path[0]->getTheta() << endl;
       continue;

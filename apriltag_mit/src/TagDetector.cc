@@ -11,8 +11,8 @@
 #include "AprilTags/Edge.h"
 #include "AprilTags/FloatImage.h"
 #include "AprilTags/GrayModel.h"
-#include "AprilTags/GLine2D.h"
-#include "AprilTags/GLineSegment2D.h"
+#include "AprilTags/Line2D.h"
+#include "AprilTags/LineSegment2D.h"
 #include "AprilTags/Gridder.h"
 #include "AprilTags/MathUtil.h"
 #include "AprilTags/Segment.h"
@@ -75,10 +75,62 @@ void TagDetector::CalcPolar(const FloatImage &image, FloatImage &im_mag,
   cv::cartToPolar(Ix, Iy, im_mag.mat(), im_theta.mat());
 }
 
+void TagDetector::ChainSegments(std::vector<Segment> &segments,
+                                const FloatImage &image) const {
+  const int width = image.width();
+  const int height = image.height();
+  Gridder<Segment> gridder(0, 0, width, height, 10);
+
+  // add every segment to the hash table according to the position of the
+  // segment's first point. Remember that the first point has a specific meaning
+  // due to our left-hand rule above.
+  for (Segment &s : segments) {
+    gridder.Add(s.x0(), s.y0(), &s);
+  }
+
+  // Now, find child segments that begin where each parent segment ends.
+  for (Segment &parent_seg : segments) {
+    // compute length of the line segment
+    Line2D parent_line(
+        std::pair<float, float>(parent_seg.x0(), parent_seg.y0()),
+        std::pair<float, float>(parent_seg.x1(), parent_seg.y1()));
+
+    Gridder<Segment>::iterator iter = gridder.find(
+        parent_seg.x1(), parent_seg.y1(), 0.5f * parent_seg.length());
+    while (iter.hasNext()) {
+      Segment &child_seg = iter.next();
+      if (MathUtil::mod2pi(child_seg.theta() - parent_seg.theta()) > 0) {
+        continue;
+      }
+
+      // compute intersection of points
+      Line2D child_line(
+          std::pair<float, float>(child_seg.x0(), child_seg.y0()),
+          std::pair<float, float>(child_seg.x1(), child_seg.y1()));
+
+      std::pair<float, float> p = parent_line.IntersectionWidth(child_line);
+      if (p.first == -1) {
+        continue;
+      }
+
+      float parent_dist = Distance2D({p.first, p.second}, parent_seg.p1());
+      float child_dist = Distance2D({p.first, p.second}, child_seg.p0());
+
+      if (max(parent_dist, child_dist) > parent_seg.length()) {
+        continue;
+      }
+
+      // everything's OK, this child is a reasonable successor.
+      parent_seg.children.push_back(&child_seg);
+    }
+  }
+}
+
 std::vector<Quad> TagDetector::SearchQuads(
     std::vector<Segment> &segments) const {
   std::vector<Quad> quads;
 
+  // TODO: need to look at this
   std::vector<Segment *> tmp(5);
   for (size_t i = 0; i < segments.size(); i++) {
     tmp[0] = &segments[i];
@@ -261,11 +313,11 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
   for (clustersItr = clusters.begin(); clustersItr != clusters.end();
        clustersItr++) {
     std::vector<XYW> points = clustersItr->second;
-    GLineSegment2D gseg = GLineSegment2D::lsqFitXYW(points);
+    LineSegment2D gseg = LineSegment2D::lsqFitXYW(points);
 
     // filter short lines
     float length = MathUtil::Distance2D(gseg.getP0(), gseg.getP1());
-    if (length < Segment::minimumLineLength) continue;
+    if (length < Segment::kMinLineLength) continue;
 
     Segment seg;
     float dy = gseg.getP1().second - gseg.getP0().second;
@@ -273,8 +325,8 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
 
     float tmpTheta = std::atan2(dy, dx);
 
-    seg.setTheta(tmpTheta);
-    seg.setLength(length);
+    seg.set_theta(tmpTheta);
+    seg.set_length(length);
 
     // We add an extra semantic to segments: the vector
     // p1->p2 will have dark on the left, white on the right.
@@ -292,7 +344,7 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
 
       // err *should* be +M_PI/2 for the correct winding, but if we
       // got the wrong winding, it'll be around -M_PI/2.
-      float err = MathUtil::mod2pi(theta - seg.getTheta());
+      float err = MathUtil::mod2pi(theta - seg.theta());
 
       if (err < 0)
         noflip += mag;
@@ -301,21 +353,21 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
     }
 
     if (flip > noflip) {
-      float temp = seg.getTheta() + (float)M_PI;
-      seg.setTheta(temp);
+      float temp = seg.theta() + (float)M_PI;
+      seg.set_theta(temp);
     }
 
-    float dot = dx * std::cos(seg.getTheta()) + dy * std::sin(seg.getTheta());
+    float dot = dx * std::cos(seg.theta()) + dy * std::sin(seg.theta());
     if (dot > 0) {
-      seg.setX0(gseg.getP1().first);
-      seg.setY0(gseg.getP1().second);
-      seg.setX1(gseg.getP0().first);
-      seg.setY1(gseg.getP0().second);
+      seg.set_x0(gseg.getP1().first);
+      seg.set_y0(gseg.getP1().second);
+      seg.set_x1(gseg.getP0().first);
+      seg.set_y1(gseg.getP0().second);
     } else {
-      seg.setX0(gseg.getP0().first);
-      seg.setY0(gseg.getP0().second);
-      seg.setX1(gseg.getP1().first);
-      seg.setY1(gseg.getP1().second);
+      seg.set_x0(gseg.getP0().first);
+      seg.set_y0(gseg.getP0().second);
+      seg.set_x1(gseg.getP1().first);
+      seg.set_y1(gseg.getP1().second);
     }
 
     segments.push_back(seg);
@@ -328,55 +380,9 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
   // ===========================================================================
   // We will chain segments together next. The gridder accelerates the search by
   // building (essentially) a 2D hash table.
+
   TimerUs t_step6("ChainSegments");
-  Gridder<Segment> gridder(0, 0, width, height, 10);
-
-  // add every segment to the hash table according to the position of the
-  // segment's first point. Remember that the first point has a specific meaning
-  // due to our left-hand rule above.
-  for (unsigned int i = 0; i < segments.size(); i++) {
-    gridder.add(segments[i].getX0(), segments[i].getY0(), &segments[i]);
-  }
-
-  // Now, find child segments that begin where each parent segment ends.
-  for (unsigned i = 0; i < segments.size(); i++) {
-    Segment &parent_seg = segments[i];
-
-    // compute length of the line segment
-    GLine2D parent_line(
-        std::pair<float, float>(parent_seg.getX0(), parent_seg.getY0()),
-        std::pair<float, float>(parent_seg.getX1(), parent_seg.getY1()));
-
-    Gridder<Segment>::iterator iter = gridder.find(
-        parent_seg.getX1(), parent_seg.getY1(), 0.5f * parent_seg.getLength());
-    while (iter.hasNext()) {
-      Segment &child = iter.next();
-      if (MathUtil::mod2pi(child.getTheta() - parent_seg.getTheta()) > 0) {
-        continue;
-      }
-
-      // compute intersection of points
-      GLine2D childLine(std::pair<float, float>(child.getX0(), child.getY0()),
-                        std::pair<float, float>(child.getX1(), child.getY1()));
-
-      std::pair<float, float> p = parent_line.intersectionWith(childLine);
-      if (p.first == -1) {
-        continue;
-      }
-
-      float parent_dist = MathUtil::Distance2D(
-          p, std::pair<float, float>(parent_seg.getX1(), parent_seg.getY1()));
-      float child_dist = MathUtil::Distance2D(
-          p, std::pair<float, float>(child.getX0(), child.getY0()));
-
-      if (max(parent_dist, child_dist) > parent_seg.getLength()) {
-        continue;
-      }
-
-      // everything's OK, this child is a reasonable successor.
-      parent_seg.children.push_back(&child);
-    }
-  }
+  ChainSegments(segments, image);
   t_step6.stop();
   t_step6.report();
 
@@ -384,6 +390,7 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
   // Step 7: Search all connected segments for quads.
   //============================================================================
   // To see if any form a loop of length 4.
+
   TimerUs t_step7("SearchQuads");
   const auto quads = SearchQuads(segments);
   t_step7.stop();

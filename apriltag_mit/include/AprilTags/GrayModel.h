@@ -48,7 +48,7 @@ class GrayModel {
   IntensityModel black_model_, white_model_;
 };
 
-bool IsOnOutterBorder(int x, int y, int l, bool black_corner = true);
+bool IsOnOuterBorder(int x, int y, int l, bool black_corner = true);
 bool IsOnInnerBorder(int x, int y, int l);
 bool IsInsideInnerBorder(int x, int y, int l);
 

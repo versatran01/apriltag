@@ -46,6 +46,13 @@ class TagDetector {
                  FloatImage& im_theta) const;
 
   /**
+   * @brief ChainSegments Step 6
+   * @param segments
+   */
+  void ChainSegments(std::vector<Segment>& segments,
+                     const FloatImage& image) const;
+
+  /**
    * @brief SearchQuads Step 7
    * @param segments
    * @return

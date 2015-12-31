@@ -88,7 +88,7 @@ void IntensityModel::Fit() {
   c_[3] = b_[3] / num_obs_;
 }
 
-bool IsOnOutterBorder(int x, int y, int l, bool black_corner) {
+bool IsOnOuterBorder(int x, int y, int l, bool black_corner) {
   if (black_corner) {
     // Black corners will be excluded
     const bool on_corner = (x == -1 && y == -1) || (x == -1 && y == l) ||
@@ -106,6 +106,5 @@ bool IsOnInnerBorder(int x, int y, int l) {
 bool IsInsideInnerBorder(int x, int y, int l) {
   return (y >= 1 && y < (l - 1) && x >= 1 && x < (l - 1));
 }
-
 
 }  // namespace AprilTags

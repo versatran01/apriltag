@@ -1,8 +1,8 @@
 #ifndef APRILTAGS_SEGMENT_H_
 #define APRILTAGS_SEGMENT_H_
 
-#include <cmath>
 #include <vector>
+#include <opencv2/core/core.hpp>
 
 namespace AprilTags {
 
@@ -15,49 +15,45 @@ class Segment {
    * @brief minimumSegmentSize
    * Minimum number of pixels in a segment before we'll fit a line to it
    */
-  static int const kMinSegmentPixels = 4;
+  static constexpr int kMinSegmentPixels = 4;
 
   /**
    * @brief minimumLineLength
    * Calculated based on minimum plausible decoding size for Tag9 family
    */
-  static float const minimumLineLength;
+  static constexpr float kMinLineLength = 4;
 
-  float getX0() const { return x0; }
-  void setX0(float newValue) { x0 = newValue; }
+  const cv::Point2f& p0() const { return p0_; }
+  const cv::Point2f& p1() const { return p1_; }
 
-  float getY0() const { return y0; }
-  void setY0(float newValue) { y0 = newValue; }
+  float x0() const { return p0_.x; }
+  void set_x0(float x0) { p0_.x = x0; }
 
-  float getX1() const { return x1; }
-  void setX1(float newValue) { x1 = newValue; }
+  float y0() const { return p0_.y; }
+  void set_y0(float y0) { p0_.y = y0; }
 
-  float getY1() const { return y1; }
-  void setY1(float newValue) { y1 = newValue; }
+  float x1() const { return p1_.x; }
+  void set_x1(float x1) { p1_.x = x1; }
 
-  float getTheta() const { return theta; }
-  void setTheta(float newValue) { theta = newValue; }
+  float y1() const { return p1_.y; }
+  void set_y1(float y1) { p1_.y = y1; }
 
-  float getLength() const { return length; }
-  void setLength(float newValue) { length = newValue; }
+  float theta() const { return theta_; }
+  void set_theta(float theta) { theta_ = theta; }
 
-  //! Returns the length of the Segment.
-  float segmentLength();
+  float length() const { return length_; }
+  void set_length(float length) { length_ = length; }
 
-  //! Print endpoint coordinates of this segment.
-  void printSegment();
+  int id() const { return id_; }
 
-  //! ID of Segment.
-  int getId() const { return segmentId; }
-
-  std::vector<Segment *> children;
+  std::vector<Segment*> children;
 
  private:
-  float x0, y0, x1, y1;
-  float theta;   // gradient direction (points towards white)
-  float length;  // length of line segment in pixels
-  int segmentId;
-  static int idCounter;
+  cv::Point2f p0_, p1_;
+  float theta_;   // gradient direction (points towards white)
+  float length_;  // length of line segment in pixels
+  int id_;
+  static int counter;
 };
 
 }  // namsepace AprilTags

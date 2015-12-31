@@ -69,11 +69,13 @@ class Gridder {
   // Destructor
   ~Gridder() {
     for (unsigned int i = 0; i < cells.size(); i++) {
-      for (unsigned int j = 0; j < cells[i].size(); j++) delete cells[i][j];
+      for (unsigned int j = 0; j < cells[i].size(); j++) {
+        delete cells[i][j];
+      }
     }
   }
 
-  void add(float x, float y, T* object) {
+  void Add(float x, float y, T* object) {
     int ix = (int)((x - x0) / pixelsPerCell);
     int iy = (int)((y - y0) / pixelsPerCell);
 
@@ -82,8 +84,6 @@ class Gridder {
       c->object = object;
       c->next = cells[iy][ix];
       cells[iy][ix] = c;
-      // cout << "Gridder placed seg " << o->getId() << " at (" << ix << "," <<
-      // iy << ")" << endl;
     }
   }
 

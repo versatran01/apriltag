@@ -1,5 +1,5 @@
-#ifndef APRILTAGS_GLINE2D_H_
-#define APRILTAGS_GLINE2D_H_
+#ifndef APRILTAGS_LINE2D_H_
+#define APRILTAGS_LINE2D_H_
 
 #include <cmath>
 #include <utility>
@@ -11,29 +11,29 @@
 namespace AprilTags {
 
 //! A 2D line
-class GLine2D {
+class Line2D {
  public:
   //! Create a new line.
-  GLine2D();
+  Line2D();
 
   //! Create a new line.
   /*  @param slope the slope
    *  @param b the y intercept
    */
-  GLine2D(float slope, float b);
+  Line2D(float slope, float b);
 
   //! Create a new line.
   /*  @param dx A change in X corresponding to dy
    *  @param dy A change in Y corresponding to dx
    *  @param p A point that the line passes through
    */
-  GLine2D(float dX, float dY, const std::pair<float, float> &pt);
+  Line2D(float dX, float dY, const std::pair<float, float> &pt);
 
   //! Create a new line through two points.
   /*  @param p1 the first point
    *  @param p2 the second point
    */
-  GLine2D(const std::pair<float, float> &p1, const std::pair<float, float> &p2);
+  Line2D(const std::pair<float, float> &p1, const std::pair<float, float> &p2);
 
   //! Get the coordinate of a point (on this line), with zero corresponding to
   // the point
@@ -53,9 +53,9 @@ class GLine2D {
 
   //!Compute the point where two lines intersect, or (-1,0) if the lines are
   // parallel.
-  std::pair<float, float> intersectionWith(const GLine2D &line) const;
+  std::pair<float, float> IntersectionWidth(const Line2D &line) const;
 
-  static GLine2D lsqFitXYW(const std::vector<XYW> &xyweights);
+  static Line2D lsqFitXYW(const std::vector<XYW> &xyweights);
 
   inline float getDx() const { return dx; }
   inline float getDy() const { return dy; }
