@@ -7,7 +7,7 @@
 #include <opencv2/core/core.hpp>
 
 #include "AprilTags/MathUtil.h"
-#include "AprilTags/XYWeight.h"
+#include "AprilTags/XYW.h"
 #include "AprilTags/Segment.h"
 
 namespace AprilTags {

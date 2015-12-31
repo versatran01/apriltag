@@ -4,7 +4,7 @@
 #include <cmath>
 
 #include "AprilTags/Line2D.h"
-#include "AprilTags/XYWeight.h"
+#include "AprilTags/XYW.h"
 
 namespace AprilTags {
 

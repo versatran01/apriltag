@@ -18,7 +18,7 @@
 #include "AprilTags/Segment.h"
 #include "AprilTags/TagFamily.h"
 #include "AprilTags/UnionFindSimple.h"
-#include "AprilTags/XYWeight.h"
+#include "AprilTags/XYW.h"
 
 #include "AprilTags/TagDetector.h"
 
@@ -38,10 +38,6 @@ int TagDetector::black_border() const { return black_border_; }
 
 int TagDetector::CalcFilterSize(float sigma) const {
   return static_cast<int>(std::max(3.0f, 3 * sigma)) | 1;
-}
-
-int TagDetector::QuadLengthBits() const {
-  return 2 * black_border_ + tag_family_.dimension_bits();
 }
 
 void TagDetector::Preprocess(const FloatImage &image, FloatImage &im_decode,
@@ -73,6 +69,69 @@ void TagDetector::CalcPolar(const FloatImage &image, FloatImage &im_mag,
   cv::Scharr(image.mat(), Ix, CV_32F, 1, 0, 1 / 16.0);
   cv::Scharr(image.mat(), Iy, CV_32F, 0, 1, 1 / 16.0);
   cv::cartToPolar(Ix, Iy, im_mag.mat(), im_theta.mat());
+}
+
+std::vector<Segment> TagDetector::FitLines(
+    const std::map<int, std::vector<XYW>> &clusters, const FloatImage &im_mag,
+    const FloatImage &im_theta) const {
+  std::vector<Segment> segments;
+
+  for (const auto &i_xyw : clusters) {
+    const std::vector<XYW> &xyws = i_xyw.second;
+    LineSegment2D lseg = LineSegment2D::LsqFitXyw(xyws);
+
+    // filter short lines
+    const auto length = Distance2D(lseg.p0(), lseg.p1());
+    if (length < Segment::kMinLineLength) continue;
+
+    Segment seg;
+    const auto dy = lseg.p1().y - lseg.p0().y;
+    const auto dx = lseg.p1().x - lseg.p0().x;
+
+    const float tmpTheta = std::atan2(dy, dx);
+
+    seg.set_theta(tmpTheta);
+    seg.set_length(length);
+
+    // We add an extra semantic to segments: the vector
+    // p1->p2 will have dark on the left, white on the right.
+    // To do this, we'll look at every gradient and each one
+    // will vote for which way they think the gradient should
+    // go. This is way more retentive than necessary: we
+    // could probably sample just one point!
+
+    float flip = 0, noflip = 0;
+    for (const XYW &xyw : xyws) {
+      const auto theta = im_theta.get(xyw.x, xyw.y);
+      const auto mag = im_mag.get(xyw.x, xyw.y);
+
+      // err *should* be +M_PI/2 for the correct winding, but if we
+      // got the wrong winding, it'll be around -M_PI/2.
+      float err = mod2pi(theta - seg.theta());
+
+      if (err < 0)
+        noflip += mag;
+      else
+        flip += mag;
+    }
+
+    if (flip > noflip) {
+      float temp = seg.theta() + Pi<float>();
+      seg.set_theta(temp);
+    }
+
+    float dot = dx * std::cos(seg.theta()) + dy * std::sin(seg.theta());
+    if (dot > 0) {
+      seg.set_p0(lseg.p1());
+      seg.set_p1(lseg.p0());
+    } else {
+      seg.set_p0(lseg.p0());
+      seg.set_p1(lseg.p1());
+    }
+
+    segments.push_back(seg);
+  }
+  return segments;
 }
 
 void TagDetector::ChainSegments(std::vector<Segment> &segments,
@@ -306,67 +365,9 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
   // ===========================================================================
   // Step 5: Loop over the clusters, fitting lines (which we call Segments).
   // ===========================================================================
+
   TimerUs t_step5("FitLine");
-  std::vector<Segment> segments;  // used in Step six
-  std::map<int, std::vector<XYW>>::const_iterator clustersItr;
-  for (clustersItr = clusters.begin(); clustersItr != clusters.end();
-       clustersItr++) {
-    std::vector<XYW> xyws = clustersItr->second;
-    LineSegment2D lseg = LineSegment2D::LsqFitXyw(xyws);
-
-    // filter short lines
-    float length = Distance2D(lseg.p0(), lseg.p1());
-    if (length < Segment::kMinLineLength) continue;
-
-    Segment seg;
-    float dy = lseg.p1().y - lseg.p0().y;
-    float dx = lseg.p1().x - lseg.p0().x;
-
-    float tmpTheta = std::atan2(dy, dx);
-
-    seg.set_theta(tmpTheta);
-    seg.set_length(length);
-
-    // We add an extra semantic to segments: the vector
-    // p1->p2 will have dark on the left, white on the right.
-    // To do this, we'll look at every gradient and each one
-    // will vote for which way they think the gradient should
-    // go. This is way more retentive than necessary: we
-    // could probably sample just one point!
-
-    float flip = 0, noflip = 0;
-    for (size_t i = 0; i < xyws.size(); i++) {
-      XYW xyw = xyws[i];
-
-      float theta = im_theta.get((int)xyw.x, (int)xyw.y);
-      float mag = im_mag.get((int)xyw.x, (int)xyw.y);
-
-      // err *should* be +M_PI/2 for the correct winding, but if we
-      // got the wrong winding, it'll be around -M_PI/2.
-      float err = mod2pi(theta - seg.theta());
-
-      if (err < 0)
-        noflip += mag;
-      else
-        flip += mag;
-    }
-
-    if (flip > noflip) {
-      float temp = seg.theta() + (float)M_PI;
-      seg.set_theta(temp);
-    }
-
-    float dot = dx * std::cos(seg.theta()) + dy * std::sin(seg.theta());
-    if (dot > 0) {
-      seg.set_p0(lseg.p1());
-      seg.set_p1(lseg.p0());
-    } else {
-      seg.set_p0(lseg.p0());
-      seg.set_p1(lseg.p1());
-    }
-
-    segments.push_back(seg);
-  }
+  auto segments = FitLines(clusters, im_mag, im_theta);
   t_step5.stop();
   t_step5.report();
 

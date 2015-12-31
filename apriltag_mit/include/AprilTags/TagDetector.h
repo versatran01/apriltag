@@ -8,6 +8,7 @@
 #include "AprilTags/FloatImage.h"
 #include "AprilTags/Quad.h"
 #include "AprilTags/GrayModel.h"
+#include "AprilTags/XYW.h"
 
 namespace AprilTags {
 
@@ -24,8 +25,6 @@ class TagDetector {
   const TagFamily tag_family_;
 
   int CalcFilterSize(float sigma) const;
-
-  int QuadLengthBits() const;
 
   /**
    * @brief Preprocess Step 1
@@ -44,6 +43,17 @@ class TagDetector {
    */
   void CalcPolar(const FloatImage& image, FloatImage& im_mag,
                  FloatImage& im_theta) const;
+
+  std::map<int, std::vector<XYW>> ClusterPixels() const;
+
+  /**
+   * @brief FitLines Step 5
+   * @param clusters
+   * @return
+   */
+  std::vector<Segment> FitLines(const std::map<int, std::vector<XYW>>& clusters,
+                                const FloatImage& im_mag,
+                                const FloatImage& im_theta) const;
 
   /**
    * @brief ChainSegments Step 6

@@ -4,7 +4,7 @@
 namespace AprilTags {
 
 LineSegment2D::LineSegment2D(const cv::Point2f& p0, const cv::Point2f& p1)
-    : line_(p0, p1), p0_(p0), p1_(p1), w_() {}
+    : line_(p0, p1), p0_(p0), p1_(p1) {}
 
 LineSegment2D LineSegment2D::LsqFitXyw(const std::vector<XYW>& xyws) {
   Line2D line = Line2D::LsqFitXyw(xyws);
