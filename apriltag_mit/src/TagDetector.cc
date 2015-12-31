@@ -64,7 +64,7 @@ void TagDetector::CalcPolar(const FloatImage &image, FloatImage &im_mag,
 }
 
 std::map<int, std::vector<XYW>> TagDetector::ClusterPixels(
-    UnionFindSimple &uf, const FloatImage &im_mag) const {
+    UnionFind &uf, const FloatImage &im_mag) const {
   const int height = im_mag.height();
   const int width = im_mag.width();
 
@@ -74,11 +74,11 @@ std::map<int, std::vector<XYW>> TagDetector::ClusterPixels(
     for (int x = 0; x < width - 1; ++x) {
       const int id = y * width + x;
 
-      if (uf.getSetSize(id) < Segment::kMinSegmentPixels) {
+      if (uf.GetSetSize(id) < Segment::kMinSegmentPixels) {
         continue;
       }
 
-      int rep = uf.getRepresentative(id);
+      int rep = uf.GetRepresentative(id);
 
       map<int, vector<XYW>>::iterator it = clusters.find(rep);
       if (it == clusters.end()) {
@@ -305,7 +305,7 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
   // NOTE: This is the most time consuming part!
   TimerUs t_step3("ExtractEdges");
   const size_t num_pixels = width * height;
-  UnionFindSimple uf(num_pixels);
+  UnionFind uf(num_pixels);
 
   vector<Edge> edges(num_pixels * 4);
   size_t num_edges = 0;
@@ -341,7 +341,7 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
         theta_max[id] = theta0;
 
         // Calculates then adds edges to 'vector<Edge> edges'
-        Edge::calcEdges(theta0, x, y, im_theta, im_mag, edges, num_edges);
+        Edge::CalcEdges(theta0, x, y, im_theta, im_mag, edges, num_edges);
 
         // XXX Would 8 connectivity help for rotated tags?
         // Probably not much, so long as input filtering hasn't been disabled.
@@ -350,7 +350,7 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
 
     edges.resize(num_edges);
     std::stable_sort(edges.begin(), edges.end());
-    Edge::mergeEdges(edges, uf, theta_min, theta_max, mag_min, mag_max);
+    Edge::MergeEdges(edges, uf, theta_min, theta_max, mag_min, mag_max);
   }
   t_step3.stop();
   t_step3.report();

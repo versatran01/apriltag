@@ -8,7 +8,7 @@
 namespace AprilTags {
 
 class FloatImage;
-class UnionFindSimple;
+class UnionFind;
 
 using std::min;
 using std::max;
@@ -22,22 +22,25 @@ class Edge {
   /**
    * @brief kMinMag minimum intensity gradient for an edge to be recognized
    */
-  static float const kMinMag;
+  // float const Edge::minMag = 0.004f;
+  static constexpr float kMinMag = 0.06f;
 
   /**
    * @brief kMaxEdgeCost maximum acceptable difference in local orientation
    */
-  static float const kMaxEdgeCost;
-  static int const kWeightScale;    // was 10000
-  static float const kThetaThresh;  //!< theta threshold for merging edges
-  static float const kMagThresh;    //!< magnitude threshold for merging edges
+  static constexpr float kMaxEdgeCost = 30.f * float(M_PI) / 180.f;
+  static constexpr int kWeightScale = 100;  // was 10000
+  // theta threshold for merging edges
+  static constexpr float kThetaThresh = 100;
+  // magnitude threshold for merging edges
+  static constexpr float kMagThresh = 1200;
 
-  int pixelIdxA;
-  int pixelIdxB;
+  int pid0;
+  int pid1;
   int cost;
 
   //! Constructor
-  Edge() : pixelIdxA(), pixelIdxB(), cost() {}
+  Edge() : pid0(), pid1(), cost() {}
 
   //! Compare edges based on cost
   inline bool operator<(const Edge &other) const { return (cost < other.cost); }
@@ -49,16 +52,16 @@ class Edge {
     the two pixels.  Lower cost is better.  A cost of -1 means there
     is no edge here (intensity gradien fell below threshold).
    */
-  static int edgeCost(float theta0, float theta1, float mag1);
+  static int EdgeCost(float theta0, float theta1, float mag1);
 
   //! Calculates and inserts up to four edges into 'edges', a vector of Edges.
-  static void calcEdges(float theta0, int x, int y, const FloatImage &theta,
+  static void CalcEdges(float theta0, int x, int y, const FloatImage &theta,
                         const FloatImage &mag, std::vector<Edge> &edges,
                         size_t &nEdges);
 
   //! Process edges in order of increasing cost, merging clusters if we can do
   // so without exceeding the thetaThresh.
-  static void mergeEdges(std::vector<Edge> &edges, UnionFindSimple &uf,
+  static void MergeEdges(std::vector<Edge> &edges, UnionFind &uf,
                          float tmin[], float tmax[], float mmin[],
                          float mmax[]);
 };
