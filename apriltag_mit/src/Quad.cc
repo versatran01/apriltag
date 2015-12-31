@@ -112,22 +112,20 @@ void Quad::Search(std::vector<Segment *> &path, Segment &parent, int depth,
     // Is the first segment the same as the last segment (i.e., a loop?)
     if (path[4] == path[0]) {
       // the 4 corners of the quad as computed by the intersection of segments.
-      std::vector<std::pair<float, float>> p(4);
+      std::vector<cv::Point2f> p(4);
       float calc_perimeter = 0;
       bool bad = false;
       for (size_t i = 0; i < 4; i++) {
         // compute intersections between all the lines. This will give us
         // sub-pixel accuracy for the corners of the quad.
-        Line2D line_a(std::make_pair(path[i]->x0(), path[i]->y0()),
-                      std::make_pair(path[i]->x1(), path[i]->y1()));
-        Line2D line_b(std::make_pair(path[i + 1]->x0(), path[i + 1]->y0()),
-                      std::make_pair(path[i + 1]->x1(), path[i + 1]->y1()));
+        Line2D line_a(*path[i]);
+        Line2D line_b(*path[i + 1]);
 
         p[i] = line_a.IntersectionWidth(line_b);
         calc_perimeter += path[i]->length();
 
         // no intersection? Occurs when the lines are almost parallel.
-        if (p[i].first == -1) {
+        if (p[i].x == -1) {
           bad = true;
         }
       }
@@ -135,14 +133,10 @@ void Quad::Search(std::vector<Segment *> &path, Segment &parent, int depth,
       // eliminate quads that don't form a simply connected loop, i.e., those
       // that form an hour glass, or wind the wrong way.
       if (!bad) {
-        float t0 =
-            std::atan2(p[1].second - p[0].second, p[1].first - p[0].first);
-        float t1 =
-            std::atan2(p[2].second - p[1].second, p[2].first - p[1].first);
-        float t2 =
-            std::atan2(p[3].second - p[2].second, p[3].first - p[2].first);
-        float t3 =
-            std::atan2(p[0].second - p[3].second, p[0].first - p[3].first);
+        float t0 = std::atan2(p[1].y - p[0].y, p[1].x - p[0].x);
+        float t1 = std::atan2(p[2].y - p[1].y, p[2].x - p[1].x);
+        float t2 = std::atan2(p[3].y - p[2].y, p[3].x - p[2].x);
+        float t3 = std::atan2(p[0].y - p[3].y, p[0].x - p[3].x);
 
         //  double ttheta = fmod(t1-t0, 2*M_PI) + fmod(t2-t1, 2*M_PI) +
         //    fmod(t3-t2, 2*M_PI) + fmod(t0-t3, 2*M_PI);
@@ -155,12 +149,12 @@ void Quad::Search(std::vector<Segment *> &path, Segment &parent, int depth,
       }
 
       if (!bad) {
-        float d0 = MathUtil::Distance2D(p[0], p[1]);
-        float d1 = MathUtil::Distance2D(p[1], p[2]);
-        float d2 = MathUtil::Distance2D(p[2], p[3]);
-        float d3 = MathUtil::Distance2D(p[3], p[0]);
-        float d4 = MathUtil::Distance2D(p[0], p[2]);
-        float d5 = MathUtil::Distance2D(p[1], p[3]);
+        float d0 = Distance2D(p[0], p[1]);
+        float d1 = Distance2D(p[1], p[2]);
+        float d2 = Distance2D(p[2], p[3]);
+        float d3 = Distance2D(p[3], p[0]);
+        float d4 = Distance2D(p[0], p[2]);
+        float d5 = Distance2D(p[1], p[3]);
 
         // check sizes
         if (d0 < Quad::kMinEdgeLength || d1 < Quad::kMinEdgeLength ||
@@ -179,12 +173,7 @@ void Quad::Search(std::vector<Segment *> &path, Segment &parent, int depth,
       }
 
       if (!bad) {
-        std::vector<cv::Point2f> pcv = {{p[0].first, p[0].second},
-                                        {p[1].first, p[1].second},
-                                        {p[2].first, p[2].second},
-                                        {p[3].first, p[3].second}};
-
-        Quad quad(pcv);
+        Quad quad(p);
         quad.segments = path;
         quad.obs_perimeter = calc_perimeter;
         quads.push_back(quad);

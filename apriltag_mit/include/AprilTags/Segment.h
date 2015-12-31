@@ -24,7 +24,9 @@ class Segment {
   static constexpr float kMinLineLength = 4;
 
   const cv::Point2f& p0() const { return p0_; }
+  void set_p0(const cv::Point2f& p0) { p0_ = p0; }
   const cv::Point2f& p1() const { return p1_; }
+  void set_p1(const cv::Point2f& p1) { p1_ = p1; }
 
   float x0() const { return p0_.x; }
   void set_x0(float x0) { p0_.x = x0; }

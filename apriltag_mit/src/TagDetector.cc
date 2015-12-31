@@ -79,7 +79,7 @@ void TagDetector::ChainSegments(std::vector<Segment> &segments,
                                 const FloatImage &image) const {
   const int width = image.width();
   const int height = image.height();
-  Gridder<Segment> gridder(0, 0, width, height, 10);
+  Gridder<Segment> gridder(width, height, 10);
 
   // add every segment to the hash table according to the position of the
   // segment's first point. Remember that the first point has a specific meaning
@@ -91,9 +91,7 @@ void TagDetector::ChainSegments(std::vector<Segment> &segments,
   // Now, find child segments that begin where each parent segment ends.
   for (Segment &parent_seg : segments) {
     // compute length of the line segment
-    Line2D parent_line(
-        std::pair<float, float>(parent_seg.x0(), parent_seg.y0()),
-        std::pair<float, float>(parent_seg.x1(), parent_seg.y1()));
+    Line2D parent_line(parent_seg);
 
     Gridder<Segment>::iterator iter = gridder.find(
         parent_seg.x1(), parent_seg.y1(), 0.5f * parent_seg.length());
@@ -101,23 +99,21 @@ void TagDetector::ChainSegments(std::vector<Segment> &segments,
     while (iter.hasNext()) {
       Segment &child_seg = iter.next();
 
-      // We only look for
+      // We only look for segments that goes counterclockwise
       if (mod2pi(child_seg.theta() - parent_seg.theta()) > 0) {
         continue;
       }
 
       // compute intersection of points
-      Line2D child_line(
-          std::pair<float, float>(child_seg.x0(), child_seg.y0()),
-          std::pair<float, float>(child_seg.x1(), child_seg.y1()));
+      Line2D child_line(child_seg);
 
-      std::pair<float, float> p = parent_line.IntersectionWidth(child_line);
-      if (p.first == -1) {
+      auto p = parent_line.IntersectionWidth(child_line);
+      if (p.x == -1) {
         continue;
       }
 
-      float parent_dist = Distance2D({p.first, p.second}, parent_seg.p1());
-      float child_dist = Distance2D({p.first, p.second}, child_seg.p0());
+      float parent_dist = Distance2D(p, parent_seg.p1());
+      float child_dist = Distance2D(p, child_seg.p0());
 
       if (max(parent_dist, child_dist) > parent_seg.length()) {
         continue;
@@ -315,16 +311,16 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
   std::map<int, std::vector<XYW>>::const_iterator clustersItr;
   for (clustersItr = clusters.begin(); clustersItr != clusters.end();
        clustersItr++) {
-    std::vector<XYW> points = clustersItr->second;
-    LineSegment2D gseg = LineSegment2D::lsqFitXYW(points);
+    std::vector<XYW> xyws = clustersItr->second;
+    LineSegment2D lseg = LineSegment2D::LsqFitXyw(xyws);
 
     // filter short lines
-    float length = MathUtil::Distance2D(gseg.getP0(), gseg.getP1());
+    float length = Distance2D(lseg.p0(), lseg.p1());
     if (length < Segment::kMinLineLength) continue;
 
     Segment seg;
-    float dy = gseg.getP1().second - gseg.getP0().second;
-    float dx = gseg.getP1().first - gseg.getP0().first;
+    float dy = lseg.p1().y - lseg.p0().y;
+    float dx = lseg.p1().x - lseg.p0().x;
 
     float tmpTheta = std::atan2(dy, dx);
 
@@ -339,8 +335,8 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
     // could probably sample just one point!
 
     float flip = 0, noflip = 0;
-    for (size_t i = 0; i < points.size(); i++) {
-      XYW xyw = points[i];
+    for (size_t i = 0; i < xyws.size(); i++) {
+      XYW xyw = xyws[i];
 
       float theta = im_theta.get((int)xyw.x, (int)xyw.y);
       float mag = im_mag.get((int)xyw.x, (int)xyw.y);
@@ -362,15 +358,11 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
 
     float dot = dx * std::cos(seg.theta()) + dy * std::sin(seg.theta());
     if (dot > 0) {
-      seg.set_x0(gseg.getP1().first);
-      seg.set_y0(gseg.getP1().second);
-      seg.set_x1(gseg.getP0().first);
-      seg.set_y1(gseg.getP0().second);
+      seg.set_p0(lseg.p1());
+      seg.set_p1(lseg.p0());
     } else {
-      seg.set_x0(gseg.getP0().first);
-      seg.set_y0(gseg.getP0().second);
-      seg.set_x1(gseg.getP1().first);
-      seg.set_y1(gseg.getP1().second);
+      seg.set_p0(lseg.p0());
+      seg.set_p1(lseg.p1());
     }
 
     segments.push_back(seg);

@@ -3,32 +3,24 @@
 
 namespace AprilTags {
 
-LineSegment2D::LineSegment2D(const std::pair<float, float> &p0Arg,
-                             const std::pair<float, float> &p1Arg)
-    : line(p0Arg, p1Arg), p0(p0Arg), p1(p1Arg), weight() {}
+LineSegment2D::LineSegment2D(const cv::Point2f& p0, const cv::Point2f& p1)
+    : line_(p0, p1), p0_(p0), p1_(p1), w_() {}
 
-LineSegment2D LineSegment2D::lsqFitXYW(const std::vector<XYW> &xyweight) {
-  Line2D gline = Line2D::lsqFitXYW(xyweight);
-  float maxcoord = -std::numeric_limits<float>::infinity();
-  float mincoord = std::numeric_limits<float>::infinity();
+LineSegment2D LineSegment2D::LsqFitXyw(const std::vector<XYW>& xyws) {
+  Line2D line = Line2D::LsqFitXyw(xyws);
+  float coord_max = -std::numeric_limits<float>::infinity();
+  float coord_min = std::numeric_limits<float>::infinity();
 
-  //  for (unsigned int i = 0; i < xyweight.size(); i++) {
-  //    std::pair<float, float> p(xyweight[i].x, xyweight[i].y);
-  //    float coord = gline.getLineCoordinate(p);
-  //    maxcoord = std::max(maxcoord, coord);
-  //    mincoord = std::min(mincoord, coord);
-  //  }
-
-  for (const XYW &w : xyweight) {
-    std::pair<float, float> p(w.x, w.y);
-    float coord = gline.getLineCoordinate(p);
-    maxcoord = std::max(maxcoord, coord);
-    mincoord = std::min(mincoord, coord);
+  for (const XYW& xyw : xyws) {
+    const cv::Point2f p(xyw.x, xyw.y);
+    const float coord = line.GetLineCoordinate(p);
+    coord_max = std::max(coord_max, coord);
+    coord_min = std::min(coord_min, coord);
   }
 
-  std::pair<float, float> minValue = gline.getPointOfCoordinate(mincoord);
-  std::pair<float, float> maxValue = gline.getPointOfCoordinate(maxcoord);
-  return LineSegment2D(minValue, maxValue);
+  const auto p_min = line.GetPointOfCoordinate(coord_min);
+  const auto p_max = line.GetPointOfCoordinate(coord_max);
+  return LineSegment2D(p_min, p_max);
 }
 
 }  // namespace AprilTags

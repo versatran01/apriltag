@@ -4,78 +4,66 @@
 #include <cmath>
 #include <utility>
 #include <vector>
+#include <opencv2/core/core.hpp>
 
 #include "AprilTags/MathUtil.h"
 #include "AprilTags/XYWeight.h"
+#include "AprilTags/Segment.h"
 
 namespace AprilTags {
 
 //! A 2D line
 class Line2D {
  public:
-  //! Create a new line.
-  Line2D();
+  Line2D() = default;
 
-  //! Create a new line.
-  /*  @param slope the slope
-   *  @param b the y intercept
-   */
-  Line2D(float slope, float b);
+  Line2D(float k, float b);
 
-  //! Create a new line.
-  /*  @param dx A change in X corresponding to dy
-   *  @param dy A change in Y corresponding to dx
-   *  @param p A point that the line passes through
-   */
-  Line2D(float dX, float dY, const std::pair<float, float> &pt);
+  Line2D(const Segment &seg);
 
-  //! Create a new line through two points.
-  /*  @param p1 the first point
-   *  @param p2 the second point
-   */
-  Line2D(const std::pair<float, float> &p1, const std::pair<float, float> &p2);
+  Line2D(float dx, float dy, const cv::Point2f &p);
 
-  //! Get the coordinate of a point (on this line), with zero corresponding to
-  // the point
-  //! on the that is perpendicular toa line passing through the origin and the
-  // line.
-  /*  This allows easy computation if one point is between two other points on
-   * the line:
-   *  compute the line coordinate of all three points and test if a<=b<=c. This
-   * is
-   *  implemented by computing the dot product of the vector 'p' with the
-   *  line's direct unit vector.
+  Line2D(const cv::Point2f &p1, const cv::Point2f &p2);
+
+  /**
+   * @brief getLineCoordinate Get the coordinate of a point on this line.
+   * With 0 corresponding to the point on a line that is perpendicular to the
+   * line and passing through the origin
+   * @param p
+   * @return
    */
-  float getLineCoordinate(const std::pair<float, float> &p);
+  float GetLineCoordinate(const cv::Point2f &p);
 
   //! The inverse of getLineCoordinate.
-  std::pair<float, float> getPointOfCoordinate(float coord);
+  cv::Point2f GetPointOfCoordinate(float coord);
 
   //!Compute the point where two lines intersect, or (-1,0) if the lines are
   // parallel.
-  std::pair<float, float> IntersectionWidth(const Line2D &line) const;
+  cv::Point2f IntersectionWidth(const Line2D &line) const;
 
-  static Line2D lsqFitXYW(const std::vector<XYW> &xyweights);
+  static Line2D LsqFitXyw(const std::vector<XYW> &xyw);
 
-  inline float getDx() const { return dx; }
-  inline float getDy() const { return dy; }
-  inline float getFirst() const { return p.first; }
-  inline float getSecond() const { return p.second; }
+  float dx() const { return dx_; }
+  float dy() const { return dy_; }
+  float x() const { return p_.x; }
+  float y() const { return p_.y; }
+  const cv::Point2f &p() const { return p_; }
 
  protected:
-  void normalizeSlope();
-  void normalizeP();
+  void NormalizeSlope();
+  void NormalizeP();
 
  private:
-  float dx, dy;
+  float dx_ = 0;
+  float dy_ = 0;
 
   /**
    * @brief p A point the line passes through
    * When normalized, it is the point closest to the origin
    */
-  std::pair<float, float> p;
-  bool didNormalizeSlope;
-  bool didNormalizeP;
+  cv::Point2f p_;
+  bool slope_normalized_ = false;
+  bool p_normalized_ = false;
 };
 
 }  // namespace AprilTags
