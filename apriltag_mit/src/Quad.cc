@@ -140,8 +140,8 @@ void Quad::Search(std::vector<Segment *> &path, Segment &parent, int depth,
 
         //  double ttheta = fmod(t1-t0, 2*M_PI) + fmod(t2-t1, 2*M_PI) +
         //    fmod(t3-t2, 2*M_PI) + fmod(t0-t3, 2*M_PI);
-        float total_theta = mod2pi(t1 - t0) + mod2pi(t2 - t1) +
-                            mod2pi(t3 - t2) + mod2pi(t0 - t3);
+        float total_theta = Mod2Pi(t1 - t0) + Mod2Pi(t2 - t1) +
+                            Mod2Pi(t3 - t2) + Mod2Pi(t0 - t3);
         // cout << "ttheta=" << ttheta << endl;
         // the magic value is -2*PI. It should be exact,
         // but we allow for (lots of) numeric imprecision.

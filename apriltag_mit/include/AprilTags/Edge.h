@@ -10,9 +10,6 @@ namespace AprilTags {
 class FloatImage;
 class UnionFind;
 
-using std::min;
-using std::max;
-
 //! Represents an edge between adjacent pixels in the image.
 /*! The edge is encoded by the indices of the two pixels. Edge cost
  *  is proportional to the difference in local orientations.
@@ -61,9 +58,8 @@ class Edge {
 
   //! Process edges in order of increasing cost, merging clusters if we can do
   // so without exceeding the thetaThresh.
-  static void MergeEdges(std::vector<Edge> &edges, UnionFind &uf,
-                         float tmin[], float tmax[], float mmin[],
-                         float mmax[]);
+  static void MergeEdges(std::vector<Edge> &edges, UnionFind &uf, float tmin[],
+                         float tmax[], float mmin[], float mmax[]);
 };
 
 }  // namespace AprilTags

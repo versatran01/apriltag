@@ -71,8 +71,8 @@ Line2D Line2D::LsqFitXyw(const std::vector<XYW> &xyw) {
 
   Ex = mX / n;
   Ey = mY / n;
-  Cxx = mXX / n - square(mX / n);
-  Cyy = mYY / n - square(mY / n);
+  Cxx = mXX / n - Square(mX / n);
+  Cyy = mYY / n - Square(mY / n);
   Cxy = mXY / n - (mX / n) * (mY / n);
 
   // find dominant direction via SVD

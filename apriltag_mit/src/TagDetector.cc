@@ -129,7 +129,7 @@ std::vector<Segment> TagDetector::FitLines(
 
       // err *should* be +M_PI/2 for the correct winding, but if we
       // got the wrong winding, it'll be around -M_PI/2.
-      float err = mod2pi(theta - seg.theta());
+      float err = Mod2Pi(theta - seg.theta());
 
       if (err < 0)
         noflip += mag;
@@ -181,7 +181,7 @@ void TagDetector::ChainSegments(std::vector<Segment> &segments,
       Segment &child_seg = iter.next();
 
       // We only look for segments that goes counterclockwise
-      if (mod2pi(child_seg.theta() - parent_seg.theta()) > 0) {
+      if (Mod2Pi(child_seg.theta() - parent_seg.theta()) > 0) {
         continue;
       }
 

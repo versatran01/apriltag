@@ -9,7 +9,7 @@ int Edge::EdgeCost(float theta0, float theta1, float mag1) {
   // mag0 was checked by the main routine so no need to recheck here
   if (mag1 < kMinMag) return -1;
 
-  const float theta_diff = std::abs(mod2pi(theta1 - theta0));
+  const float theta_diff = std::abs(Mod2Pi(theta1 - theta0));
   if (theta_diff > kMaxEdgeCost) return -1;
 
   const float norm_diff = theta_diff / kMaxEdgeCost;
@@ -61,8 +61,8 @@ void Edge::CalcEdges(float theta0, int x, int y, const FloatImage &im_theta,
   }
 }
 
-void Edge::MergeEdges(std::vector<Edge> &edges, UnionFind &uf,
-                      float tmin[], float tmax[], float mmin[], float mmax[]) {
+void Edge::MergeEdges(std::vector<Edge> &edges, UnionFind &uf, float tmin[],
+                      float tmax[], float mmin[], float mmax[]) {
   //  for (size_t i = 0; i < edges.size(); i++) {
   //    int ida = edges[i].pixelIdxA;
   //    int idb = edges[i].pixelIdxB;
@@ -87,24 +87,25 @@ void Edge::MergeEdges(std::vector<Edge> &edges, UnionFind &uf,
     // bshift will be a multiple of 2pi that aligns the spans of 'b' with 'a'
     // so that we can properly take the union of them.
     float bshift =
-        mod2pi((tmina + tmaxa) / 2, (tminb + tmaxb) / 2) - (tminb + tmaxb) / 2;
+        Mod2Pi((tmina + tmaxa) / 2, (tminb + tmaxb) / 2) - (tminb + tmaxb) / 2;
 
-    float tminab = min(tmina, tminb + bshift);
-    float tmaxab = max(tmaxa, tmaxb + bshift);
+    float tminab = std::min(tmina, tminb + bshift);
+    float tmaxab = std::max(tmaxa, tmaxb + bshift);
 
     if (tmaxab - tminab > 2 * (float)M_PI)  // corner case that's probably not
                                             // too useful to handle correctly,
                                             // oh well.
       tmaxab = tminab + 2 * (float)M_PI;
 
-    float mminab = min(mmin[ida], mmin[idb]);
-    float mmaxab = max(mmax[ida], mmax[idb]);
+    float mminab = std::min(mmin[ida], mmin[idb]);
+    float mmaxab = std::max(mmax[ida], mmax[idb]);
 
     // merge these two clusters?
     float costab = (tmaxab - tminab);
-    if (costab <= (min(costa, costb) + kThetaThresh / (sza + szb)) &&
-        (mmaxab - mminab) <= min(mmax[ida] - mmin[ida], mmax[idb] - mmin[idb]) +
-                                 kMagThresh / (sza + szb)) {
+    if (costab <= (std::min(costa, costb) + kThetaThresh / (sza + szb)) &&
+        (mmaxab - mminab) <=
+            std::min(mmax[ida] - mmin[ida], mmax[idb] - mmin[idb]) +
+                kMagThresh / (sza + szb)) {
       int idab = uf.ConnectNodes(ida, idb);
 
       tmin[idab] = tminab;
