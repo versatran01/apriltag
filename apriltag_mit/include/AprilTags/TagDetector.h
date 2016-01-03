@@ -126,6 +126,8 @@ class TagDetector {
   float segment_sigma_ = 0.8;
 };
 
+void ConvertToGray(cv::InputArray in, cv::OutputArray out);
+
 }  // namespace AprilTags
 
 #endif  // APRILTAGS_TAGDETECTOR_H_

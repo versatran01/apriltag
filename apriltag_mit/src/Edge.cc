@@ -13,7 +13,7 @@ int Edge::EdgeCost(float theta0, float theta1, float mag1) {
   if (theta_diff > kMaxEdgeCost) return -1;
 
   const float norm_diff = theta_diff / kMaxEdgeCost;
-  return static_cast<int>(norm_diff * kWeightScale);
+  return norm_diff * kWeightScale;
 }
 
 void Edge::CalcEdges(float theta0, int x, int y, const FloatImage &im_theta,
@@ -63,9 +63,6 @@ void Edge::CalcEdges(float theta0, int x, int y, const FloatImage &im_theta,
 
 void Edge::MergeEdges(std::vector<Edge> &edges, UnionFind &uf, float tmin[],
                       float tmax[], float mmin[], float mmax[]) {
-  //  for (size_t i = 0; i < edges.size(); i++) {
-  //    int ida = edges[i].pixelIdxA;
-  //    int idb = edges[i].pixelIdxB;
   for (Edge &e : edges) {
     int ida = e.pid0;
     int idb = e.pid1;

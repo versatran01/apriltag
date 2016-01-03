@@ -435,4 +435,15 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
   return good_detections;
 }
 
+void ConvertToGray(cv::InputArray in, cv::OutputArray out) {
+  CV_Assert(in.getMat().channels() == 1 || in.getMat().channels() == 3);
+
+  out.create(in.getMat().size(), CV_8UC1);
+  if (in.getMat().type() == CV_8UC3) {
+    cv::cvtColor(in.getMat(), out.getMat(), cv::COLOR_BGR2GRAY);
+  } else {
+    in.getMat().copyTo(out);
+  }
+}
+
 }  // namespace AprilTags
