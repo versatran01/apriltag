@@ -162,7 +162,7 @@ std::vector<Segment> TagDetector::FitLines(const Clusters &clusters,
 
   for (const auto &i_xyw : clusters) {
     const std::vector<XYW> &xyws = i_xyw.second;
-    LineSegment2D lseg = LineSegment2D::LsqFitXyw(xyws);
+    const auto lseg = LineSegment2D::LsqFitXyw(xyws);
 
     // filter short lines
     const auto length = Distance2D(lseg.p0(), lseg.p1());

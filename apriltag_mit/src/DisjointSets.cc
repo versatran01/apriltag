@@ -30,18 +30,18 @@ int DisjointSets::ConnectNodes(int id0, int id1) {
 
   if (root0 == root1) return root0;
 
-  int asz = data_[root0].size;
-  int bsz = data_[root1].size;
+  int sz0 = data_[root0].size;
+  int sz1 = data_[root1].size;
 
-  if (asz > bsz) {
+  if (sz0 > sz1) {
     data_[root1].id = root0;
-    data_[root0].size += bsz;
+    data_[root0].size += sz1;
     return root0;
   } else {
     data_[root0].id = root1;
-    data_[root1].size += asz;
+    data_[root1].size += sz0;
     return root1;
   }
 }
 
-}  // namespace
+}  // namespace AprilTags
