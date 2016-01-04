@@ -77,50 +77,51 @@ DisjointSets TagDetector::ExtractEdges(const FloatImage &im_mag,
   // Bounds on the thetas assigned to this group. Note that because
   // theta is periodic, these are defined such that the average
   // value is contained *within* the interval.
-  {
-    // limit scope of storage
-    // Previously all this was on the stack, but this is 1.2MB for 320x240
-    // images That's already a problem for OS X (default 512KB thread stack
-    // size), could be a problem elsewhere for bigger images... so store on heap
+  // limit scope of storage
+  // Previously all this was on the stack, but this is 1.2MB for 320x240
+  // images That's already a problem for OS X (default 512KB thread stack
+  // size), could be a problem elsewhere for bigger images... so store on heap
 
-    // do all the memory in one big block, exception safe
-    TimerUs t_step31("CalEdges");
-    std::vector<float> storage(num_pixels * 4);
-    float *theta_min = &storage[num_pixels * 0];
-    float *theta_max = &storage[num_pixels * 1];
-    float *mag_min = &storage[num_pixels * 2];
-    float *mag_max = &storage[num_pixels * 3];
+  // do all the memory in one big block, exception safe
+  TimerUs t_step31("3.1 - CalEdges");
+  std::vector<float> storage(num_pixels * 4);
+  float *theta_min = &storage[num_pixels * 0];
+  float *theta_max = &storage[num_pixels * 1];
+  float *mag_min = &storage[num_pixels * 2];
+  float *mag_max = &storage[num_pixels * 3];
 
-    for (int y = 0; y + 1 < height; ++y) {
-      for (int x = 0; x + 1 < width; ++x) {
-        const auto mag0 = im_mag.get(x, y);
-        if (mag0 < Edge::kMinMag) {
-          continue;
-        }
-        const int id = y * width + x;
-        mag_max[id] = mag0;
-        mag_min[id] = mag0;
-
-        const auto theta0 = im_theta.get(x, y);
-        theta_min[id] = theta0;
-        theta_max[id] = theta0;
-
-        // Calculates then adds edges to 'vector<Edge> edges'
-        const auto local_edges = CalcLocalEdges(theta0, x, y, im_mag, im_theta);
-        edges.insert(edges.end(), local_edges.begin(), local_edges.end());
+  for (int y = 0; y + 1 < height; ++y) {
+    for (int x = 0; x + 1 < width; ++x) {
+      const auto mag0 = im_mag.get(x, y);
+      if (mag0 < Edge::kMinMag) {
+        continue;
       }
-    }
-    t_step31.stop();
-    t_step31.report();
+      const int id = y * width + x;
+      mag_max[id] = mag0;
+      mag_min[id] = mag0;
 
-    // std::sort is faster than std::stable_sort
-    std::sort(edges.begin(), edges.end());
-    TimerUs t_step33("MergeEdges");
-    MergeEdges(edges, dsets, theta_min, theta_max, mag_min, mag_max,
-               Edge::kMagThresh, Edge::kThetaThresh);
-    t_step33.stop();
-    t_step33.report();
+      const auto theta0 = im_theta.get(x, y);
+      theta_min[id] = theta0;
+      theta_max[id] = theta0;
+
+      // Calculates then adds edges to 'vector<Edge> edges'
+      const auto local_edges = CalcLocalEdges(theta0, x, y, im_mag, im_theta);
+      edges.insert(edges.end(), local_edges.begin(), local_edges.end());
+    }
   }
+  t_step31.stop();
+  t_step31.report();
+
+  // std::sort is faster than std::stable_sort
+  TimerUs t_step32("3.2 - SortEdges");
+  std::sort(edges.begin(), edges.end());
+  t_step32.stop();
+  t_step32.report();
+  TimerUs t_step33("3.3 - MergeEdges");
+  MergeEdges(edges, dsets, theta_min, theta_max, mag_min, mag_max,
+             Edge::kMagThresh, Edge::kThetaThresh);
+  t_step33.stop();
+  t_step33.report();
 
   return dsets;
 }
@@ -339,7 +340,7 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
   // ===========================================================================
   // Small Gaussian blur
 
-  TimerUs t_step1("Preprocess");
+  TimerUs t_step1("1 - Preprocess");
   FloatImage im_decode, im_segment;
   Preprocess(im_orig, im_decode, im_segment);
   t_step1.stop();
@@ -354,7 +355,7 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
   // NOTE: in Kaess' original code, mag is Ix^2 + Iy^2, so we need to modify
   // Edge::kMinMag to reflect this change accordingly
 
-  TimerUs t_step2("CalcPolar");
+  TimerUs t_step2("2 - CalcPolar");
   FloatImage im_mag, im_theta;
   CalcPolar(im_segment, im_mag, im_theta);
   t_step2.stop();
@@ -367,8 +368,8 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
   // 4-connectivity.
   // NOTE: This is the most time consuming part!
 
-  TimerUs t_step3("ExtractEdges");
-  auto uf = ExtractEdges(im_mag, im_theta);
+  TimerUs t_step3("3 - ExtractEdges");
+  auto dsets = ExtractEdges(im_mag, im_theta);
   t_step3.stop();
   t_step3.report();
 
@@ -377,8 +378,8 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
   // ===========================================================================
   // We will soon fit lines (segments) to these points.
 
-  TimerUs t_step4("ClusterPixels");
-  const auto clusters = ClusterPixels(uf, im_mag);
+  TimerUs t_step4("4 - ClusterPixels");
+  const auto clusters = ClusterPixels(dsets, im_mag);
   t_step4.stop();
   t_step4.report();
 
@@ -386,7 +387,7 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
   // Step 5: Loop over the clusters, fitting lines (which we call Segments).
   // ===========================================================================
 
-  TimerUs t_step5("FitLine");
+  TimerUs t_step5("5 - FitLines");
   auto segments = FitLines(clusters, im_mag, im_theta);
   t_step5.stop();
   t_step5.report();
@@ -397,7 +398,7 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
   // We will chain segments together next. The gridder accelerates the search by
   // building (essentially) a 2D hash table.
 
-  TimerUs t_step6("ChainSegments");
+  TimerUs t_step6("6 - ChainSegments");
   ChainSegments(segments, image);
   t_step6.stop();
   t_step6.report();
@@ -407,7 +408,7 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
   //============================================================================
   // To see if any form a loop of length 4.
 
-  TimerUs t_step7("SearchQuads");
+  TimerUs t_step7("7 - SearchQuads");
   const auto quads = SearchQuads(segments);
   t_step7.stop();
   t_step7.report();
@@ -418,8 +419,8 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
   // For each quad, we first estimate a threshold color to decide between 0 and
   // 1. Then, we read off the bits and see if they make sense.
 
-  TimerUs t_step8("DecodeQuads");
-  const auto detections = DecodeQuads(quads, im_decode);
+  TimerUs t_step8("8 - DecodeQuads");
+  const auto tags = DecodeQuads(quads, im_decode);
   t_step8.stop();
   t_step8.report();
 
@@ -433,12 +434,12 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
   // the one with the greatest observed perimeter.
   // NOTE: allow multiple non-overlapping detections of the same target.
 
-  TimerUs t_step9("ResolveOverlap");
-  const auto good_detections = ResolveOverlap(detections);
+  TimerUs t_step9("9 - ResolveOverlap");
+  const auto good_tags = ResolveOverlap(tags);
   t_step9.stop();
   t_step9.report();
 
-  return good_detections;
+  return good_tags;
 }
 
 void ConvertToGray(cv::InputArray in, cv::OutputArray out) {
