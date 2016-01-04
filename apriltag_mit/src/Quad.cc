@@ -103,8 +103,6 @@ code_t Quad::ToTagCode(const FloatImage &image, unsigned dimension_bits,
 
 void Quad::Search(std::vector<Segment *> &path, Segment &parent, int depth,
                   std::vector<Quad> &quads) {
-  // cout << "Searching segment " << parent.getId() << ", depth=" << depth << ",
-  // #children=" << parent.children.size() << endl;
   // terminal depth occurs when we've found four segments.
   if (depth == 4) {
     // cout << "Entered terminal depth" << endl; // debug code
@@ -182,14 +180,10 @@ void Quad::Search(std::vector<Segment *> &path, Segment &parent, int depth,
     return;
   }
 
-  //  if (depth >= 1) // debug code
-  // cout << "depth: " << depth << endl;
-
   // Not terminal depth. Recurse on any children that obey the correct
   // handedness.
   for (unsigned int i = 0; i < parent.children.size(); i++) {
     Segment &child = *parent.children[i];
-    //    cout << "  Child " << child.getId() << ":  ";
     // (handedness was checked when we created the children)
 
     // we could rediscover each quad 4 times (starting from
@@ -198,8 +192,6 @@ void Quad::Search(std::vector<Segment *> &path, Segment &parent, int depth,
     // requiring that the first corner have the lowest
     // value. We're arbitrarily going to use theta...
     if (child.theta() > path[0]->theta()) {
-      // cout << "theta failed: " << child.getTheta() << " > " <<
-      // path[0]->getTheta() << endl;
       continue;
     }
     path[depth + 1] = &child;
@@ -207,4 +199,4 @@ void Quad::Search(std::vector<Segment *> &path, Segment &parent, int depth,
   }
 }
 
-}  // namespace
+}  // namespace AprilTags

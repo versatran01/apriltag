@@ -5,11 +5,9 @@
 #include <unordered_set>
 
 #include "AprilTags/FloatImage.h"
+#include "AprilTags/DisjointSets.h"
 
 namespace AprilTags {
-
-class FloatImage;
-class DisjointSets;
 
 //! Represents an edge between adjacent pixels in the image.
 /*! The edge is encoded by the indices of the two pixels. Edge cost
@@ -58,12 +56,16 @@ struct Edge {
   // so without exceeding the thetaThresh.
 };
 
+struct Stats {
+  float mmin, mmax, tmin, tmax;
+};
+
 std::vector<Edge> CalcLocalEdges(int x, int y, const FloatImage &im_mag,
                                  const FloatImage &im_theta);
 
 void MergeEdges(const std::vector<Edge> &edges, DisjointSets &dsets,
-                float tmin[], float tmax[], float mmin[], float mmax[],
-                float mag_thresh, float theta_thresh);
+                std::vector<Stats> &stats, float mag_thresh,
+                float theta_thresh);
 
 }  // namespace AprilTags
 

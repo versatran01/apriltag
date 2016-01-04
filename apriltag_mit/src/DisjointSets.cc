@@ -3,46 +3,47 @@
 
 namespace AprilTags {
 
-DisjointSets::DisjointSets(int max_ids) : data_(max_ids) {
-  for (size_t i = 0; i < data_.size(); ++i) {
+DisjointSets::DisjointSets(int n) : parent_(n), size_(n, 1) {
+  for (size_t i = 0; i < n; ++i) {
     // everyone is their own cluster of size 1
-    data_[i].id = i;
-    data_[i].size = 1;
+    parent_[i] = i;
   }
 }
 
-int DisjointSets::GetRepresentative(int id) {
+int DisjointSets::Find(int id) {
   // terminal case: a node is its own parent
-  if (data_[id].id == id) return id;
+  const int parent = parent_[id];
+  if (parent == id) return id;
 
   // otherwise, recurse...
-  int root = GetRepresentative(data_[id].id);
+  int root = Find(parent);
 
   // short circuit the path
-  data_[id].id = root;
+  parent_[id] = root;
 
   return root;
 }
 
-int DisjointSets::ConnectNodes(int id0, int id1) {
-  int root0 = GetRepresentative(id0);
-  int root1 = GetRepresentative(id1);
+int DisjointSets::Union(int id0, int id1) {
+  const int root0 = Find(id0);
+  const int root1 = Find(id1);
 
   if (root0 == root1) return root0;
 
-  int sz0 = data_[root0].size;
-  int sz1 = data_[root1].size;
+  const int sz0 = size_[root0];
+  const int sz1 = size_[root1];
 
-  // This is wrong
   if (sz0 > sz1) {
-    data_[root1].id = root0;
-    data_[root0].size += sz1;
+    parent_[root1] = root0;
+    size_[root0] += sz1;
     return root0;
   } else {
-    data_[root0].id = root1;
-    data_[root1].size += sz0;
+    parent_[root0] = root1;
+    size_[root1] += sz0;
     return root1;
   }
 }
+
+int DisjointSets::GetSetSize(int id) { return size_[Find(id)]; }
 
 }  // namespace AprilTags

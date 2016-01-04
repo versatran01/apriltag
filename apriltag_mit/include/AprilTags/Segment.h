@@ -15,13 +15,13 @@ class Segment {
    * @brief minimumSegmentSize
    * Minimum number of pixels in a segment before we'll fit a line to it
    */
-  static constexpr int kMinSegmentPixels = 20;
+  static constexpr int kMinSegmentPixels = 40;
 
   /**
    * @brief minimumLineLength
    * Calculated based on minimum plausible decoding size for Tag9 family
    */
-  static constexpr float kMinLineLength = 4;
+  static constexpr float kMinLineLength = 24;
 
   const cv::Point2f& p0() const { return p0_; }
   void set_p0(const cv::Point2f& p0) { p0_ = p0; }

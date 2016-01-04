@@ -5,48 +5,21 @@
 
 namespace AprilTags {
 
-//! Implementation of disjoint set data structure using the union-find algorithm
 class DisjointSets {
-  //! Identifies parent ids and sizes.
-  struct Data {
-    int id;
-    int size;
-  };
-
  public:
-  explicit DisjointSets(int max_ids);
+  explicit DisjointSets(int n);
 
-  int GetSetSize(int id) { return data_[GetRepresentative(id)].size; }
+  int GetSetSize(int id);
 
-  int GetRepresentative(int id);
+  int Find(int id);
 
   //! Returns the id of the merged node.
-  int ConnectNodes(int id0, int id1);
+  int Union(int id0, int id1);
 
  private:
-  std::vector<Data> data_;
-};
-
-/**
- * @brief The Element struct
- * Element in our disjoint sets
- */
-struct Element {
-  int pid, size;
-  float mmin, mmax, tmin, tmax;
-};
-
-namespace exp {
-
-class DisjointSets {
- public:
-  DisjointSets(int n);
-
- private:
-  std::vector<int> rank_;
   std::vector<int> parent_;
+  std::vector<int> size_;
 };
-}
 
 }  // namespace AprilTags
 

@@ -19,8 +19,6 @@
 
 namespace AprilTags {
 
-using namespace std;
-
 TagDetector::TagDetector(const TagCodes &tag_codes, int black_border)
     : tag_family_(tag_codes), black_border_(black_border) {}
 
@@ -69,13 +67,9 @@ DisjointSets TagDetector::ExtractEdges(const FloatImage &im_mag,
   const int width = im_mag.width();
   const int height = im_mag.height();
   const size_t num_pixels = width * height;
-  DisjointSets dsets(num_pixels);
 
   std::vector<Edge> edges;
   edges.reserve(num_pixels);
-
-  // Record all vertices
-  cv::Mat mask = cv::Mat::zeros(height, width, CV_8UC1);
 
   // Bounds on the thetas assigned to this group. Note that because
   // theta is periodic, these are defined such that the average
@@ -86,50 +80,32 @@ DisjointSets TagDetector::ExtractEdges(const FloatImage &im_mag,
   // size), could be a problem elsewhere for bigger images... so store on heap
 
   // do all the memory in one big block, exception safe
-  TimerUs t_step31("3.1 - CalEdges");
-  std::vector<float> storage(num_pixels * 4);
-  float *theta_min = &storage[num_pixels * 0];
-  float *theta_max = &storage[num_pixels * 1];
-  float *mag_min = &storage[num_pixels * 2];
-  float *mag_max = &storage[num_pixels * 3];
+  std::vector<Stats> stats(num_pixels);
 
   for (int y = 0; y < height - 1; ++y) {
     for (int x = 0; x < width - 1; ++x) {
       const auto mag0 = im_mag.get(x, y);
       if (mag0 > Edge::kMinMag) {
         const int pid = y * width + x;
-        mag_max[pid] = mag0;
-        mag_min[pid] = mag0;
+        stats[pid].mmin = mag0;
+        stats[pid].mmax = mag0;
 
         const auto theta0 = im_theta.get(x, y);
-        theta_min[pid] = theta0;
-        theta_max[pid] = theta0;
+        stats[pid].tmin = theta0;
+        stats[pid].tmax = theta0;
 
         // Calculates then adds edges to 'vector<Edge> edges'
         const auto local_edges = CalcLocalEdges(x, y, im_mag, im_theta);
         edges.insert(edges.end(), local_edges.begin(), local_edges.end());
-
-        // Set mask, later used for initializing disjoint sets
-        for (const Edge &edge : local_edges) {
-          mask.at<uchar>(edge.pid0) = 255;
-          mask.at<uchar>(edge.pid1) = 255;
-        }
       }
     }
   }
 
-  // Use later for initializing disjoint sets
-  t_step31.stop();
-  t_step31.report();
-
   // std::sort is faster than std::stable_sort
   std::sort(edges.begin(), edges.end());
 
-  TimerUs t_step33("3.3 - MergeEdges");
-  MergeEdges(edges, dsets, theta_min, theta_max, mag_min, mag_max,
-             Edge::kMagThresh, Edge::kThetaThresh);
-  t_step33.stop();
-  t_step33.report();
+  DisjointSets dsets(num_pixels);
+  MergeEdges(edges, dsets, stats, Edge::kMagThresh, Edge::kThetaThresh);
 
   return dsets;
 }
@@ -148,10 +124,9 @@ TagDetector::Clusters TagDetector::ClusterPixels(
     for (int x = 0; x < width - 1; ++x) {
       const int pid = y * width + x;
 
-      if (dsets.GetSetSize(pid) > Segment::kMinSegmentPixels) {
-        int rep = dsets.GetRepresentative(pid);
-
-        const auto mag = im_mag.get(x, y);
+      const int rep = dsets.Find(pid);
+      if (dsets.GetSetSize(rep) > Segment::kMinSegmentPixels) {
+        const auto mag = im_mag.get(pid);
         XYW xyw(x, y, mag);
         auto it = clusters.find(rep);
         if (it == clusters.end()) {
@@ -180,54 +155,54 @@ std::vector<Segment> TagDetector::FitLines(const Clusters &clusters,
 
     // filter short lines
     const auto length = Distance2D(lseg.p0(), lseg.p1());
-    if (length < Segment::kMinLineLength) continue;
+    if (length > Segment::kMinLineLength) {
+      Segment seg;
+      const auto dy = lseg.p1().y - lseg.p0().y;
+      const auto dx = lseg.p1().x - lseg.p0().x;
 
-    Segment seg;
-    const auto dy = lseg.p1().y - lseg.p0().y;
-    const auto dx = lseg.p1().x - lseg.p0().x;
+      const float tmp_theta = std::atan2(dy, dx);
 
-    const float tmp_theta = std::atan2(dy, dx);
+      seg.set_theta(tmp_theta);
+      seg.set_length(length);
 
-    seg.set_theta(tmp_theta);
-    seg.set_length(length);
+      // We add an extra semantic to segments: the vector
+      // p1->p2 will have dark on the left, white on the right.
+      // To do this, we'll look at every gradient and each one
+      // will vote for which way they think the gradient should
+      // go. This is way more retentive than necessary: we
+      // could probably sample just one point!
 
-    // We add an extra semantic to segments: the vector
-    // p1->p2 will have dark on the left, white on the right.
-    // To do this, we'll look at every gradient and each one
-    // will vote for which way they think the gradient should
-    // go. This is way more retentive than necessary: we
-    // could probably sample just one point!
+      float flip = 0, noflip = 0;
+      for (const XYW &xyw : xyws) {
+        const auto theta = im_theta.get(xyw.x, xyw.y);
+        const auto mag = im_mag.get(xyw.x, xyw.y);
 
-    float flip = 0, noflip = 0;
-    for (const XYW &xyw : xyws) {
-      const auto theta = im_theta.get(xyw.x, xyw.y);
-      const auto mag = im_mag.get(xyw.x, xyw.y);
+        // err *should* be +M_PI/2 for the correct winding, but if we
+        // got the wrong winding, it'll be around -M_PI/2.
+        float err = Mod2Pi(theta - seg.theta());
 
-      // err *should* be +M_PI/2 for the correct winding, but if we
-      // got the wrong winding, it'll be around -M_PI/2.
-      float err = Mod2Pi(theta - seg.theta());
+        if (err < 0) {
+          noflip += mag;
+        } else {
+          flip += mag;
+        }
+      }
 
-      if (err < 0)
-        noflip += mag;
-      else
-        flip += mag;
+      if (flip > noflip) {
+        seg.set_theta(seg.theta() + Pi<float>());
+      }
+
+      float dot = dx * std::cos(seg.theta()) + dy * std::sin(seg.theta());
+      if (dot > 0) {
+        seg.set_p0(lseg.p1());
+        seg.set_p1(lseg.p0());
+      } else {
+        seg.set_p0(lseg.p0());
+        seg.set_p1(lseg.p1());
+      }
+
+      segments.push_back(seg);
     }
-
-    if (flip > noflip) {
-      float temp = seg.theta() + Pi<float>();
-      seg.set_theta(temp);
-    }
-
-    float dot = dx * std::cos(seg.theta()) + dy * std::sin(seg.theta());
-    if (dot > 0) {
-      seg.set_p0(lseg.p1());
-      seg.set_p1(lseg.p0());
-    } else {
-      seg.set_p0(lseg.p0());
-      seg.set_p1(lseg.p1());
-    }
-
-    segments.push_back(seg);
   }
   return segments;
 }
@@ -272,7 +247,7 @@ void TagDetector::ChainSegments(std::vector<Segment> &segments,
       float parent_dist = Distance2D(p, parent_seg.p1());
       float child_dist = Distance2D(p, child_seg.p0());
 
-      if (max(parent_dist, child_dist) > parent_seg.length()) {
+      if (std::max(parent_dist, child_dist) > parent_seg.length()) {
         continue;
       }
 
@@ -353,11 +328,8 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
   // ===========================================================================
   // Small Gaussian blur
 
-  TimerUs t_step1("1 - Preprocess");
   FloatImage im_decode, im_segment;
   Preprocess(im_orig, im_decode, im_segment);
-  t_step1.stop();
-  t_step1.report();
 
   // ===========================================================================
   // Step 2: Compute local gradients and store magnitude and direction
@@ -368,11 +340,8 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
   // NOTE: in Kaess' original code, mag is Ix^2 + Iy^2, so we need to modify
   // Edge::kMinMag to reflect this change accordingly
 
-  TimerUs t_step2("2 - CalcPolar");
   FloatImage im_mag, im_theta;
   CalcPolar(im_segment, im_mag, im_theta);
-  t_step2.stop();
-  t_step2.report();
 
   //============================================================================
   // Step 3: Extract edges by grouping pixels with similar thetas together.
@@ -381,29 +350,20 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
   // 4-connectivity.
   // NOTE: This is the most time consuming part!
 
-  TimerUs t_step3("3 - ExtractEdges");
   auto dsets = ExtractEdges(im_mag, im_theta);
-  t_step3.stop();
-  t_step3.report();
 
   // ===========================================================================
   // Step 4: Loop over pixels to collect stattistics for each cluster
   // ===========================================================================
   // We will soon fit lines (segments) to these points.
 
-  TimerUs t_step4("4 - ClusterPixels");
   const auto clusters = ClusterPixels(dsets, im_mag);
-  t_step4.stop();
-  t_step4.report();
 
   // ===========================================================================
   // Step 5: Loop over the clusters, fitting lines (which we call Segments).
   // ===========================================================================
 
-  TimerUs t_step5("5 - FitLines");
   auto segments = FitLines(clusters, im_mag, im_theta);
-  t_step5.stop();
-  t_step5.report();
 
   // ===========================================================================
   // Step 6: For each segment, find segments that begin where this segment ends.
@@ -411,20 +371,14 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
   // We will chain segments together next. The gridder accelerates the search by
   // building (essentially) a 2D hash table.
 
-  TimerUs t_step6("6 - ChainSegments");
   ChainSegments(segments, image);
-  t_step6.stop();
-  t_step6.report();
 
   //============================================================================
   // Step 7: Search all connected segments for quads.
   //============================================================================
   // To see if any form a loop of length 4.
 
-  TimerUs t_step7("7 - SearchQuads");
   const auto quads = SearchQuads(segments);
-  t_step7.stop();
-  t_step7.report();
 
   //============================================================================
   // Step 8: Decode the quads.
@@ -432,10 +386,7 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
   // For each quad, we first estimate a threshold color to decide between 0 and
   // 1. Then, we read off the bits and see if they make sense.
 
-  TimerUs t_step8("8 - DecodeQuads");
   const auto tags = DecodeQuads(quads, im_decode);
-  t_step8.stop();
-  t_step8.report();
 
   // ===========================================================================
   // Step 9: Resolve overlapped tags.

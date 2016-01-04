@@ -44,54 +44,55 @@ std::vector<Edge> CalcLocalEdges(int x, int y, const FloatImage &im_mag,
 }
 
 void MergeEdges(const std::vector<Edge> &edges, DisjointSets &dsets,
-                float tmin[], float tmax[], float mmin[], float mmax[],
-                float mag_thresh, float theta_thresh) {
+                std::vector<Stats> &stats, float mag_thresh,
+                float theta_thresh) {
   for (const Edge &e : edges) {
-    int id0 = dsets.GetRepresentative(e.pid0);
-    int id1 = dsets.GetRepresentative(e.pid1);
+    const int id0 = dsets.Find(e.pid0);
+    const int id1 = dsets.Find(e.pid1);
 
     if (id0 == id1) continue;
 
-    int sza = dsets.GetSetSize(id0);
-    int szb = dsets.GetSetSize(id1);
+    const int sz0 = dsets.GetSetSize(id0);
+    const int sz1 = dsets.GetSetSize(id1);
+    const int sz01 = sz0 + sz1;
 
-    float tmin0 = tmin[id0];
-    float tmax0 = tmax[id0];
-    float tmin1 = tmin[id1];
-    float tmax1 = tmax[id1];
+    const Stats &s0 = stats[id0];
+    const Stats &s1 = stats[id1];
 
-    float cost0 = (tmax0 - tmin0);
-    float cost1 = (tmax1 - tmin1);
+    const float mcost0 = s0.mmax - s0.mmin;
+    const float mcost1 = s1.mmax - s1.mmin;
+    const float tcost0 = s0.tmax - s0.tmin;
+    const float tcost1 = s1.tmax - s1.tmin;
+    const float tmean0 = (s0.tmin + s0.tmax) / 2;
+    const float tmean1 = (s1.tmin + s1.tmax) / 2;
 
     // bshift will be a multiple of 2pi that aligns the spans of 'b' with 'a'
     // so that we can properly take the union of them.
-    float bshift =
-        Mod2Pi((tmin0 + tmax0) / 2, (tmin1 + tmax1) / 2) - (tmin1 + tmax1) / 2;
+    const float bshift = Mod2Pi(tmean0, tmean1) - tmean1;
 
-    float tmin01 = std::min(tmin0, tmin1 + bshift);
-    float tmax01 = std::max(tmax0, tmax1 + bshift);
+    const float mmin01 = std::min(s0.mmin, s1.mmin);
+    const float mmax01 = std::max(s0.mmax, s1.mmax);
+    float tmin01 = std::min(s0.tmin, s1.tmin + bshift);
+    float tmax01 = std::max(s0.tmax, s1.tmax + bshift);
 
     // Corner case probably not too useful to hand correctly
     if (tmax01 - tmin01 > 2 * Pi<float>()) {
       tmax01 = tmin01 + 2 * Pi<float>();
     }
 
-    float mmin01 = std::min(mmin[id0], mmin[id1]);
-    float mmax01 = std::max(mmax[id0], mmax[id1]);
-
     // merge these two clusters?
-    float cost01 = (tmax01 - tmin01);
-    if (cost01 <= (std::min(cost0, cost1) + theta_thresh / (sza + szb)) &&
-        (mmax01 - mmin01) <=
-            std::min(mmax[id0] - mmin[id0], mmax[id1] - mmin[id1]) +
-                mag_thresh / (sza + szb)) {
-      int id0b = dsets.ConnectNodes(id0, id1);
+    const float mcost01 = mmax01 - mmin01;
+    const float tcost01 = tmax01 - tmin01;
 
-      tmin[id0b] = tmin01;
-      tmax[id0b] = tmax01;
+    if (tcost01 <= (std::min(tcost0, tcost1) + theta_thresh / sz01) &&
+        mcost01 <= std::min(mcost0, mcost1) + mag_thresh / sz01) {
+      const int id01 = dsets.Union(id0, id1);
 
-      mmin[id0b] = mmin01;
-      mmax[id0b] = mmax01;
+      Stats &s01 = stats[id01];
+      s01.tmax = tmax01;
+      s01.tmin = tmin01;
+      s01.mmax = mmax01;
+      s01.mmin = mmin01;
     }
   }
 }
