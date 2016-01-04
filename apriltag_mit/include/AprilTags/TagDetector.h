@@ -129,6 +129,8 @@ class TagDetector {
 
 void ConvertToGray(cv::InputArray in, cv::OutputArray out);
 
+std::vector<int> IndexFromNonZero(const cv::Mat mat);
+
 }  // namespace AprilTags
 
 #endif  // APRILTAGS_TAGDETECTOR_H_

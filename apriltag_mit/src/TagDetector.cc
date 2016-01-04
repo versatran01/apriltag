@@ -74,6 +74,9 @@ DisjointSets TagDetector::ExtractEdges(const FloatImage &im_mag,
   std::vector<Edge> edges;
   edges.reserve(num_pixels);
 
+  // Record all vertices
+  cv::Mat mask = cv::Mat::zeros(height, width, CV_8UC1);
+
   // Bounds on the thetas assigned to this group. Note that because
   // theta is periodic, these are defined such that the average
   // value is contained *within* the interval.
@@ -90,33 +93,39 @@ DisjointSets TagDetector::ExtractEdges(const FloatImage &im_mag,
   float *mag_min = &storage[num_pixels * 2];
   float *mag_max = &storage[num_pixels * 3];
 
-  for (int y = 0; y + 1 < height; ++y) {
-    for (int x = 0; x + 1 < width; ++x) {
+  for (int y = 0; y < height - 1; ++y) {
+    for (int x = 0; x < width - 1; ++x) {
       const auto mag0 = im_mag.get(x, y);
-      if (mag0 < Edge::kMinMag) {
-        continue;
+      if (mag0 > Edge::kMinMag) {
+        const int pid = y * width + x;
+        mag_max[pid] = mag0;
+        mag_min[pid] = mag0;
+
+        const auto theta0 = im_theta.get(x, y);
+        theta_min[pid] = theta0;
+        theta_max[pid] = theta0;
+
+        // Calculates then adds edges to 'vector<Edge> edges'
+        const auto local_edges = CalcLocalEdges(x, y, im_mag, im_theta);
+        edges.insert(edges.end(), local_edges.begin(), local_edges.end());
+
+        // Set mask
+        for (const Edge &edge : local_edges) {
+          mask.at<uchar>(edge.pid0) = 255;
+          mask.at<uchar>(edge.pid1) = 255;
+        }
       }
-      const int id = y * width + x;
-      mag_max[id] = mag0;
-      mag_min[id] = mag0;
-
-      const auto theta0 = im_theta.get(x, y);
-      theta_min[id] = theta0;
-      theta_max[id] = theta0;
-
-      // Calculates then adds edges to 'vector<Edge> edges'
-      const auto local_edges = CalcLocalEdges(theta0, x, y, im_mag, im_theta);
-      edges.insert(edges.end(), local_edges.begin(), local_edges.end());
     }
   }
+
+  // Use later for initializing disjoint sets
+  const auto pids = IndexFromNonZero(mask);
   t_step31.stop();
   t_step31.report();
 
   // std::sort is faster than std::stable_sort
-  TimerUs t_step32("3.2 - SortEdges");
   std::sort(edges.begin(), edges.end());
-  t_step32.stop();
-  t_step32.report();
+
   TimerUs t_step33("3.3 - MergeEdges");
   MergeEdges(edges, dsets, theta_min, theta_max, mag_min, mag_max,
              Edge::kMagThresh, Edge::kThetaThresh);
@@ -135,13 +144,13 @@ TagDetector::Clusters TagDetector::ClusterPixels(
 
   for (int y = 0; y < height - 1; ++y) {
     for (int x = 0; x < width - 1; ++x) {
-      const int id = y * width + x;
+      const int pid = y * width + x;
 
-      if (dsets.GetSetSize(id) < Segment::kMinSegmentPixels) {
+      if (dsets.GetSetSize(pid) < Segment::kMinSegmentPixels) {
         continue;
       }
 
-      int rep = dsets.GetRepresentative(id);
+      int rep = dsets.GetRepresentative(pid);
 
       Clusters::iterator it = clusters.find(rep);
       if (it == clusters.end()) {
@@ -451,6 +460,26 @@ void ConvertToGray(cv::InputArray in, cv::OutputArray out) {
   } else {
     in.getMat().copyTo(out);
   }
+}
+
+std::vector<int> IndexFromNonZero(const cv::Mat mat) {
+  const auto num_pixels = mat.total();
+  const auto width = mat.cols;
+  const auto height = mat.rows;
+  std::vector<int> pids;
+  pids.reserve(num_pixels / 2);
+
+  for (int y = 0; y < height; ++y) {
+    const auto up = mat.ptr<uchar>(y);
+    for (int x = 0; x < width; ++x) {
+      const auto e = up[x];
+      if (e) {
+        const auto pid = y * width + x;
+        pids.push_back(pid);
+      }
+    }
+  }
+  return pids;
 }
 
 }  // namespace AprilTags

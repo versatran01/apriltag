@@ -2,6 +2,7 @@
 #define APRILTAGS_EDGE_H_
 
 #include <vector>
+#include <unordered_set>
 
 #include "AprilTags/FloatImage.h"
 
@@ -14,14 +15,13 @@ class DisjointSets;
 /*! The edge is encoded by the indices of the two pixels. Edge cost
  *  is proportional to the difference in local orientations.
  */
-class Edge {
- public:
+struct Edge {
   // minimum intensity gradient for an edge to be recognized
   // float const Edge::minMag = 0.004f;
   static constexpr float kMinMag = 0.06f;
 
   // maximum acceptable difference in local orientation
-  static constexpr float kMaxThetaDiff = 30.f * float(M_PI) / 180.f;
+  static constexpr float kMaxThetaDiff = 25.f * M_PI / 180.f;
   // used to convert cost to int
   static constexpr int kWeightScale = 100;
   // theta threshold for merging edges
@@ -58,8 +58,7 @@ class Edge {
   // so without exceeding the thetaThresh.
 };
 
-std::vector<Edge> CalcLocalEdges(float theta0, int x, int y,
-                                 const FloatImage &im_mag,
+std::vector<Edge> CalcLocalEdges(int x, int y, const FloatImage &im_mag,
                                  const FloatImage &im_theta);
 
 void MergeEdges(const std::vector<Edge> &edges, DisjointSets &dsets,

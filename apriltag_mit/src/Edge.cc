@@ -16,41 +16,30 @@ int Edge::EdgeCost(float theta0, float theta1, float mag1) {
   return norm_diff * kWeightScale;
 }
 
-std::vector<Edge> CalcLocalEdges(float theta0, int x, int y,
-                                 const FloatImage &im_mag,
+std::vector<Edge> CalcLocalEdges(int x, int y, const FloatImage &im_mag,
                                  const FloatImage &im_theta) {
   std::vector<Edge> edges;
-  edges.reserve(4);  // max is 4
+  edges.reserve(4);
 
   const int width = im_theta.width();
-  const int pid = y * width + x;
+  const int pid0 = y * width + x;
+  const float theta0 = im_theta.get(pid0);
 
-  int cost = -1;
-  // horizontal edge
-  cost = Edge::EdgeCost(theta0, im_theta.get(x + 1, y), im_mag.get(x + 1, y));
-  if (cost >= 0) {
-    edges.push_back({pid, pid + 1, cost});
+  const int pid1s[4] = {pid0 + 1, pid0 + width, pid0 + width + 1,
+                        pid0 + width - 1};
+  int n = 4;
+  // Handle a corner case when pixel is on left border
+  if (x == 0) n = 3;
+
+  for (int i = 0; i < n; ++i) {
+    const auto pid1 = pid1s[i];
+    const auto cost =
+        Edge::EdgeCost(theta0, im_theta.get(pid1), im_mag.get(pid1));
+    if (cost >= 0) {
+      edges.emplace_back(pid0, pid1, cost);
+    }
   }
 
-  // vertical edge
-  cost = Edge::EdgeCost(theta0, im_theta.get(x, y + 1), im_mag.get(x, y + 1));
-  if (cost >= 0) {
-    edges.push_back({pid, pid + width, cost});
-  }
-
-  // downward diagonal edge
-  cost = Edge::EdgeCost(theta0, im_theta.get(x + 1, y + 1),
-                        im_mag.get(x + 1, y + 1));
-  if (cost >= 0) {
-    edges.push_back({pid, pid + width + 1, cost});
-  }
-
-  // updward diagonal edge
-  cost = (x == 0) ? -1 : Edge::EdgeCost(theta0, im_theta.get(x - 1, y + 1),
-                                        im_mag.get(x - 1, y + 1));
-  if (cost >= 0) {
-    edges.push_back({pid, pid + width - 1, cost});
-  }
   return edges;
 }
 
