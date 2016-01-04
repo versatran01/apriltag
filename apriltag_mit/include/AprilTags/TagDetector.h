@@ -9,12 +9,14 @@
 #include "AprilTags/Quad.h"
 #include "AprilTags/GrayModel.h"
 #include "AprilTags/XYW.h"
-#include "AprilTags/UnionFind.h"
+#include "AprilTags/DisjointSets.h"
 
 namespace AprilTags {
 
 class TagDetector {
  public:
+  using Clusters = std::map<int, std::vector<XYW>>;
+
   explicit TagDetector(const TagCodes& tag_codes, int black_border = 1);
 
   std::vector<TagDetection> ExtractTags(const cv::Mat& image) const;
@@ -51,8 +53,8 @@ class TagDetector {
    * @param im_theta
    * @return
    */
-  UnionFind ExtractEdges(const FloatImage& im_mag,
-                         const FloatImage& im_theta) const;
+  DisjointSets ExtractEdges(const FloatImage& im_mag,
+                            const FloatImage& im_theta) const;
 
   /**
    * @brief ClusterPixels Step 4
@@ -60,15 +62,14 @@ class TagDetector {
    * @param im_mag
    * @return
    */
-  std::map<int, std::vector<XYW>> ClusterPixels(UnionFind& uf,
-                                                const FloatImage& im_mag) const;
+  Clusters ClusterPixels(DisjointSets& uf, const FloatImage& im_mag) const;
 
   /**
    * @brief FitLines Step 5
    * @param clusters
    * @return
    */
-  std::vector<Segment> FitLines(const std::map<int, std::vector<XYW>>& clusters,
+  std::vector<Segment> FitLines(const Clusters& clusters,
                                 const FloatImage& im_mag,
                                 const FloatImage& im_theta) const;
 

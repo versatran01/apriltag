@@ -3,6 +3,7 @@
 #include <climits>
 
 #include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/highgui/highgui.hpp>
 
 #include "AprilTags/Edge.h"
 #include "AprilTags/GrayModel.h"
@@ -63,15 +64,15 @@ void TagDetector::CalcPolar(const FloatImage &image, FloatImage &im_mag,
   cv::cartToPolar(Ix, Iy, im_mag.mat(), im_theta.mat());
 }
 
-UnionFind TagDetector::ExtractEdges(const FloatImage &im_mag,
-                                    const FloatImage &im_theta) const {
+DisjointSets TagDetector::ExtractEdges(const FloatImage &im_mag,
+                                       const FloatImage &im_theta) const {
   const int width = im_mag.width();
   const int height = im_mag.height();
   const size_t num_pixels = width * height;
-  UnionFind uf(num_pixels);
+  DisjointSets dsets(num_pixels);
 
-  std::vector<Edge> edges(num_pixels * 4);
-  size_t num_edges = 0;
+  std::vector<Edge> edges;
+  edges.reserve(num_pixels);
 
   // Bounds on the thetas assigned to this group. Note that because
   // theta is periodic, these are defined such that the average
@@ -83,14 +84,15 @@ UnionFind TagDetector::ExtractEdges(const FloatImage &im_mag,
     // size), could be a problem elsewhere for bigger images... so store on heap
 
     // do all the memory in one big block, exception safe
+    TimerUs t_step31("CalEdges");
     std::vector<float> storage(num_pixels * 4);
     float *theta_min = &storage[num_pixels * 0];
     float *theta_max = &storage[num_pixels * 1];
     float *mag_min = &storage[num_pixels * 2];
     float *mag_max = &storage[num_pixels * 3];
 
-    for (int y = 0; y + 1 < height; y++) {
-      for (int x = 0; x + 1 < width; x++) {
+    for (int y = 0; y + 1 < height; ++y) {
+      for (int x = 0; x + 1 < width; ++x) {
         const auto mag0 = im_mag.get(x, y);
         if (mag0 < Edge::kMinMag) {
           continue;
@@ -104,44 +106,48 @@ UnionFind TagDetector::ExtractEdges(const FloatImage &im_mag,
         theta_max[id] = theta0;
 
         // Calculates then adds edges to 'vector<Edge> edges'
-        Edge::CalcEdges(theta0, x, y, im_theta, im_mag, edges, num_edges);
-
-        // XXX Would 8 connectivity help for rotated tags?
-        // Probably not much, so long as input filtering hasn't been disabled.
+        const auto local_edges = CalcLocalEdges(theta0, x, y, im_mag, im_theta);
+        edges.insert(edges.end(), local_edges.begin(), local_edges.end());
       }
     }
+    t_step31.stop();
+    t_step31.report();
 
-    edges.resize(num_edges);
-    std::stable_sort(edges.begin(), edges.end());
-    Edge::MergeEdges(edges, uf, theta_min, theta_max, mag_min, mag_max);
+    // std::sort is faster than std::stable_sort
+    std::sort(edges.begin(), edges.end());
+    TimerUs t_step33("MergeEdges");
+    MergeEdges(edges, dsets, theta_min, theta_max, mag_min, mag_max,
+               Edge::kMagThresh, Edge::kThetaThresh);
+    t_step33.stop();
+    t_step33.report();
   }
 
-  return uf;
+  return dsets;
 }
 
-std::map<int, std::vector<XYW>> TagDetector::ClusterPixels(
-    UnionFind &uf, const FloatImage &im_mag) const {
+TagDetector::Clusters TagDetector::ClusterPixels(
+    DisjointSets &dsets, const FloatImage &im_mag) const {
   const int height = im_mag.height();
   const int width = im_mag.width();
 
-  std::map<int, std::vector<XYW>> clusters;
+  Clusters clusters;
 
   for (int y = 0; y < height - 1; ++y) {
     for (int x = 0; x < width - 1; ++x) {
       const int id = y * width + x;
 
-      if (uf.GetSetSize(id) < Segment::kMinSegmentPixels) {
+      if (dsets.GetSetSize(id) < Segment::kMinSegmentPixels) {
         continue;
       }
 
-      int rep = uf.GetRepresentative(id);
+      int rep = dsets.GetRepresentative(id);
 
-      map<int, vector<XYW>>::iterator it = clusters.find(rep);
+      Clusters::iterator it = clusters.find(rep);
       if (it == clusters.end()) {
-        clusters[rep] = vector<XYW>();
+        clusters[rep] = std::vector<XYW>();
         it = clusters.find(rep);
       }
-      vector<XYW> &points = it->second;
+      std::vector<XYW> &points = it->second;
       points.push_back(XYW(x, y, im_mag.get(x, y)));
     }
   }
@@ -149,9 +155,9 @@ std::map<int, std::vector<XYW>> TagDetector::ClusterPixels(
   return clusters;
 }
 
-std::vector<Segment> TagDetector::FitLines(
-    const std::map<int, std::vector<XYW>> &clusters, const FloatImage &im_mag,
-    const FloatImage &im_theta) const {
+std::vector<Segment> TagDetector::FitLines(const Clusters &clusters,
+                                           const FloatImage &im_mag,
+                                           const FloatImage &im_theta) const {
   std::vector<Segment> segments;
 
   for (const auto &i_xyw : clusters) {

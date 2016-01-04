@@ -1,12 +1,12 @@
-#ifndef APRILTAGS_UNIONFINDSIMPLE_H_
-#define APRILTAGS_UNIONFINDSIMPLE_H_
+#ifndef APRILTAGS_DISJOINTSETS_H_
+#define APRILTAGS_DISJOINTSETS_H_
 
 #include <vector>
 
 namespace AprilTags {
 
 //! Implementation of disjoint set data structure using the union-find algorithm
-class UnionFind {
+class DisjointSets {
   //! Identifies parent ids and sizes.
   struct Data {
     int id;
@@ -14,7 +14,7 @@ class UnionFind {
   };
 
  public:
-  explicit UnionFind(int max_ids);
+  explicit DisjointSets(int max_ids);
 
   int GetSetSize(int id) { return data_[GetRepresentative(id)].size; }
 
@@ -29,4 +29,4 @@ class UnionFind {
 
 }  // namespace AprilTags
 
-#endif  // APRILTAGS_UNIONFINDSIMPLE_H_
+#endif  // APRILTAGS_DISJOINTSETS_H_

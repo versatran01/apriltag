@@ -1,7 +1,7 @@
 #include "AprilTags/Edge.h"
 #include "AprilTags/FloatImage.h"
 #include "AprilTags/MathUtil.h"
-#include "AprilTags/UnionFind.h"
+#include "AprilTags/DisjointSets.h"
 
 namespace AprilTags {
 
@@ -10,70 +10,61 @@ int Edge::EdgeCost(float theta0, float theta1, float mag1) {
   if (mag1 < kMinMag) return -1;
 
   const float theta_diff = std::abs(Mod2Pi(theta1 - theta0));
-  if (theta_diff > kMaxEdgeCost) return -1;
+  if (theta_diff > kMaxThetaDiff) return -1;
 
-  const float norm_diff = theta_diff / kMaxEdgeCost;
+  const float norm_diff = theta_diff / kMaxThetaDiff;
   return norm_diff * kWeightScale;
 }
 
-void Edge::CalcEdges(float theta0, int x, int y, const FloatImage &im_theta,
-                     const FloatImage &mag, std::vector<Edge> &edges,
-                     size_t &num_edges) {
-  int width = im_theta.width();
-  int pid = y * width + x;
+std::vector<Edge> CalcLocalEdges(float theta0, int x, int y,
+                                 const FloatImage &im_mag,
+                                 const FloatImage &im_theta) {
+  std::vector<Edge> edges;
+  edges.reserve(4);  // max is 4
 
+  const int width = im_theta.width();
+  const int pid = y * width + x;
+
+  int cost = -1;
   // horizontal edge
-  int cost1 = EdgeCost(theta0, im_theta.get(x + 1, y), mag.get(x + 1, y));
-  if (cost1 >= 0) {
-    edges[num_edges].cost = cost1;
-    edges[num_edges].pid0 = pid;
-    edges[num_edges].pid1 = y * width + x + 1;
-    ++num_edges;
+  cost = Edge::EdgeCost(theta0, im_theta.get(x + 1, y), im_mag.get(x + 1, y));
+  if (cost >= 0) {
+    edges.push_back({pid, pid + 1, cost});
   }
 
   // vertical edge
-  int cost2 = EdgeCost(theta0, im_theta.get(x, y + 1), mag.get(x, y + 1));
-  if (cost2 >= 0) {
-    edges[num_edges].cost = cost2;
-    edges[num_edges].pid0 = pid;
-    edges[num_edges].pid1 = (y + 1) * width + x;
-    ++num_edges;
+  cost = Edge::EdgeCost(theta0, im_theta.get(x, y + 1), im_mag.get(x, y + 1));
+  if (cost >= 0) {
+    edges.push_back({pid, pid + width, cost});
   }
 
   // downward diagonal edge
-  int cost3 =
-      EdgeCost(theta0, im_theta.get(x + 1, y + 1), mag.get(x + 1, y + 1));
-  if (cost3 >= 0) {
-    edges[num_edges].cost = cost3;
-    edges[num_edges].pid0 = pid;
-    edges[num_edges].pid1 = (y + 1) * width + x + 1;
-    ++num_edges;
+  cost = Edge::EdgeCost(theta0, im_theta.get(x + 1, y + 1),
+                        im_mag.get(x + 1, y + 1));
+  if (cost >= 0) {
+    edges.push_back({pid, pid + width + 1, cost});
   }
 
   // updward diagonal edge
-  int cost4 = (x == 0) ? -1 : EdgeCost(theta0, im_theta.get(x - 1, y + 1),
-                                       mag.get(x - 1, y + 1));
-  if (cost4 >= 0) {
-    edges[num_edges].cost = cost4;
-    edges[num_edges].pid0 = pid;
-    edges[num_edges].pid1 = (y + 1) * width + x - 1;
-    ++num_edges;
+  cost = (x == 0) ? -1 : Edge::EdgeCost(theta0, im_theta.get(x - 1, y + 1),
+                                        im_mag.get(x - 1, y + 1));
+  if (cost >= 0) {
+    edges.push_back({pid, pid + width - 1, cost});
   }
+  return edges;
 }
 
-void Edge::MergeEdges(std::vector<Edge> &edges, UnionFind &uf, float tmin[],
-                      float tmax[], float mmin[], float mmax[]) {
-  for (Edge &e : edges) {
-    int ida = e.pid0;
-    int idb = e.pid1;
-
-    ida = uf.GetRepresentative(ida);
-    idb = uf.GetRepresentative(idb);
+void MergeEdges(const std::vector<Edge> &edges, DisjointSets &dsets,
+                float tmin[], float tmax[], float mmin[], float mmax[],
+                float mag_thresh, float theta_thresh) {
+  for (const Edge &e : edges) {
+    int ida = dsets.GetRepresentative(e.pid0);
+    int idb = dsets.GetRepresentative(e.pid1);
 
     if (ida == idb) continue;
 
-    int sza = uf.GetSetSize(ida);
-    int szb = uf.GetSetSize(idb);
+    int sza = dsets.GetSetSize(ida);
+    int szb = dsets.GetSetSize(idb);
 
     float tmina = tmin[ida], tmaxa = tmax[ida];
     float tminb = tmin[idb], tmaxb = tmax[idb];
@@ -89,21 +80,21 @@ void Edge::MergeEdges(std::vector<Edge> &edges, UnionFind &uf, float tmin[],
     float tminab = std::min(tmina, tminb + bshift);
     float tmaxab = std::max(tmaxa, tmaxb + bshift);
 
-    if (tmaxab - tminab > 2 * (float)M_PI)  // corner case that's probably not
-                                            // too useful to handle correctly,
-                                            // oh well.
-      tmaxab = tminab + 2 * (float)M_PI;
+    // Corner case probably not too useful to hand correctly
+    if (tmaxab - tminab > 2 * Pi<float>()) {
+      tmaxab = tminab + 2 * Pi<float>();
+    }
 
     float mminab = std::min(mmin[ida], mmin[idb]);
     float mmaxab = std::max(mmax[ida], mmax[idb]);
 
     // merge these two clusters?
     float costab = (tmaxab - tminab);
-    if (costab <= (std::min(costa, costb) + kThetaThresh / (sza + szb)) &&
+    if (costab <= (std::min(costa, costb) + theta_thresh / (sza + szb)) &&
         (mmaxab - mminab) <=
             std::min(mmax[ida] - mmin[ida], mmax[idb] - mmin[idb]) +
-                kMagThresh / (sza + szb)) {
-      int idab = uf.ConnectNodes(ida, idb);
+                mag_thresh / (sza + szb)) {
+      int idab = dsets.ConnectNodes(ida, idb);
 
       tmin[idab] = tminab;
       tmax[idab] = tmaxab;

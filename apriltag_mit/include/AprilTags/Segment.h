@@ -15,7 +15,7 @@ class Segment {
    * @brief minimumSegmentSize
    * Minimum number of pixels in a segment before we'll fit a line to it
    */
-  static constexpr int kMinSegmentPixels = 4;
+  static constexpr int kMinSegmentPixels = 20;
 
   /**
    * @brief minimumLineLength

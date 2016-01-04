@@ -1,9 +1,9 @@
-#include "AprilTags/UnionFind.h"
+#include "AprilTags/DisjointSets.h"
 #include <iostream>
 
 namespace AprilTags {
 
-UnionFind::UnionFind(int max_ids) : data_(max_ids) {
+DisjointSets::DisjointSets(int max_ids) : data_(max_ids) {
   for (size_t i = 0; i < data_.size(); ++i) {
     // everyone is their own cluster of size 1
     data_[i].id = i;
@@ -11,7 +11,7 @@ UnionFind::UnionFind(int max_ids) : data_(max_ids) {
   }
 }
 
-int UnionFind::GetRepresentative(int id) {
+int DisjointSets::GetRepresentative(int id) {
   // terminal case: a node is its own parent
   if (data_[id].id == id) return id;
 
@@ -24,7 +24,7 @@ int UnionFind::GetRepresentative(int id) {
   return root;
 }
 
-int UnionFind::ConnectNodes(int id0, int id1) {
+int DisjointSets::ConnectNodes(int id0, int id1) {
   int root0 = GetRepresentative(id0);
   int root1 = GetRepresentative(id1);
 
