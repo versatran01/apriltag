@@ -33,6 +33,7 @@ int DisjointSets::ConnectNodes(int id0, int id1) {
   int sz0 = data_[root0].size;
   int sz1 = data_[root1].size;
 
+  // This is wrong
   if (sz0 > sz1) {
     data_[root1].id = root0;
     data_[root0].size += sz1;

@@ -27,6 +27,27 @@ class DisjointSets {
   std::vector<Data> data_;
 };
 
+/**
+ * @brief The Element struct
+ * Element in our disjoint sets
+ */
+struct Element {
+  int pid, size;
+  float mmin, mmax, tmin, tmax;
+};
+
+namespace exp {
+
+class DisjointSets {
+ public:
+  DisjointSets(int n);
+
+ private:
+  std::vector<int> rank_;
+  std::vector<int> parent_;
+};
+}
+
 }  // namespace AprilTags
 
 #endif  // APRILTAGS_DISJOINTSETS_H_

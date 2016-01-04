@@ -47,49 +47,51 @@ void MergeEdges(const std::vector<Edge> &edges, DisjointSets &dsets,
                 float tmin[], float tmax[], float mmin[], float mmax[],
                 float mag_thresh, float theta_thresh) {
   for (const Edge &e : edges) {
-    int ida = dsets.GetRepresentative(e.pid0);
-    int idb = dsets.GetRepresentative(e.pid1);
+    int id0 = dsets.GetRepresentative(e.pid0);
+    int id1 = dsets.GetRepresentative(e.pid1);
 
-    if (ida == idb) continue;
+    if (id0 == id1) continue;
 
-    int sza = dsets.GetSetSize(ida);
-    int szb = dsets.GetSetSize(idb);
+    int sza = dsets.GetSetSize(id0);
+    int szb = dsets.GetSetSize(id1);
 
-    float tmina = tmin[ida], tmaxa = tmax[ida];
-    float tminb = tmin[idb], tmaxb = tmax[idb];
+    float tmin0 = tmin[id0];
+    float tmax0 = tmax[id0];
+    float tmin1 = tmin[id1];
+    float tmax1 = tmax[id1];
 
-    float costa = (tmaxa - tmina);
-    float costb = (tmaxb - tminb);
+    float cost0 = (tmax0 - tmin0);
+    float cost1 = (tmax1 - tmin1);
 
     // bshift will be a multiple of 2pi that aligns the spans of 'b' with 'a'
     // so that we can properly take the union of them.
     float bshift =
-        Mod2Pi((tmina + tmaxa) / 2, (tminb + tmaxb) / 2) - (tminb + tmaxb) / 2;
+        Mod2Pi((tmin0 + tmax0) / 2, (tmin1 + tmax1) / 2) - (tmin1 + tmax1) / 2;
 
-    float tminab = std::min(tmina, tminb + bshift);
-    float tmaxab = std::max(tmaxa, tmaxb + bshift);
+    float tmin01 = std::min(tmin0, tmin1 + bshift);
+    float tmax01 = std::max(tmax0, tmax1 + bshift);
 
     // Corner case probably not too useful to hand correctly
-    if (tmaxab - tminab > 2 * Pi<float>()) {
-      tmaxab = tminab + 2 * Pi<float>();
+    if (tmax01 - tmin01 > 2 * Pi<float>()) {
+      tmax01 = tmin01 + 2 * Pi<float>();
     }
 
-    float mminab = std::min(mmin[ida], mmin[idb]);
-    float mmaxab = std::max(mmax[ida], mmax[idb]);
+    float mmin01 = std::min(mmin[id0], mmin[id1]);
+    float mmax01 = std::max(mmax[id0], mmax[id1]);
 
     // merge these two clusters?
-    float costab = (tmaxab - tminab);
-    if (costab <= (std::min(costa, costb) + theta_thresh / (sza + szb)) &&
-        (mmaxab - mminab) <=
-            std::min(mmax[ida] - mmin[ida], mmax[idb] - mmin[idb]) +
+    float cost01 = (tmax01 - tmin01);
+    if (cost01 <= (std::min(cost0, cost1) + theta_thresh / (sza + szb)) &&
+        (mmax01 - mmin01) <=
+            std::min(mmax[id0] - mmin[id0], mmax[id1] - mmin[id1]) +
                 mag_thresh / (sza + szb)) {
-      int idab = dsets.ConnectNodes(ida, idb);
+      int id0b = dsets.ConnectNodes(id0, id1);
 
-      tmin[idab] = tminab;
-      tmax[idab] = tmaxab;
+      tmin[id0b] = tmin01;
+      tmax[id0b] = tmax01;
 
-      mmin[idab] = mminab;
-      mmax[idab] = mmaxab;
+      mmin[id0b] = mmin01;
+      mmax[id0b] = mmax01;
     }
   }
 }

@@ -1,6 +1,7 @@
 #ifndef APRILTAGS_TAGDETECTOR_H_
 #define APRILTAGS_TAGDETECTOR_H_
 
+#include <unordered_map>
 #include <opencv2/core/core.hpp>
 
 #include "AprilTags/TagDetection.h"
@@ -15,7 +16,7 @@ namespace AprilTags {
 
 class TagDetector {
  public:
-  using Clusters = std::map<int, std::vector<XYW>>;
+  using Clusters = std::unordered_map<int, std::vector<XYW>>;
 
   explicit TagDetector(const TagCodes& tag_codes, int black_border = 1);
 

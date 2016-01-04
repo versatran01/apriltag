@@ -109,7 +109,7 @@ DisjointSets TagDetector::ExtractEdges(const FloatImage &im_mag,
         const auto local_edges = CalcLocalEdges(x, y, im_mag, im_theta);
         edges.insert(edges.end(), local_edges.begin(), local_edges.end());
 
-        // Set mask
+        // Set mask, later used for initializing disjoint sets
         for (const Edge &edge : local_edges) {
           mask.at<uchar>(edge.pid0) = 255;
           mask.at<uchar>(edge.pid1) = 255;
@@ -119,7 +119,6 @@ DisjointSets TagDetector::ExtractEdges(const FloatImage &im_mag,
   }
 
   // Use later for initializing disjoint sets
-  const auto pids = IndexFromNonZero(mask);
   t_step31.stop();
   t_step31.report();
 
@@ -142,23 +141,28 @@ TagDetector::Clusters TagDetector::ClusterPixels(
 
   Clusters clusters;
 
+  // TODO: if we refactored disjoint sets, then we can just iterate over each
+  // set that is long enough instead of interate over every pixel
+  // Then clusters can be refactored to be a vector<vector<XYW>>
   for (int y = 0; y < height - 1; ++y) {
     for (int x = 0; x < width - 1; ++x) {
       const int pid = y * width + x;
 
-      if (dsets.GetSetSize(pid) < Segment::kMinSegmentPixels) {
-        continue;
-      }
+      if (dsets.GetSetSize(pid) > Segment::kMinSegmentPixels) {
+        int rep = dsets.GetRepresentative(pid);
 
-      int rep = dsets.GetRepresentative(pid);
-
-      Clusters::iterator it = clusters.find(rep);
-      if (it == clusters.end()) {
-        clusters[rep] = std::vector<XYW>();
-        it = clusters.find(rep);
+        const auto mag = im_mag.get(x, y);
+        XYW xyw(x, y, mag);
+        auto it = clusters.find(rep);
+        if (it == clusters.end()) {
+          // Spawn a new cluster
+          clusters.insert({rep, {xyw}});
+        } else {
+          // Append to an existing cluster
+          std::vector<XYW> &points = it->second;
+          points.push_back(xyw);
+        }
       }
-      std::vector<XYW> &points = it->second;
-      points.push_back(XYW(x, y, im_mag.get(x, y)));
     }
   }
 
@@ -182,9 +186,9 @@ std::vector<Segment> TagDetector::FitLines(const Clusters &clusters,
     const auto dy = lseg.p1().y - lseg.p0().y;
     const auto dx = lseg.p1().x - lseg.p0().x;
 
-    const float tmpTheta = std::atan2(dy, dx);
+    const float tmp_theta = std::atan2(dy, dx);
 
-    seg.set_theta(tmpTheta);
+    seg.set_theta(tmp_theta);
     seg.set_length(length);
 
     // We add an extra semantic to segments: the vector
