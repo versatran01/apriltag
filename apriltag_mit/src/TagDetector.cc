@@ -398,10 +398,7 @@ std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
   // the one with the greatest observed perimeter.
   // NOTE: allow multiple non-overlapping detections of the same target.
 
-  TimerUs t_step9("9 - ResolveOverlap");
   const auto good_tags = ResolveOverlap(tags);
-  t_step9.stop();
-  t_step9.report();
 
   return good_tags;
 }
