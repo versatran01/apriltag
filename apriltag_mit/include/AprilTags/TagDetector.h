@@ -9,14 +9,13 @@
 #include "AprilTags/FloatImage.h"
 #include "AprilTags/Quad.h"
 #include "AprilTags/GrayModel.h"
-#include "AprilTags/XYW.h"
 #include "AprilTags/DisjointSets.h"
 
 namespace AprilTags {
 
 class TagDetector {
  public:
-  using Clusters = std::unordered_map<int, std::vector<XYW>>;
+  using Clusters = std::unordered_map<int, std::vector<cv::Point3f>>;
 
   explicit TagDetector(const TagCodes& tag_codes, int black_border = 1);
 

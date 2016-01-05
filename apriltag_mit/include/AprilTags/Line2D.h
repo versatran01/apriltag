@@ -7,7 +7,6 @@
 #include <opencv2/core/core.hpp>
 
 #include "AprilTags/MathUtil.h"
-#include "AprilTags/XYW.h"
 #include "AprilTags/Segment.h"
 
 namespace AprilTags {
@@ -41,7 +40,7 @@ class Line2D {
   // parallel.
   cv::Point2f IntersectionWidth(const Line2D &line) const;
 
-  static Line2D LsqFitXyw(const std::vector<XYW> &xyw);
+  static Line2D LsqFitXyw(const std::vector<cv::Point3f> &xyw);
 
   float dx() const { return dx_; }
   float dy() const { return dy_; }

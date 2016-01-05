@@ -127,14 +127,14 @@ TagDetector::Clusters TagDetector::ClusterPixels(
       const int rep = dsets.Find(pid);
       if (dsets.GetSetSize(rep) > Segment::kMinSegmentPixels) {
         const auto mag = im_mag.get(pid);
-        XYW xyw(x, y, mag);
+        const cv::Point3f xyw(x, y, mag);
         auto it = clusters.find(rep);
         if (it == clusters.end()) {
           // Spawn a new cluster
           clusters.insert({rep, {xyw}});
         } else {
           // Append to an existing cluster
-          std::vector<XYW> &points = it->second;
+          std::vector<cv::Point3f> &points = it->second;
           points.push_back(xyw);
         }
       }
@@ -150,7 +150,7 @@ std::vector<Segment> TagDetector::FitLines(const Clusters &clusters,
   std::vector<Segment> segments;
 
   for (const auto &i_xyw : clusters) {
-    const std::vector<XYW> &xyws = i_xyw.second;
+    const std::vector<cv::Point3f> &xyws = i_xyw.second;
     const auto lseg = LineSegment2D::LsqFitXyw(xyws);
 
     // filter short lines
@@ -173,7 +173,7 @@ std::vector<Segment> TagDetector::FitLines(const Clusters &clusters,
       // could probably sample just one point!
 
       float flip = 0, noflip = 0;
-      for (const XYW &xyw : xyws) {
+      for (const cv::Point3f &xyw : xyws) {
         const auto theta = im_theta.get(xyw.x, xyw.y);
         const auto mag = im_mag.get(xyw.x, xyw.y);
 

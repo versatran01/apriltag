@@ -4,7 +4,6 @@
 #include <cmath>
 
 #include "AprilTags/Line2D.h"
-#include "AprilTags/XYW.h"
 
 namespace AprilTags {
 
@@ -12,7 +11,7 @@ namespace AprilTags {
 class LineSegment2D {
  public:
   LineSegment2D(const cv::Point2f &p0, const cv::Point2f &p1);
-  static LineSegment2D LsqFitXyw(const std::vector<XYW> &xyws);
+  static LineSegment2D LsqFitXyw(const std::vector<cv::Point3f> &xyws);
 
   const cv::Point2f &p0() const { return p0_; }
   const cv::Point2f &p1() const { return p1_; }

@@ -48,16 +48,16 @@ cv::Point2f Line2D::IntersectionWidth(const Line2D &line) const {
   return cv::Point2f(dx_ * x00 + p_.x, dy_ * x00 + p_.y);
 }
 
-Line2D Line2D::LsqFitXyw(const std::vector<XYW> &xyw) {
+Line2D Line2D::LsqFitXyw(const std::vector<cv::Point3f> &xyw) {
   float Cxx = 0, Cyy = 0, Cxy = 0, Ex = 0, Ey = 0, mXX = 0, mYY = 0, mXY = 0,
         mX = 0, mY = 0;
   float n = 0;
 
   int idx = 0;
-  for (unsigned int i = 0; i < xyw.size(); i++) {
-    float x = xyw[i].x;
-    float y = xyw[i].y;
-    float w = xyw[i].w;
+  for (size_t i = 0; i < xyw.size(); i++) {
+    const float x = xyw[i].x;
+    const float y = xyw[i].y;
+    const float w = xyw[i].z;
 
     mY += y * w;
     mX += x * w;
