@@ -26,7 +26,7 @@ struct Edge {
   static constexpr float kThetaThresh = 100;
   // magnitude threshold for merging edges
   //  static constexpr float kMagThresh = 1200;
-  static constexpr float kMagThresh = 120;
+  static constexpr float kMagThresh = 150;
 
   int pid0;
   int pid1;
