@@ -3,6 +3,7 @@
 
 #include <ros/ros.h>
 #include <sensor_msgs/Image.h>
+#include <std_msgs/Empty.h>
 #include <dynamic_reconfigure/server.h>
 #include <image_transport/image_transport.h>
 
@@ -19,12 +20,14 @@ class ApriltagDetectorNode {
 
   void ImageCb(const sensor_msgs::ImageConstPtr& image_msg);
   void ConnectCb();
+  void ShutdownCb(const std_msgs::EmptyConstPtr& empty);
 
   void ConfigCb(ConfigT& config, int level);
 
  private:
   ros::NodeHandle pnh_;
   ros::Publisher pub_apriltags_;
+  ros::Subscriber sub_empty_;
   image_transport::Subscriber sub_image_;
   image_transport::Publisher pub_image_;
   dynamic_reconfigure::Server<ConfigT> cfg_server_;

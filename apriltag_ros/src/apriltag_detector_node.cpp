@@ -14,11 +14,18 @@ using apriltag_msgs::ApriltagArrayStamped;
 ApriltagDetectorNode::ApriltagDetectorNode(const ros::NodeHandle& pnh)
     : pnh_(pnh), cfg_server_(pnh) {
   image_transport::ImageTransport it(pnh);
+  sub_empty_ =
+      pnh_.subscribe("shutdown", 1, &ApriltagDetectorNode::ShutdownCb, this);
   sub_image_ = it.subscribe("image", 1, &ApriltagDetectorNode::ImageCb, this);
   pub_apriltags_ = pnh_.advertise<ApriltagArrayStamped>("apriltag_array", 1);
   pub_image_ = it.advertise("image_detection", 1);
   cfg_server_.setCallback(
       boost::bind(&ApriltagDetectorNode::ConfigCb, this, _1, _2));
+}
+
+void ApriltagDetectorNode::ShutdownCb(const std_msgs::EmptyConstPtr& empty) {
+  ROS_INFO("Shutting down %s", pnh_.getNamespace().c_str());
+  ros::shutdown();
 }
 
 void ApriltagDetectorNode::ImageCb(const ImageConstPtr& image_msg) {

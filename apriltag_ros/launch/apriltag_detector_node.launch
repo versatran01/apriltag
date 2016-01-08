@@ -1,12 +1,13 @@
 <launch>
   <arg name="camera" default="camera"/>
+  <arg name="image" default="image_raw"/>
 
   <node pkg="apriltag_ros" type="apriltag_detector_node"
     name="apriltag_detector" output="screen" ns="$(arg camera)">
     <param name="family" type="int" value="0"/>
     <param name="type" type="int" value="0"/>
 
-    <remap from="~image" to="image_raw"/>
+    <remap from="~image" to="$(arg image)"/>
     <remap from="~apriltags" to="apriltags"/>
     <remap from="~image_detection" to="image_detection"/>
   </node>
