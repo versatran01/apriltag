@@ -8,29 +8,35 @@ if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE RelWithDebInfo)
 endif()
 
-find_package(Eigen3 REQUIRED)
-find_package(OpenCV REQUIRED)
-
-include_directories(include
-    ${OpenCV_INCLUDE_DIRS}
-    ${Eigen_INCLUDE_DIRS}
-    )
-
 if(USE_ROS)
-    find_package(catkin REQUIRED COMPONENTS roslib)
+    find_package(catkin REQUIRED COMPONENTS roslib cmake_modules)
+    find_package(Eigen 3 REQUIRED)
+    include_directories(${Eigen_INCLUDE_DIRS})
     catkin_package(
         DEPENDS Eigen OpenCV
-        INCLUDE_DIRS include
+        INCLUDE_DIRS include ${Eigen_INCLUDE_DIRS}
         LIBRARIES ${PROJECT_NAME}
         CFG_EXTRAS apriltag_mit-extras.cmake
         )
 else()
+    find_package(Eigen3 REQUIRED)
+    include_directories(${EIGEN3_INCLUDE_DIRS})
     message(STATUS "Source:  " ${PROJECT_SOURCE_DIR})
     message(STATUS "Binary:  " ${PROJECT_BINARY_DIR})
     set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
     set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
     link_directories(${PROJECT_SOURCE_DIR}/lib)
 endif()
+
+find_package(OpenCV REQUIRED)
+include_directories(include
+    ${OpenCV_INCLUDE_DIRS}
+    )
+
+include_directories(include
+    ${OpenCV_INCLUDE_DIRS}
+    ${Eigen_INCLUDE_DIRS}
+    )
 
 file(GLOB CC_FILES ${PROJECT_SOURCE_DIR}/src/*.cc)
 add_library(${PROJECT_NAME} SHARED ${CC_FILES})
