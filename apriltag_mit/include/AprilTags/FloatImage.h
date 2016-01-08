@@ -1,42 +1,36 @@
 #ifndef APRILTAGS_FLOATIMAGE_H_
 #define APRILTAGS_FLOATIMAGE_H_
 
-#include <algorithm>
-#include <vector>
 #include <opencv2/core/core.hpp>
-
-namespace DualCoding {
-typedef unsigned char uchar;
-template <typename T>
-class Sketch;
-}
 
 namespace AprilTags {
 
 //! Represent an image as a vector of floats in [0,1]
 class FloatImage {
- private:
-  cv::Mat image_;
-
  public:
-  //! Default constructor
   FloatImage() = default;
   FloatImage(const cv::Mat& image);
-
-  //! Construct an empty image
   FloatImage(int width, int height);
-
   FloatImage& operator=(const FloatImage& other);
 
-  float get(int x, int y) const { return image_.at<float>(y, x); }
-  void set(int x, int y, float v) { image_.at<float>(y, x) = v; }
+  inline float get(int x, int y) const { return image_.at<float>(y, x); }
+  inline float get(int idx) const { return image_.at<float>(idx); }
+  inline void set(int x, int y, float v) { image_.at<float>(y, x) = v; }
 
-  int getWidth() const { return image_.cols; }
-  int getHeight() const { return image_.rows; }
-  int getNumFloatImagePixels() const { return image_.cols * image_.rows; }
+  int width() const { return image_.cols; }
+  int height() const { return image_.rows; }
+  int num_pixels() const { return image_.cols * image_.rows; }
+  cv::Mat& mat() { return image_; }
+  const cv::Mat& mat() const { return image_; }
 
-  void filterFactoredCentered(int ksize, float sigma);
+  void FilterGaussian(int ksize, float sigma);
+
+ private:
+  cv::Mat image_;
 };
+
+bool IsInsideImage(int x, int y, int w, int h);
+bool IsInsideImage(int x, int y, const FloatImage& image);
 
 }  // namespace AprilTags
 

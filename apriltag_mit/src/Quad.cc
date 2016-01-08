@@ -1,66 +1,108 @@
-#include <Eigen/Dense>
-
-#include "AprilTags/FloatImage.h"
+#include <opencv2/calib3d/calib3d.hpp>
 #include "AprilTags/MathUtil.h"
-#include "AprilTags/GLine2D.h"
+#include "AprilTags/Line2D.h"
 #include "AprilTags/Quad.h"
 #include "AprilTags/Segment.h"
 
 namespace AprilTags {
 
-const float Quad::maxQuadAspectRatio = 32;
-
-Quad::Quad(const std::vector<std::pair<float, float> > &p,
-           const std::pair<float, float> &opticalCenter)
-    : quadPoints(p),
+Quad::Quad(const std::vector<cv::Point2f> &p)
+    : p(p),
       segments(),
-      observedPerimeter(),
-      homography(opticalCenter) {
-#ifdef STABLE_H
-  std::vector<std::pair<float, float> > srcPts;
-  srcPts.push_back(std::make_pair(-1, -1));
-  srcPts.push_back(std::make_pair(1, -1));
-  srcPts.push_back(std::make_pair(1, 1));
-  srcPts.push_back(std::make_pair(-1, 1));
-  homography.setCorrespondences(srcPts, p);
-#else
-  homography.addCorrespondence(-1, -1, quadPoints[0].first,
-                               quadPoints[0].second);
-  homography.addCorrespondence(1, -1, quadPoints[1].first,
-                               quadPoints[1].second);
-  homography.addCorrespondence(1, 1, quadPoints[2].first, quadPoints[2].second);
-  homography.addCorrespondence(-1, 1, quadPoints[3].first,
-                               quadPoints[3].second);
-#endif
+      obs_perimeter(),
+      p0_(p[0]),
+      p3_(p[3]),
+      p01_(p[1] - p[0]),
+      p32_(p[2] - p[3]) {}
 
-#ifdef INTERPOLATE
-  p0 = Eigen::Vector2f(p[0].first, p[0].second);
-  p3 = Eigen::Vector2f(p[3].first, p[3].second);
-  p01 = (Eigen::Vector2f(p[1].first, p[1].second) - p0);
-  p32 = (Eigen::Vector2f(p[2].first, p[2].second) - p3);
-#endif
+cv::Point2f Quad::Interpolate(const cv::Point2f &p) const {
+  const float kx = (p.x + 1) / 2;
+  const float ky = (p.y + 1) / 2;
+  const auto r1 = p0_ + p01_ * kx;
+  const auto r2 = p3_ + p32_ * kx;
+  const auto r = r1 + (r2 - r1) * ky;
+  return r;
 }
 
-std::pair<float, float> Quad::interpolate(float x, float y) {
-#ifdef INTERPOLATE
-  Eigen::Vector2f r1 = p0 + p01 * (x + 1.) / 2.;
-  Eigen::Vector2f r2 = p3 + p32 * (x + 1.) / 2.;
-  Eigen::Vector2f r = r1 + (r2 - r1) * (y + 1) / 2;
-  return std::pair<float, float>(r(0), r(1));
-#else
-  return homography.project(x, y);
-#endif
+cv::Point2f Quad::Interpolate01(const cv::Point2f &p) const {
+  return Interpolate(2 * p - cv::Point2f(1, 1));
 }
 
-std::pair<float, float> Quad::interpolate01(float x, float y) {
-  return interpolate(2 * x - 1, 2 * y - 1);
+GrayModel Quad::MakeGrayModel(const FloatImage &image,
+                              unsigned length_bits) const {
+  GrayModel model;
+  const int lb = length_bits;
+
+  // Only need to loop through the boundary
+  for (int yb = -1; yb <= lb; ++yb) {
+    // Convert to normalized coordinates 01
+    const float yn = (yb + 0.5f) / lb;
+    for (int xb = -1; xb <= lb; ++xb) {
+      // Skip if inside quad boundary
+      if (IsInsideInnerBorder(xb, yb, lb)) continue;
+
+      const float xn = (xb + 0.5f) / lb;
+      // Convert to image coordinates
+      const auto pi = Interpolate01({xn, yn});
+      int xi = pi.x + 0.5;
+      int yi = pi.y + 0.5;
+
+      // Skip if outside image
+      if (!IsInsideImage(xi, yi, image)) continue;
+
+      const float v = image.get(xi, yi);
+      if (IsOnOuterBorder(xb, yb, lb)) {
+        model.AddWhiteObs(xn, yn, v);
+      } else if (IsOnInnerBorder(xb, yb, lb)) {
+        model.AddBlackObs(xn, yn, v);
+      }
+    }
+  }
+
+  // Don't forget to Fit the model
+  model.Fit();
+  return model;
 }
 
-void Quad::search(const FloatImage &fImage, std::vector<Segment *> &path,
-                  Segment &parent, int depth, std::vector<Quad> &quads,
-                  const std::pair<float, float> &opticalCenter) {
-  // cout << "Searching segment " << parent.getId() << ", depth=" << depth << ",
-  // #children=" << parent.children.size() << endl;
+code_t Quad::DecodePayload(const FloatImage &image, const GrayModel &model,
+                           unsigned dimension_bits,
+                           unsigned black_border) const {
+  code_t code = 0;
+  const int lb = 2 * black_border + dimension_bits;
+
+  for (int yb = dimension_bits - 1; yb >= 0; yb--) {
+    float yn = (black_border + yb + 0.5f) / lb;
+    for (int xb = 0; xb < dimension_bits; xb++) {
+      float xn = (black_border + xb + 0.5f) / lb;
+
+      const auto pi = Interpolate01({xn, yn});
+      int xi = pi.x + 0.5;
+      int yi = pi.y + 0.5;
+
+      if (!IsInsideImage(xi, yi, image)) {
+        return 0;
+      }
+
+      const float threshold = model.CalcThreshold(xn, yn);
+      float v = image.get(xi, yi);
+      code = code << 1;
+      if (v > threshold) {
+        code |= 1;
+      }
+    }
+  }
+  return code;
+}
+
+code_t Quad::ToTagCode(const FloatImage &image, unsigned dimension_bits,
+                       unsigned black_border) const {
+  const int lb = 2 * black_border + dimension_bits;
+  const auto model = MakeGrayModel(image, lb);
+  return DecodePayload(image, model, dimension_bits, black_border);
+}
+
+void Quad::Search(std::vector<Segment *> &path, Segment &parent, int depth,
+                  std::vector<Quad> &quads) {
   // terminal depth occurs when we've found four segments.
   if (depth == 4) {
     // cout << "Entered terminal depth" << endl; // debug code
@@ -68,91 +110,80 @@ void Quad::search(const FloatImage &fImage, std::vector<Segment *> &path,
     // Is the first segment the same as the last segment (i.e., a loop?)
     if (path[4] == path[0]) {
       // the 4 corners of the quad as computed by the intersection of segments.
-      std::vector<std::pair<float, float> > p(4);
-      float calculatedPerimeter = 0;
+      std::vector<cv::Point2f> p(4);
+      float calc_perimeter = 0;
       bool bad = false;
-      for (int i = 0; i < 4; i++) {
+      for (size_t i = 0; i < 4; i++) {
         // compute intersections between all the lines. This will give us
         // sub-pixel accuracy for the corners of the quad.
-        GLine2D linea(std::make_pair(path[i]->getX0(), path[i]->getY0()),
-                      std::make_pair(path[i]->getX1(), path[i]->getY1()));
-        GLine2D lineb(
-            std::make_pair(path[i + 1]->getX0(), path[i + 1]->getY0()),
-            std::make_pair(path[i + 1]->getX1(), path[i + 1]->getY1()));
+        Line2D line_a(*path[i]);
+        Line2D line_b(*path[i + 1]);
 
-        p[i] = linea.intersectionWith(lineb);
-        calculatedPerimeter += path[i]->getLength();
+        p[i] = line_a.IntersectionWidth(line_b);
+        calc_perimeter += path[i]->length();
 
         // no intersection? Occurs when the lines are almost parallel.
-        if (p[i].first == -1) bad = true;
+        if (p[i].x == -1) {
+          bad = true;
+        }
       }
       // cout << "bad = " << bad << endl;
       // eliminate quads that don't form a simply connected loop, i.e., those
       // that form an hour glass, or wind the wrong way.
       if (!bad) {
-        float t0 =
-            std::atan2(p[1].second - p[0].second, p[1].first - p[0].first);
-        float t1 =
-            std::atan2(p[2].second - p[1].second, p[2].first - p[1].first);
-        float t2 =
-            std::atan2(p[3].second - p[2].second, p[3].first - p[2].first);
-        float t3 =
-            std::atan2(p[0].second - p[3].second, p[0].first - p[3].first);
+        float t0 = std::atan2(p[1].y - p[0].y, p[1].x - p[0].x);
+        float t1 = std::atan2(p[2].y - p[1].y, p[2].x - p[1].x);
+        float t2 = std::atan2(p[3].y - p[2].y, p[3].x - p[2].x);
+        float t3 = std::atan2(p[0].y - p[3].y, p[0].x - p[3].x);
 
         //  double ttheta = fmod(t1-t0, 2*M_PI) + fmod(t2-t1, 2*M_PI) +
         //    fmod(t3-t2, 2*M_PI) + fmod(t0-t3, 2*M_PI);
-        float ttheta = MathUtil::mod2pi(t1 - t0) + MathUtil::mod2pi(t2 - t1) +
-                       MathUtil::mod2pi(t3 - t2) + MathUtil::mod2pi(t0 - t3);
+        float total_theta = Mod2Pi(t1 - t0) + Mod2Pi(t2 - t1) +
+                            Mod2Pi(t3 - t2) + Mod2Pi(t0 - t3);
         // cout << "ttheta=" << ttheta << endl;
         // the magic value is -2*PI. It should be exact,
         // but we allow for (lots of) numeric imprecision.
-        if (ttheta < -7 || ttheta > -5) bad = true;
+        if (total_theta < -7 || total_theta > -5) bad = true;
       }
 
       if (!bad) {
-        float d0 = MathUtil::distance2D(p[0], p[1]);
-        float d1 = MathUtil::distance2D(p[1], p[2]);
-        float d2 = MathUtil::distance2D(p[2], p[3]);
-        float d3 = MathUtil::distance2D(p[3], p[0]);
-        float d4 = MathUtil::distance2D(p[0], p[2]);
-        float d5 = MathUtil::distance2D(p[1], p[3]);
+        float d0 = Distance2D(p[0], p[1]);
+        float d1 = Distance2D(p[1], p[2]);
+        float d2 = Distance2D(p[2], p[3]);
+        float d3 = Distance2D(p[3], p[0]);
+        float d4 = Distance2D(p[0], p[2]);
+        float d5 = Distance2D(p[1], p[3]);
 
         // check sizes
-        if (d0 < Quad::minimumEdgeLength || d1 < Quad::minimumEdgeLength ||
-            d2 < Quad::minimumEdgeLength || d3 < Quad::minimumEdgeLength ||
-            d4 < Quad::minimumEdgeLength || d5 < Quad::minimumEdgeLength) {
+        if (d0 < Quad::kMinEdgeLength || d1 < Quad::kMinEdgeLength ||
+            d2 < Quad::kMinEdgeLength || d3 < Quad::kMinEdgeLength ||
+            d4 < Quad::kMinEdgeLength || d5 < Quad::kMinEdgeLength) {
           bad = true;
-          // cout << "tagsize too small" << endl;
         }
 
         // check aspect ratio
-        float dmax = max(max(d0, d1), max(d2, d3));
-        float dmin = min(min(d0, d1), min(d2, d3));
+        float dmax = std::max(std::max(d0, d1), std::max(d2, d3));
+        float dmin = std::min(std::min(d0, d1), std::min(d2, d3));
 
-        if (dmax > dmin * Quad::maxQuadAspectRatio) {
+        if (dmax > dmin * Quad::kMaxQuadAspectRatio) {
           bad = true;
-          // cout << "aspect ratio too extreme" << endl;
         }
       }
 
       if (!bad) {
-        Quad q(p, opticalCenter);
-        q.segments = path;
-        q.observedPerimeter = calculatedPerimeter;
-        quads.push_back(q);
+        Quad quad(p);
+        quad.segments = path;
+        quad.obs_perimeter = calc_perimeter;
+        quads.push_back(quad);
       }
     }
     return;
   }
 
-  //  if (depth >= 1) // debug code
-  // cout << "depth: " << depth << endl;
-
   // Not terminal depth. Recurse on any children that obey the correct
   // handedness.
   for (unsigned int i = 0; i < parent.children.size(); i++) {
     Segment &child = *parent.children[i];
-    //    cout << "  Child " << child.getId() << ":  ";
     // (handedness was checked when we created the children)
 
     // we could rediscover each quad 4 times (starting from
@@ -160,14 +191,12 @@ void Quad::search(const FloatImage &fImage, std::vector<Segment *> &path,
     // points, we can eliminate the redundant detections by
     // requiring that the first corner have the lowest
     // value. We're arbitrarily going to use theta...
-    if (child.getTheta() > path[0]->getTheta()) {
-      // cout << "theta failed: " << child.getTheta() << " > " <<
-      // path[0]->getTheta() << endl;
+    if (child.theta() > path[0]->theta()) {
       continue;
     }
     path[depth + 1] = &child;
-    search(fImage, path, child, depth + 1, quads, opticalCenter);
+    Search(path, child, depth + 1, quads);
   }
 }
 
-}  // namespace
+}  // namespace AprilTags

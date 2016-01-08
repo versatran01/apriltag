@@ -1,78 +1,86 @@
 #ifndef APRILTAGS_QUAD_H_
 #define APRILTAGS_QUAD_H_
 
-#include <utility>
-#include <vector>
-
-#include <Eigen/Dense>
-
-#include "AprilTags/Homography33.h"
+#include <opencv2/core/core.hpp>
+#include "AprilTags/GrayModel.h"
+#include "AprilTags/FloatImage.h"
+#include "AprilTags/TagCodes.h"
 
 namespace AprilTags {
 
 class FloatImage;
 class Segment;
 
-using std::min;
-using std::max;
-
 //! Represents four segments that form a loop, and might be a tag.
 class Quad {
  public:
-  static const int minimumEdgeLength = 6;  //!< Minimum size of a tag (in
-  // pixels) as measured along edges and
-  // diagonals
-  static float const
-      maxQuadAspectRatio;  //!< Early pruning of quads with insane ratios.
+  /**
+   * @brief kMinEdgeLength Minimum size of a tag (in pixels) as measured along
+   * edges and diagonals
+   */
+  static const int kMinEdgeLength = 6;
+  /**
+   * @brief kMaxQuadAspectRatio Early pruning of quads with insane ratios
+   */
+  static constexpr float kMaxQuadAspectRatio = 32.0;
 
-  //! Constructor
-  /*! (x,y) are the optical center of the camera, which is
-   *   needed to correctly compute the homography. */
-  Quad(const std::vector<std::pair<float, float> >& p,
-       const std::pair<float, float>& opticalCenter);
+  Quad(const std::vector<cv::Point2f>& p);
 
-  //! Interpolate given that the lower left corner of the lower left cell is at
-  //(-1,-1) and the upper right corner of the upper right cell is at (1,1).
-  std::pair<float, float> interpolate(float x, float y);
+  /**
+   * @brief interpolate Interpolate given that the lower left corner of the
+   * lower left cell is (-1, -1) and the upper right corner of the upper right
+   * cell is at (1,1)
+   * @param p
+   * @return
+   */
+  cv::Point2f Interpolate(const cv::Point2f& p) const;
 
-  //! Same as interpolate, except that the coordinates are interpreted between 0
-  // and 1, instead of -1 and 1.
-  std::pair<float, float> interpolate01(float x, float y);
+  /**
+   * @brief interpolate01 Interpolate between 0~1 instead of -1~1
+   * @param p
+   * @return
+   */
+  cv::Point2f Interpolate01(const cv::Point2f& p) const;
 
-  //! Points for the quad (in pixel coordinates), in counter clockwise order.
-  // These points are the intersections of segments.
-  std::vector<std::pair<float, float> > quadPoints;
+  /**
+   * @brief p Points for the quad in pixel coordinates, in couter clockwise
+   * order. These points are the intersectiosn of segments
+   */
+  std::vector<cv::Point2f> p;
 
-  //! Segments composing this quad
+  /**
+   * @brief segments Segments composing this quad
+   */
   std::vector<Segment*> segments;
 
-  //! Total length (in pixels) of the actual perimeter observed for the quad.
-  /*! This is in contrast to the geometric perimeter, some of which
-   *  may not have been directly observed but rather inferred by
-   *  intersecting segments. Quads with more observed perimeter are
-   *  preferred over others. */
-  float observedPerimeter;
-
-  //! Given that the whole quad spans from (0,0) to (1,1) in "quad space",
-  // compute the pixel coordinates for a given point within that quad.
-  /*!  Note that for most of the Quad's existence, we will not know the correct
-   * orientation of the tag. */
-  Homography33 homography;
-
-  //! Searches through a vector of Segments to form Quads.
-  /*  @param quads any discovered quads will be added to this list
-   *  @param path  the segments currently part of the search
-   *  @param parent the first segment in the quad
-   *  @param depth how deep in the search are we?
+  /**
+   * @brief obs_perimeter Total length in pixels of the acutal perimeter
+   * observed for the quad.
+   * This is in contrast to the geometric perimeter, some of which may not have
+   * been directly observed but rather inferred by tintersecting segments. Quads
+   * with more observed perimeter are preferred over others.
    */
-  static void search(const FloatImage& fImage, std::vector<Segment*>& path,
-                     Segment& parent, int depth, std::vector<Quad>& quads,
-                     const std::pair<float, float>& opticalCenter);
+  float obs_perimeter;
 
-#ifdef INTERPOLATE
+  /**
+   * @brief search Searches through a vector of segments to form Quads
+   * @param path
+   * @param parent
+   * @param depth
+   * @param quads
+   */
+  static void Search(std::vector<Segment*>& path, Segment& parent, int depth,
+                     std::vector<Quad>& quads);
+
+  code_t ToTagCode(const FloatImage& image, unsigned dimension_bits,
+                   unsigned black_border) const;
+
  private:
-  Eigen::Vector2f p0, p3, p01, p32;
-#endif
+  GrayModel MakeGrayModel(const FloatImage& image, unsigned length_bits) const;
+  code_t DecodePayload(const FloatImage& image, const GrayModel& model,
+                       unsigned dimension_bits, unsigned black_border) const;
+
+  cv::Point2f p0_, p3_, p01_, p32_;
 };
 
 }  // namespace AprilTags

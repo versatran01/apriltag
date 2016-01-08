@@ -1,5 +1,3 @@
-#include <iostream>
-
 #include <Eigen/Dense>
 #include <Eigen/LU>
 
@@ -7,78 +5,106 @@
 
 namespace AprilTags {
 
-GrayModel::GrayModel() : A(), v(), b(), nobs(0), dirty(false) {
-  A.setZero();
-  v.setZero();
-  b.setZero();
+void GrayModel::AddBlackObs(float x, float y, float v) {
+  black_model_.AddObservation(x, y, v);
 }
 
-void GrayModel::addObservation(float x, float y, float gray) {
+void GrayModel::AddWhiteObs(float x, float y, float v) {
+  white_model_.AddObservation(x, y, v);
+}
+
+void GrayModel::Fit() {
+  black_model_.Fit();
+  white_model_.Fit();
+}
+
+float GrayModel::CalcThreshold(float x, float y) const {
+  return (black_model_.Predict(x, y) + white_model_.Predict(x, y)) / 2;
+}
+
+IntensityModel::IntensityModel()
+    : A_(), c_(), b_(), num_obs_(0), dirty_(false) {
+  A_.setZero();
+  c_.setZero();
+  b_.setZero();
+}
+
+void IntensityModel::AddObservation(float x, float y, float v) {
   float xy = x * y;
 
   // update only upper-right elements. A'A is symmetric,
   // we'll fill the other elements in later.
-  A(0, 0) += x * x;
-  A(0, 1) += x * y;
-  A(0, 2) += x * xy;
-  A(0, 3) += x;
-  A(1, 1) += y * y;
-  A(1, 2) += y * xy;
-  A(1, 3) += y;
-  A(2, 2) += xy * xy;
-  A(2, 3) += xy;
-  A(3, 3) += 1;
+  A_(0, 0) += x * x;
+  A_(0, 1) += x * y;
+  A_(0, 2) += x * xy;
+  A_(0, 3) += x;
+  A_(1, 1) += y * y;
+  A_(1, 2) += y * xy;
+  A_(1, 3) += y;
+  A_(2, 2) += xy * xy;
+  A_(2, 3) += xy;
+  A_(3, 3) += 1;
 
-  b[0] += x * gray;
-  b[1] += y * gray;
-  b[2] += xy * gray;
-  b[3] += gray;
+  b_[0] += x * v;
+  b_[1] += y * v;
+  b_[2] += xy * v;
+  b_[3] += v;
 
-  nobs++;
-  dirty = true;
+  num_obs_++;
+  dirty_ = true;
 }
 
-float GrayModel::interpolate(float x, float y) {
-  if (dirty) compute();
-  return v[0] * x + v[1] * y + v[2] * x * y + v[3];
+float IntensityModel::Predict(float x, float y) const {
+  return c_[0] * x + c_[1] * y + c_[2] * x * y + c_[3];
 }
 
-void GrayModel::compute() {
+void IntensityModel::Fit() {
   // we really only need 4 linearly independent observations to fit our answer,
-  // but we'll be very
-  // sensitive to noise if we don't have an over-determined system. Thus,
-  // require at least 6
-  // observations (or we'll use a constant model below).
+  // but we'll be very sensitive to noise if we don't have an over-determined
+  // system. Thus, require at least 6 observations (or we'll use a constant
+  // model below).
 
-  dirty = false;
-  if (nobs >= 6) {
+  if (num_obs_ >= 6) {
     // make symmetric
-    Eigen::Matrix4d Ainv;
-    for (int i = 0; i < 4; i++)
-      for (int j = i + 1; j < 4; j++) A(j, i) = A(i, j);
+    for (int i = 0; i < 4; ++i) {
+      for (int j = i + 1; j < 4; ++j) {
+        A_(j, i) = A_(i, j);
+      }
+    }
 
-    //    try {
-    //      Ainv = A.inverse();
     bool invertible;
     double det_unused;
-    A.computeInverseAndDetWithCheck(Ainv, det_unused, invertible);
+    Eigen::Matrix4d Ainv;
+    A_.computeInverseAndDetWithCheck(Ainv, det_unused, invertible);
     if (invertible) {
-      v = Ainv * b;
+      c_ = Ainv * b_;
       return;
     }
-    std::cerr
-        << "AprilTags::GrayModel::compute() has underflow in matrix inverse\n";
-    //    }
-    //    catch (std::underflow_error&) {
-    //      std::cerr << "AprilTags::GrayModel::compute() has underflow in
-    // matrix inverse\n";
-    //    }
   }
 
   // If we get here, either nobs < 6 or the matrix inverse generated
   // an underflow, so use a constant model.
-  v.setZero();  // need the cast to avoid operator= ambiguity wrt. const-ness
-  v[3] = b[3] / nobs;
+  c_.setZero();  // need the cast to avoid operator= ambiguity wrt. const-ness
+  c_[3] = b_[3] / num_obs_;
 }
 
-}  // namespace
+bool IsOnOuterBorder(int x, int y, int l, bool black_corner) {
+  if (black_corner) {
+    // Black corners will be excluded
+    const bool on_corner = (x == -1 && y == -1) || (x == -1 && y == l) ||
+                           (x == l && y == -1) || (x == l && y == l);
+    return (y == -1 || y == l || x == -1 || x == l) && !on_corner;
+  } else {
+    return (y == -1 || y == l || x == -1 || x == l);
+  }
+}
+
+bool IsOnInnerBorder(int x, int y, int l) {
+  return (y == 0 || y == (l - 1) || x == 0 || x == (l - 1));
+}
+
+bool IsInsideInnerBorder(int x, int y, int l) {
+  return (y >= 1 && y < (l - 1) && x >= 1 && x < (l - 1));
+}
+
+}  // namespace AprilTags

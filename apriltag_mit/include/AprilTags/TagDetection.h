@@ -1,123 +1,107 @@
 #ifndef APRILTAGS_TAGDETECTION_H_
 #define APRILTAGS_TAGDETECTION_H_
 
-#include <Eigen/Dense>
-
-#include "opencv2/opencv.hpp"
-
-#include <utility>
 #include <vector>
+#include <opencv2/core/core.hpp>
+
+#include "AprilTags/TagCodes.h"
 
 namespace AprilTags {
 
 using Pointf = std::pair<float, float>;
 
 struct TagDetection {
-  //! Constructor
-  TagDetection();
+  TagDetection() = default;
+  TagDetection(unsigned id, bool good, code_t obs_code, code_t code,
+               unsigned hamming_distance, unsigned num_rotations)
+      : id(id),
+        good(good),
+        obs_code(obs_code),
+        code(code),
+        hamming_distance(hamming_distance),
+        num_rot(num_rotations) {
+    p.resize(4);
+  }
 
-  //! Constructor for manually creating tags in a world map
-  TagDetection(int id);
+  unsigned id;
+  bool good = false;
 
-  //! Is the detection good enough?
-  bool good;
+  /**
+   * @brief obs_code Observed code
+   */
+  code_t obs_code;
 
-  //! Observed code
-  long long obsCode;
+  /**
+   * @brief code Matched code
+   */
+  code_t code;
 
-  //! Matched code
-  long long code;
+  /**
+   * @brief hamming_distance
+   */
+  unsigned hamming_distance;
 
-  //! What was the ID of the detected tag?
-  int id;
-
-  //! The hamming distance between the detected code and the true code
-  int hammingDistance;
-
-  //! How many 90 degree rotations were required to align the code (internal use
-  // only)
-  int rotation;
+  /**
+   * @brief num_rotations Number of 90 degree rotations clockwise required to
+   * align the code
+   */
+  unsigned num_rot;
 
   /////////////// Fields below are filled in by TagDetector ///////////////
-  //! Position (in fractional pixel coordinates) of the detection.
-  /*  The points travel counter-clockwise around the target, always
-   *  starting from the same corner of the tag.
+
+  /**
+   * @brief cxy Center of tag in pixel coordinates
    */
-  std::pair<float, float> p[4];
+  cv::Point2f cxy;
 
-  //! Center of tag in pixel coordinates.
-  std::pair<float, float> cxy;
-
-  //! Measured in pixels, how long was the observed perimeter.
-  /*! Observed perimeter excludes the inferred perimeter which is used to
-   * connect incomplete quads. */
-  float observedPerimeter;
-
-  //! A 3x3 homography that computes pixel coordinates from tag-relative
-  // coordinates.
-  /*  Both the input and output coordinates are 2D homogeneous vectors, with y =
-   * Hx.
-   *  'y' are pixel coordinates, 'x' are tag-relative coordinates. Tag
-   * coordinates span
-   *  from (-1,-1) to (1,1). The orientation of the homography reflects the
-   * orientation
-   *  of the target.
+  /**
+   * @brief p Position of the detection
+   * The points travel counter-clockwise around the target, alwasy starting from
+   * the same corner of the tag
    */
-  Eigen::Matrix3d homography;
+  std::vector<cv::Point2f> p;
 
-  //! Orientation in the xy plane
-  float getXYOrientation() const;
+  /**
+   * @brief obs_perimeter length of the observed perimeter
+   * Observed perimeter excludes the inferred perimeter which is used to connect
+   * incomplete quads
+   */
+  float obs_perimeter;
 
-  //! The homography is relative to image center, whose coordinates are below.
-  std::pair<float, float> hxy;
+  /**
+   * @brief H Homography
+   * y = Hx, y are pixel coordinates, x are tag-relative coordinates
+   * from (-1,-1) to (1, 1)
+   */
+  cv::Matx33f H;
 
-  //! Interpolate point given (x,y) is in tag coordinate space from (-1,-1) to
-  //(1,1).
-  std::pair<float, float> interpolate(float x, float y) const;
+  /**
+   * @brief interpolate
+   * @param p
+   * @return
+   */
+  cv::Point2f Project(const cv::Point2f& p) const;
 
-  //! Used to eliminate redundant tags
-  bool overlapsTooMuch(const TagDetection& other) const;
+  void RotatePoints(const std::vector<cv::Point2f>& quad_p);
 
-  //! Relative pose of tag with respect to the camera
-  /* Returns the relative location and orientation of the tag using a
-     4x4 homogeneous transformation matrix (see Hartley&Zisserman,
-     Multi-View Geometry, 2003). Requires knowledge of physical tag
-     size (side length of black square in meters) as well as camera
-     calibration (focal length and principal point); Result is in
-     camera frame (z forward, x right, y down)
-  */
-  Eigen::Matrix4d getRelativeTransform(double tag_size, double fx, double fy,
-                                       double px, double py) const;
+  /**
+   * @brief OverlapsTooMuch Determines whether two tags overlap too much
+   * @param other
+   * @return
+   */
+  bool OverlapsTooMuch(const TagDetection& other) const;
 
-  //! Recover rotation matrix and translation vector of April tag relative to
-  // camera.
-  // Result is in object frame (x forward, y left, z up)
-  void getRelativeTranslationRotation(double tag_size, double fx, double fy,
-                                      double px, double py,
-                                      Eigen::Vector3d& trans,
-                                      Eigen::Matrix3d& rot) const;
-
-  //! Draw the detection within the supplied image, including boarders and tag
-  // ID.
-  void draw(cv::Mat& image, int thickness = 1) const;
-
-  //! Better version
-  Eigen::Matrix4d getRelativeH(double tag_size, const cv::Matx33d& K,
-                               const cv::Mat_<double>& D) const;
-  void getRelativeQT(double tag_size, const cv::Matx33d& K,
-                     const cv::Mat_<double>& D, Eigen::Quaterniond& quat,
-                     Eigen::Vector3d& trans) const;
-  void getRelativeRT(double tag_size, const cv::Matx33d& K,
-                     const cv::Mat_<double>& D, cv::Mat& rvec,
-                     cv::Mat& tvec) const;
-
-  //! Scale this tag
-  // TODO: Also need to scale homography?
-  void scaleTag(float scale);
-
-  //! Refine this detection using cornerSubPix
-  void refineTag(const cv::Mat& image);
+  /**
+   * @brief ScaleTag
+   * @param scale
+   */
+  void ScaleTag(float scale);
 };
+
+float TagPerimeter(const std::vector<cv::Point2f>& p);
+float TagRadius(const std::vector<cv::Point2f>& p);
+
+cv::Matx33f CalcHomography(const std::vector<cv::Point2f>& p);
 
 }  // namespace AprilTags
 

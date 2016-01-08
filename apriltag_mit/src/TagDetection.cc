@@ -3,266 +3,86 @@
 #include "AprilTags/TagDetection.h"
 #include "AprilTags/MathUtil.h"
 
-#ifdef PLATFORM_APERIOS
-// missing/broken isnan
-namespace std {
-static bool isnan(float x) {
-  const int EXP = 0x7f800000;
-  const int FRAC = 0x007fffff;
-  const int y = *((int *)(&x));
-  return ((y & EXP) == EXP && (y & FRAC) != 0);
-}
-}
-#endif
-
 namespace AprilTags {
 
-TagDetection::TagDetection()
-    : good(false),
-      obsCode(),
-      code(),
-      id(),
-      hammingDistance(),
-      rotation(),
-      p(),
-      cxy(),
-      observedPerimeter(),
-      homography(),
-      hxy() {
-  homography.setZero();
+float TagPerimeter(const std::vector<cv::Point2f> &p) {
+  float perimeter = 0;
+  for (size_t i = 0; i < 3; ++i) {
+    perimeter += Distance2D(p[i], p[i + 1]);
+  }
+  return perimeter;
 }
 
-TagDetection::TagDetection(int _id)
-    : good(false),
-      obsCode(),
-      code(),
-      id(_id),
-      hammingDistance(),
-      rotation(),
-      p(),
-      cxy(),
-      observedPerimeter(),
-      homography(),
-      hxy() {
-  homography.setZero();
+float TagRadius(const std::vector<cv::Point2f> &p) {
+  return TagPerimeter(p) / 8.0f;
 }
 
-float TagDetection::getXYOrientation() const {
-  // Because the order of segments in a quad is arbitrary, so is the
-  // homography's rotation, so we can't determine orientation directly
-  // from the homography.  Instead, use the homography to find two
-  // bottom corners of a properly oriented tag in pixel coordinates,
-  // and then compute orientation from that.
-  std::pair<float, float> p0 = interpolate(-1, -1);  // lower left corner of tag
-  std::pair<float, float> p1 = interpolate(1, -1);  // lower right corner of tag
-  float orient = atan2(p1.second - p0.second, p1.first - p0.first);
-  return !std::isnan(float(orient)) ? orient : 0.;
+cv::Point2f TagDetection::Project(const cv::Point2f &p) const {
+  float z = H(2, 0) * p.x + H(2, 1) * p.y + H(2, 2);
+  // prevents returning a pair with -NaN, for which gcc 4.4 flubs isnan
+  if (z == 0.0) return {0, 0};
+
+  const float x = (H(0, 0) * p.x + H(0, 1) * p.y + H(0, 2)) / z;
+  const float y = (H(1, 0) * p.x + H(1, 1) * p.y + H(1, 2)) / z;
+  return cv::Point2f(x, y);
 }
 
-std::pair<float, float> TagDetection::interpolate(float x, float y) const {
-  float z = homography(2, 0) * x + homography(2, 1) * y + homography(2, 2);
-  if (z == 0)
-    return std::pair<float, float>(0, 0);  // prevents returning a pair with a
-                                           // -NaN, for which gcc 4.4 flubs
-                                           // isnan
-  float newx =
-      (homography(0, 0) * x + homography(0, 1) * y + homography(0, 2)) / z +
-      hxy.first;
-  float newy =
-      (homography(1, 0) * x + homography(1, 1) * y + homography(1, 2)) / z +
-      hxy.second;
-  return std::pair<float, float>(newx, newy);
+void TagDetection::RotatePoints(const std::vector<cv::Point2f> &quad_p) {
+  // Compute the homography (and rotate it appropriately)
+  // NOTE: since homography is not needed, we disable it here
+
+  //  H = CalcHomography(quad_p);
+
+  //  float c = std::cos(num_rot * Pi_2<float>());
+  //  float s = std::sin(num_rot * Pi_2<float>());
+  //  auto R = cv::Matx33f::zeros();
+  //  R(0, 0) = R(1, 1) = c;
+  //  R(0, 1) = -s;
+  //  R(1, 0) = s;
+  //  R(2, 2) = 1;
+  //  H = H * R;
+
+  // Rotate points in detection according to decoded orientation. Thus the
+  // order of the points in the detection object can be used to determine
+  // the orientation of the target.
+  // NOTE: since we already get the rotation from matching the code, we simply
+  // rotate points here, instead of comparing distance as Kaess did in his
+  // original code
+  for (size_t i = 0; i < 4; ++i) {
+    p[i] = quad_p[(i + num_rot) % 4];
+  }
 }
 
-bool TagDetection::overlapsTooMuch(const TagDetection &other) const {
+bool TagDetection::OverlapsTooMuch(const TagDetection &other) const {
   // Compute a sort of "radius" of the two targets. We'll do this by
-  // computing the average length of the edges of the quads (in
-  // pixels).
-  float radius =
-      (MathUtil::distance2D(p[0], p[1]) + MathUtil::distance2D(p[1], p[2]) +
-       MathUtil::distance2D(p[2], p[3]) + MathUtil::distance2D(p[3], p[0]) +
-       MathUtil::distance2D(other.p[0], other.p[1]) +
-       MathUtil::distance2D(other.p[1], other.p[2]) +
-       MathUtil::distance2D(other.p[2], other.p[3]) +
-       MathUtil::distance2D(other.p[3], other.p[0])) /
-      16.0f;
+  // computing the average length of the edges of the quads
+  const auto radius = (TagRadius(p) + TagRadius(other.p)) / 2;
 
   // distance (in pixels) between two tag centers
-  float dist = MathUtil::distance2D(cxy, other.cxy);
+  const auto dist = Distance2D(cxy, other.cxy);
 
-  // reject pairs where the distance between centroids is smaller than
-  // the "radius" of one of the tags.
+  // reject pairs where the distance between centroids is smaller than the
+  // "radius" of one of the tags.
   return (dist < radius);
 }
 
-Eigen::Matrix4d TagDetection::getRelativeTransform(double tag_size, double fx,
-                                                   double fy, double px,
-                                                   double py) const {
-  float s = tag_size / 2.;
-  /*
-  std::vector<cv::Point3f> objPts;
-  std::vector<cv::Point2f> imgPts;
-  objPts.push_back(cv::Point3f(-s, -s, 0));
-  objPts.push_back(cv::Point3f(s, -s, 0));
-  objPts.push_back(cv::Point3f(s, s, 0));
-  objPts.push_back(cv::Point3f(-s, s, 0));
-
-  std::pair<float, float> p1 = p[0];
-  std::pair<float, float> p2 = p[1];
-  std::pair<float, float> p3 = p[2];
-  std::pair<float, float> p4 = p[3];
-  imgPts.push_back(cv::Point2f(p1.first, p1.second));
-  imgPts.push_back(cv::Point2f(p2.first, p2.second));
-  imgPts.push_back(cv::Point2f(p3.first, p3.second));
-  imgPts.push_back(cv::Point2f(p4.first, p4.second));
-
-  std::for_each(begin(p), end(p), [&imgPts](const Pointf &corner) {
-    imgPts.emplace_back(corner.first, corner.second);
-  });
-  */
-
-  std::vector<cv::Point3f> objPts = {
-      {-s, -s, 0}, {s, -s, 0}, {s, s, 0}, {-s, s, 0}};
-  std::vector<cv::Point2f> imgPts = {{p[0].first, p[0].second},
-                                     {p[1].first, p[1].second},
-                                     {p[2].first, p[2].second},
-                                     {p[3].first, p[3].second}};
-
-  cv::Mat rvec, tvec;
-  cv::Matx33f cameraMatrix(fx, 0, px, 0, fy, py, 0, 0, 1);
-  cv::Vec4f distParam(0, 0, 0, 0);  // all 0?
-  cv::solvePnP(objPts, imgPts, cameraMatrix, distParam, rvec, tvec);
-  cv::Matx33d r;
-  cv::Rodrigues(rvec, r);
-  Eigen::Matrix3d wRo;
-  wRo << r(0, 0), r(0, 1), r(0, 2), r(1, 0), r(1, 1), r(1, 2), r(2, 0), r(2, 1),
-      r(2, 2);
-
-  Eigen::Matrix4d T;
-  T.topLeftCorner(3, 3) = wRo;
-  T.col(3).head(3) << tvec.at<double>(0), tvec.at<double>(1),
-      tvec.at<double>(2);
-  T.row(3) << 0, 0, 0, 1;
-
-  return T;
-}
-
-void TagDetection::getRelativeQT(double tag_size, const cv::Matx33d &K,
-                                 const cv::Mat_<double> &D,
-                                 Eigen::Quaterniond &quat,
-                                 Eigen::Vector3d &trans) const {
-  cv::Mat rvec, tvec;
-  getRelativeRT(tag_size, K, D, rvec, tvec);
-  trans = Eigen::Vector3d(tvec.at<double>(0), tvec.at<double>(1),
-                          tvec.at<double>(2));
-  Eigen::Vector3d r(rvec.at<double>(0), rvec.at<double>(1), rvec.at<double>(2));
-  // Copied from kr_math pose
-  const double rn = r.norm();
-  Eigen::Vector3d rnorm(0.0, 0.0, 0.0);
-  if (rn > std::numeric_limits<double>::epsilon() * 10) {
-    rnorm = r / rn;
-  }
-  quat = Eigen::AngleAxis<double>(rn, rnorm);
-}
-
-void TagDetection::getRelativeRT(double tag_size, const cv::Matx33d &K,
-                                 const cv::Mat_<double> &D, cv::Mat &rvec,
-                                 cv::Mat &tvec) const {
-  float s = tag_size / 2.;
-  // tag corners in tag frame, which we call object
-  std::vector<cv::Point3f> p_obj = {
-      {-s, -s, 0}, {s, -s, 0}, {s, s, 0}, {-s, s, 0}};
-  // pixels coordinates in image frame
-  std::vector<cv::Point2f> p_img = {{p[0].first, p[0].second},
-                                    {p[1].first, p[1].second},
-                                    {p[2].first, p[2].second},
-                                    {p[3].first, p[3].second}};
-  cv::solvePnP(p_obj, p_img, K, D, rvec, tvec);
-}
-
-Eigen::Matrix4d TagDetection::getRelativeH(double tag_size,
-                                           const cv::Matx33d &K,
-                                           const cv::Mat_<double> &D) const {
-  cv::Mat rvec, tvec;
-  getRelativeRT(tag_size, K, D, rvec, tvec);
-  cv::Matx33d r;  // This R is cRo
-  cv::Rodrigues(rvec, r);
-  Eigen::Matrix3d cRo;
-  cRo << r(0, 0), r(0, 1), r(0, 2), r(1, 0), r(1, 1), r(1, 2), r(2, 0), r(2, 1),
-      r(2, 2);
-  Eigen::Matrix4d cTo;
-  cTo.topLeftCorner(3, 3) = cRo;
-  cTo.col(3).head(3) << tvec.at<double>(0), tvec.at<double>(1),
-      tvec.at<double>(2);
-  cTo.row(3) << 0, 0, 0, 1;
-  return cTo;
-}
-
-void TagDetection::getRelativeTranslationRotation(double tag_size, double fx,
-                                                  double fy, double px,
-                                                  double py,
-                                                  Eigen::Vector3d &trans,
-                                                  Eigen::Matrix3d &rot) const {
-  Eigen::Matrix4d T = getRelativeTransform(tag_size, fx, fy, px, py);
-
-  // converting from camera frame (z forward, x right, y down) to
-  // object frame (x forward, y left, z up)
-  Eigen::Matrix4d M;
-  M << 0, 0, 1, 0, -1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 0, 1;
-  Eigen::Matrix4d MT = M * T;
-  // translation vector from camera to the April tag
-  trans = MT.col(3).head(3);
-  // orientation of April tag with respect to camera: the camera
-  // convention makes more sense here, because yaw,pitch,roll then
-  // naturally agree with the orientation of the object
-  rot = T.block(0, 0, 3, 3);
-}
-
-// draw one April tag detection on actual image
-void TagDetection::draw(cv::Mat &image, int thickness) const {
-  // plot outline
-  cv::line(image, cv::Point2f(p[0].first, p[0].second),
-           cv::Point2f(p[1].first, p[1].second), CV_RGB(255, 0, 0), thickness);
-  cv::line(image, cv::Point2f(p[0].first, p[0].second),
-           cv::Point2f(p[3].first, p[3].second), CV_RGB(0, 255, 0), thickness);
-  cv::line(image, cv::Point2f(p[1].first, p[1].second),
-           cv::Point2f(p[2].first, p[2].second), CV_RGB(0, 0, 255), thickness);
-  cv::line(image, cv::Point2f(p[2].first, p[2].second),
-           cv::Point2f(p[3].first, p[3].second), CV_RGB(0, 0, 255), thickness);
-
-  // print ID
-  cv::putText(image, std::to_string(id),
-              cv::Point2f(cxy.first - 5, cxy.second + 5),
-              cv::FONT_HERSHEY_SIMPLEX, 1, CV_RGB(255, 0, 255), 2);
-}
-
-void TagDetection::scaleTag(float scale) {
-  cxy.first *= scale;
-  cxy.second *= scale;
-  for (auto &c : p) {
-    c.first *= scale;
-    c.second *= scale;
+void TagDetection::ScaleTag(float scale) {
+  cxy *= scale;
+  for (cv::Point2f &c : p) {
+    c *= scale;
   }
 }
 
-void TagDetection::refineTag(const cv::Mat &image) {
-  std::vector<cv::Point2f> corners;
-  for (const std::pair<float, float> &c : p) {
-    corners.push_back(cv::Point2f(c.first, c.second));
+cv::Matx33f CalcHomography(const std::vector<cv::Point2f> &p) {
+  std::vector<cv::Point2f> obj_pts = {{-1, -1}, {1, -1}, {1, 1}, {-1, 1}};
+  const auto Hd = cv::findHomography(obj_pts, p);
+  cv::Matx33f Hf;
+  for (size_t c = 0; c < 3; ++c) {
+    for (size_t r = 0; r < 3; ++r) {
+      Hf(r, c) = Hd.at<double>(r, c);
+    }
   }
-  const auto criteria =
-      cv::TermCriteria(CV_TERMCRIT_EPS + CV_TERMCRIT_ITER, 20, 0.001);
-  cv::cornerSubPix(image, corners, cv::Size(3, 3), cv::Size(-1, -1), criteria);
-
-  decltype(cxy.first) sum_x{0.0}, sum_y{0.0};
-  for (size_t i = 0; i < 4; ++i) {
-    p[i].first = corners[i].x;
-    p[i].second = corners[i].y;
-    sum_x += p[i].first;
-    sum_y += p[i].second;
-  }
-  cxy.first = sum_x / 4;
-  cxy.second = sum_y / 4;
+  return Hf;
 }
 
-}  // namespace
+}  // namespace AprilTags

@@ -1,108 +1,91 @@
 #ifndef APRILTAGS_TAGFAMILY_H_
 #define APRILTAGS_TAGFAMILY_H_
 
-#include <climits>
 #include <cmath>
-#include <stdio.h>
 #include <vector>
-#include <map>
 
+#include "AprilTags/TagCodes.h"
 #include "AprilTags/TagDetection.h"
-using namespace std;
+#include "AprilTags/Quad.h"
+#include "AprilTags/GrayModel.h"
+#include "AprilTags/FloatImage.h"
 
 namespace AprilTags {
-
-class TagCodes {
- public:
-  int bits;
-  int minHammingDistance;
-  std::vector<unsigned long long> codes;
-
- public:
-  TagCodes(int bits, int minHammingDistance, const unsigned long long* codesA,
-           int num)
-      : bits(bits),
-        minHammingDistance(minHammingDistance),
-        codes(codesA, codesA + num)  // created vector for all entries of codesA
-  {}
-};
 
 //! Generic class for all tag encoding families
 class TagFamily {
  public:
-  //! The codes array is not copied internally and so must not be modified
-  // externally.
-  TagFamily(const TagCodes& tagCodes);
+  explicit TagFamily(const TagCodes& tag_codes);
 
-  void setErrorRecoveryBits(int b);
+  unsigned payload_bits() const;
+  unsigned dimension_bits() const;
+  unsigned min_hamming() const;
+  const std::vector<code_t>& codes() const;
+  size_t num_codes() const;
 
-  void setErrorRecoveryFraction(float v);
+  void set_error_recovery_bits(unsigned error_recovery_bits);
+  void set_error_recovery_fraction(float v);
 
-  /* if the bits in w were arranged in a d*d grid and that grid was
-   * rotated, what would the new bits in w be?
-   * The bits are organized like this (for d = 3):
-   *
-   *  8 7 6       2 5 8      0 1 2
-   *  5 4 3  ==>  1 4 7 ==>  3 4 5    (rotate90 applied twice)
-   *  2 1 0       0 3 6      6 7 8
+  code_t Code(unsigned id) const;
+
+  /**
+   * @brief decode Recover id from observed code
+   * @param det
+   * @param obs_code
    */
-  static unsigned long long rotate90(unsigned long long w, int d);
+  TagDetection Decode(code_t obs_code) const;
 
-  //! Computes the hamming distance between two unsigned long longs.
-  static int hammingDistance(unsigned long long a, unsigned long long b);
-
-  //! How many bits are set in the unsigned long long?
-  static unsigned char popCountReal(unsigned long long w);
-
-  static int popCount(unsigned long long w);
-
-  //! Given an observed tag with code 'rCode', try to recover the id.
-  /*  The corresponding fields of TagDetection will be filled in. */
-  void decode(TagDetection& det, unsigned long long rCode) const;
-
-  //! Prints the hamming distances of the tag codes.
-  void printHammingDistances() const;
-
-  //! Numer of pixels wide of the inner black border.
-  //  int blackBorder;
-
-  //! Number of bits in the tag. Must be n^2.
-  int bits;
-
-  //! Dimension of tag. e.g. for 16 bits, dimension=4. Must be sqrt(bits).
-  int dimension;
-
-  //! Minimum hamming distance between any two codes.
-  /*  Accounting for rotational ambiguity? The code can recover
-   *  (minHammingDistance-1)/2 bit errors.
+  /**
+   * @brief DecodeQuade
+   * @param quad
+   * @return
    */
-  int minimumHammingDistance;
+  TagDetection DecodeQuad(const Quad& quad, const FloatImage& image,
+                          unsigned black_border) const;
 
-  /* The error recovery value determines our position on the ROC
-   * curve. We will report codes that are within errorRecoveryBits
-   * of a valid code. Small values mean greater rejection of bogus
-   * tags (but false negatives). Large values mean aggressive
-   * reporting of bad tags (but with a corresponding increase in
-   * false positives).
+  bool IsGood(unsigned id, unsigned hamming_distance) const;
+
+  /**
+   * @brief MakeGrayModel
+   * @param quad
+   * @param image
+   * @return
    */
-  int errorRecoveryBits;
+  GrayModel MakeGrayModel(const Quad& quad, const FloatImage& image,
+                          unsigned black_border) const;
 
-  //! The array of the codes. The id for a code is its index.
-  std::vector<unsigned long long> codes;
+ private:
+  /**
+   * @brief tag_codes_ All tag codes in this tag family
+   */
+  const TagCodes& tag_codes_;
 
-  static const int popCountTableShift = 12;
-  static const unsigned int popCountTableSize = 1 << popCountTableShift;
-  static unsigned char popCountTable[popCountTableSize];
+  const size_t num_codes_;
 
-  //! Initializes the static popCountTable
-  static class TableInitializer {
-   public:
-    TableInitializer() {
-      for (unsigned int i = 0; i < TagFamily::popCountTableSize; i++)
-        TagFamily::popCountTable[i] = TagFamily::popCountReal(i);
-    }
-  } initializer;
+  /**
+   * @brief error_recovery_bits_
+   * The error recovery value determines our position on the ROC curve. We will
+   * report codes that are within error_recovery_bits_ of a valid code. Small
+   * values mean greater rejection of bogus tags (but false negatives). Large
+   * values mean aggressive reporting of bad tags (but with a corresponind
+   * increase in false positives).
+   */
+  unsigned error_recovery_bits_;
 };
+
+/* if the bits in w were arranged in a d*d grid and that grid was
+ * rotated, what would the new bits in w be?
+ * The bits are organized like this (for d = 3):
+ *
+ *  8 7 6       2 5 8      0 1 2
+ *  5 4 3  ==>  1 4 7 ==>  3 4 5    (rotate90 applied twice)
+ *  2 1 0       0 3 6      6 7 8
+ */
+code_t Rotate90DegCwise(code_t w, int d);
+
+unsigned HammingDistance(code_t a, code_t b);
+
+unsigned PopCount(code_t w);
 
 }  // namespace AprilTags
 

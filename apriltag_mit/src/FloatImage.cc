@@ -1,6 +1,4 @@
 #include "AprilTags/FloatImage.h"
-#include "AprilTags/Gaussian.h"
-#include <iostream>
 #include <opencv2/imgproc/imgproc.hpp>
 
 namespace AprilTags {
@@ -18,8 +16,16 @@ FloatImage &FloatImage::operator=(const FloatImage &other) {
   return *this;
 }
 
-void FloatImage::filterFactoredCentered(int ksize, float sigma) {
+void FloatImage::FilterGaussian(int ksize, float sigma) {
   cv::GaussianBlur(image_, image_, cv::Size(ksize, ksize), sigma);
+}
+
+bool IsInsideImage(int x, int y, int w, int h) {
+  return (x >= 0 && x < w && y >= 0 && y < h);
+}
+
+bool IsInsideImage(int x, int y, const FloatImage &image) {
+  return IsInsideImage(x, y, image.width(), image.height());
 }
 
 }  // namespace AprilTags

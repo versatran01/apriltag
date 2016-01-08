@@ -2,61 +2,70 @@
 #define APRILTAGS_EDGE_H_
 
 #include <vector>
+#include <unordered_set>
 
 #include "AprilTags/FloatImage.h"
+#include "AprilTags/DisjointSets.h"
 
 namespace AprilTags {
-
-class FloatImage;
-class UnionFindSimple;
-
-using std::min;
-using std::max;
 
 //! Represents an edge between adjacent pixels in the image.
 /*! The edge is encoded by the indices of the two pixels. Edge cost
  *  is proportional to the difference in local orientations.
  */
-class Edge {
- public:
-  static float const
-      minMag;  //!< minimum intensity gradient for an edge to be recognized
-  static float const maxEdgeCost;  //!< 30 degrees = maximum acceptable
-                                   // difference in local orientations
-  static int const WEIGHT_SCALE;   // was 10000
-  static float const thetaThresh;  //!< theta threshold for merging edges
-  static float const magThresh;    //!< magnitude threshold for merging edges
+struct Edge {
+  // minimum intensity gradient for an edge to be recognized
+  // float const Edge::minMag = 0.004f;
+  static constexpr float kMinMag = 0.06f;
 
-  int pixelIdxA;
-  int pixelIdxB;
-  int cost;
+  // maximum acceptable difference in local orientation
+  static constexpr float kMaxThetaDiff = 25.f * M_PI / 180.f;
+  // used to convert cost to int
+  static constexpr int kWeightScale = 100;
+  // theta threshold for merging edges
+  static constexpr float kThetaThresh = 100;
+  // magnitude threshold for merging edges
+  //  static constexpr float kMagThresh = 1200;
+  static constexpr float kMagThresh = 150;
 
-  //! Constructor
-  Edge() : pixelIdxA(), pixelIdxB(), cost() {}
+  int pid0;
+  int pid1;
+  int cost = -1;
+
+  Edge() = default;
+  Edge(int pid0, int pid1, int cost) : pid0(pid0), pid1(pid1), cost(cost) {}
 
   //! Compare edges based on cost
-  inline bool operator<(const Edge &other) const { return (cost < other.cost); }
+  inline bool operator<(const Edge &other) const { return cost < other.cost; }
 
-  //! Cost of an edge between two adjacent pixels; -1 if no edge here
-  /*! An edge exists between adjacent pixels if the magnitude of the
-    intensity gradient at both pixels is above threshold.  The edge
-    cost is proportional to the difference in the local orientation at
-    the two pixels.  Lower cost is better.  A cost of -1 means there
-    is no edge here (intensity gradien fell below threshold).
+  /**
+   * @brief EdgeCost Cost of an edge between two adjacent pixels; -1 no edge
+   * An edge exists between adjacent pixels if the magnitude of the intensity
+   * gradient at both pixels is above threshold. The edge cost is propportional
+   * to
+   * the difference in the local orientation at the two pixels. Lower cost is
+   * better. A cost of -1 means there is no edge here
+   * @param theta0
+   * @param theta1
+   * @param mag1
+   * @return
    */
-  static int edgeCost(float theta0, float theta1, float mag1);
-
-  //! Calculates and inserts up to four edges into 'edges', a vector of Edges.
-  static void calcEdges(float theta0, int x, int y, const FloatImage &theta,
-                        const FloatImage &mag, std::vector<Edge> &edges,
-                        size_t &nEdges);
+  static int EdgeCost(float theta0, float theta1, float mag1);
 
   //! Process edges in order of increasing cost, merging clusters if we can do
   // so without exceeding the thetaThresh.
-  static void mergeEdges(std::vector<Edge> &edges, UnionFindSimple &uf,
-                         float tmin[], float tmax[], float mmin[],
-                         float mmax[]);
 };
+
+struct Stats {
+  float mmin, mmax, tmin, tmax;
+};
+
+std::vector<Edge> CalcLocalEdges(int x, int y, const FloatImage &im_mag,
+                                 const FloatImage &im_theta);
+
+void MergeEdges(const std::vector<Edge> &edges, DisjointSets &dsets,
+                std::vector<Stats> &stats, float mag_thresh,
+                float theta_thresh);
 
 }  // namespace AprilTags
 

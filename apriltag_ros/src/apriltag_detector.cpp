@@ -75,13 +75,14 @@ ApriltagDetectorMit::ApriltagDetectorMit(const TagFamily& tag_family)
     : ApriltagDetector(DetectorType::Mit, tag_family) {
   switch (tag_family) {
     case TagFamily::tf36h11:
-      tag_detector_ = boost::make_shared<mit::TagDetector>(mit::tagCodes36h11);
+      tag_detector_ =
+          boost::make_shared<mit::TagDetector>(mit::tag_codes_36h11);
       break;
     case TagFamily::tf25h9:
-      tag_detector_ = boost::make_shared<mit::TagDetector>(mit::tagCodes25h9);
+      tag_detector_ = boost::make_shared<mit::TagDetector>(mit::tag_codes_25h9);
       break;
     case TagFamily::tf16h5:
-      tag_detector_ = boost::make_shared<mit::TagDetector>(mit::tagCodes16h5);
+      tag_detector_ = boost::make_shared<mit::TagDetector>(mit::tag_codes_16h5);
       break;
     default:
       throw std::invalid_argument("Invalid tag family");
@@ -89,7 +90,7 @@ ApriltagDetectorMit::ApriltagDetectorMit(const TagFamily& tag_family)
 }
 
 void ApriltagDetectorMit::SetBlackBorder(int black_border) {
-  tag_detector_->setBlackBorder(black_border);
+  tag_detector_->set_black_border(black_border);
 }
 
 ApriltagVec ApriltagDetectorMit::DetectImpl(const cv::Mat& image) {
@@ -103,12 +104,12 @@ ApriltagVec ApriltagDetectorMit::DetectImpl(const cv::Mat& image) {
   }
 
   // Detection
-  auto detections = tag_detector_->extractTags(im_scaled);
+  auto detections = tag_detector_->ExtractTags(im_scaled);
 
   // Handle decimation
   if (decimate_ > 1) {
     for (mit::TagDetection& td : detections) {
-      td.scaleTag(decimate_);
+      td.ScaleTag(decimate_);
     }
   }
 
@@ -122,12 +123,12 @@ ApriltagVec ApriltagDetectorMit::DetectImpl(const cv::Mat& image) {
     apriltag.bits = tag_bits();
     apriltag.border = black_border();
     apriltag.family = tag_family();
-    apriltag.hamming = td.hammingDistance;
-    apriltag.center.x = td.cxy.first;
-    apriltag.center.y = td.cxy.second;
+    apriltag.hamming = td.hamming_distance;
+    apriltag.center.x = td.cxy.x;
+    apriltag.center.y = td.cxy.y;
     for (size_t i = 0; i < 4; ++i) {
-      apriltag.corners[i].x = td.p[i].first;
-      apriltag.corners[i].y = td.p[i].second;
+      apriltag.corners[i].x = td.p[i].x;
+      apriltag.corners[i].y = td.p[i].y;
     }
     apriltags.push_back(apriltag);
   }

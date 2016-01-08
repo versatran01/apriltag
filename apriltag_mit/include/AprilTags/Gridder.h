@@ -36,54 +36,38 @@ class Gridder {
     }
   };
 
-  //! Initializes Gridder constructor
-  void gridderInit(float x0Arg, float y0Arg, float x1Arg, float y1Arg,
-                   float ppCell) {
-    width = (int)((x1Arg - x0Arg) / ppCell + 1);
-    height = (int)((y1Arg - y0Arg) / ppCell + 1);
-
-    x1 = x0Arg + ppCell * width;
-    y1 = y0Arg + ppCell * height;
-    cells = std::vector<std::vector<Cell*> >(
-        height, std::vector<Cell*>(width, (Cell*)nullptr));
-  }
-
-  float x0, y0, x1, y1;
-  int width, height;
-  float pixelsPerCell;  // pixels per cell
-  std::vector<std::vector<Cell*> > cells;
+  float pixels_per_cell_;
+  int width_, height_;
+  std::vector<std::vector<Cell*>> cells_;
 
  public:
-  Gridder(float x0Arg, float y0Arg, float x1Arg, float y1Arg, float ppCell)
-      : x0(x0Arg),
-        y0(y0Arg),
-        x1(),
-        y1(),
-        width(),
-        height(),
-        pixelsPerCell(ppCell),
-        cells() {
-    gridderInit(x0Arg, y0Arg, x1Arg, y1Arg, ppCell);
+  Gridder(float pixel_width, float pixel_height, float pixels_per_cell)
+      : pixels_per_cell_(pixels_per_cell) {
+    width_ = pixel_width / pixels_per_cell + 1;
+    height_ = pixel_height / pixels_per_cell + 1;
+
+    cells_ = std::vector<std::vector<Cell*>>(
+        height_, std::vector<Cell*>(width_, (Cell*)nullptr));
   }
 
   // Destructor
   ~Gridder() {
-    for (unsigned int i = 0; i < cells.size(); i++) {
-      for (unsigned int j = 0; j < cells[i].size(); j++) delete cells[i][j];
+    for (unsigned int i = 0; i < cells_.size(); i++) {
+      for (unsigned int j = 0; j < cells_[i].size(); j++) {
+        delete cells_[i][j];
+      }
     }
   }
 
-  void add(float x, float y, T* object) {
-    int ix = (int)((x - x0) / pixelsPerCell);
-    int iy = (int)((y - y0) / pixelsPerCell);
+  void Add(float x, float y, T* object) {
+    int xc = x / pixels_per_cell_;
+    int yc = y / pixels_per_cell_;
 
-    if (ix >= 0 && iy >= 0 && ix < width && iy < height) {
+    if (xc >= 0 && yc >= 0 && xc < width_ && yc < height_) {
       Cell* c = new Cell;
       c->object = object;
-      c->next = cells[iy][ix];
-      cells[iy][ix] = c;
-      // cout << "Gridder placed seg " << o->getId() << " at (" << ix << "," <<
-      // iy << ")" << endl;
+      c->next = cells_[yc][xc];
+      cells_[yc][xc] = c;
     }
   }
 
@@ -94,28 +78,58 @@ class Gridder {
   class Iterator {
    public:
     Iterator(Gridder* grid, float x, float y, float range)
-        : outer(grid), ix0(), ix1(), iy0(), iy1(), ix(), iy(), c(NULL) {
-      iteratorInit(x, y, range);
+        : outer(grid), xc0(), xc1(), yc0(), yc1(), xc(), yc(), c(nullptr) {
+      Init(x, y, range);
+    }
+
+    //! Initializes Iterator constructor
+    void Init(float x, float y, float range) {
+      const auto ppc = outer->pixels_per_cell_;
+      const auto w = outer->width_;
+      const auto h = outer->height_;
+
+      xc0 = (x - range) / ppc;
+      yc0 = (y - range) / ppc;
+
+      xc1 = (x + range) / ppc;
+      yc1 = (y + range) / ppc;
+
+      xc0 = std::max(0, xc0);
+      xc0 = std::min(w - 1, xc0);
+
+      xc1 = std::max(0, xc1);
+      xc1 = std::min(w - 1, xc1);
+
+      yc0 = std::max(0, yc0);
+      yc0 = std::min(h - 1, yc0);
+
+      yc1 = std::max(0, yc1);
+      yc1 = std::min(h - 1, yc1);
+
+      xc = xc0;
+      yc = yc0;
+
+      c = outer->cells_[yc][xc];
     }
 
     Iterator(const Iterator& it)
         : outer(it.outer),
-          ix0(it.ix0),
-          ix1(it.ix1),
-          iy0(it.iy0),
-          iy1(it.iy1),
-          ix(it.ix),
-          iy(it.iy),
+          xc0(it.xc0),
+          xc1(it.xc1),
+          yc0(it.yc0),
+          yc1(it.yc1),
+          xc(it.xc),
+          yc(it.yc),
           c(it.c) {}
 
     Iterator& operator=(const Iterator& it) {
       outer = it.outer;
-      ix0 = it.ix0;
-      ix1 = it.ix1;
-      iy0 = it.iy0;
-      iy1 = it.iy1;
-      ix = it.ix;
-      iy = it.iy;
+      xc0 = it.xc0;
+      xc1 = it.xc1;
+      yc0 = it.yc0;
+      yc1 = it.yc1;
+      xc = it.xc;
+      yc = it.yc;
       c = it.c;
     }
 
@@ -135,50 +149,24 @@ class Gridder {
       if (c != nullptr) c = c->next;
       if (c != nullptr) return;
 
-      ix++;
+      xc++;
       while (true) {
-        if (ix > ix1) {
-          iy++;
-          ix = ix0;
+        if (xc > xc1) {
+          yc++;
+          xc = xc0;
         }
-        if (iy > iy1) break;
+        if (yc > yc1) break;
 
-        c = outer->cells[iy][ix];
+        c = outer->cells_[yc][xc];
 
         if (c != nullptr) break;
-        ix++;
+        xc++;
       }
     }
 
-    //! Initializes Iterator constructor
-    void iteratorInit(float x, float y, float range) {
-      ix0 = (int)((x - range - outer->x0) / outer->pixelsPerCell);
-      iy0 = (int)((y - range - outer->y0) / outer->pixelsPerCell);
-
-      ix1 = (int)((x + range - outer->x0) / outer->pixelsPerCell);
-      iy1 = (int)((y + range - outer->y0) / outer->pixelsPerCell);
-
-      ix0 = std::max(0, ix0);
-      ix0 = std::min(outer->width - 1, ix0);
-
-      ix1 = std::max(0, ix1);
-      ix1 = std::min(outer->width - 1, ix1);
-
-      iy0 = std::max(0, iy0);
-      iy0 = std::min(outer->height - 1, iy0);
-
-      iy1 = std::max(0, iy1);
-      iy1 = std::min(outer->height - 1, iy1);
-
-      ix = ix0;
-      iy = iy0;
-
-      c = outer->cells[iy][ix];
-    }
-
     Gridder* outer;
-    int ix0, ix1, iy0, iy1;
-    int ix, iy;
+    int xc0, xc1, yc0, yc1;
+    int xc, yc;
     Cell* c;
   };
 
