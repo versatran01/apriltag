@@ -20,10 +20,9 @@ ApriltagDetectorNode::ApriltagDetectorNode(const ros::NodeHandle& pnh)
   // Setup connect callback
   auto connect_cb = boost::bind(&ApriltagDetectorNode::ConnectCb, this);
   boost::lock_guard<boost::mutex> lock(connect_mutex_);
-  pub_apriltags_ = pnh_.advertise<ApriltagArrayStamped>("apriltag_array", 1,
+  pub_apriltags_ = pnh_.advertise<ApriltagArrayStamped>("apriltags", 1,
                                                         connect_cb, connect_cb);
-  pub_detection_ =
-      it_.advertise("apriltag_detection", 1, connect_cb, connect_cb);
+  pub_detection_ = it_.advertise("image_detection", 1, connect_cb, connect_cb);
 }
 
 void ApriltagDetectorNode::ImageCb(const ImageConstPtr& image_msg) {
