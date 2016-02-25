@@ -199,7 +199,7 @@ ApriltagVec ApriltagDetectorUmich::DetectImpl(const cv::Mat& image) {
 }
 
 void DrawApriltag(cv::Mat& image, const apriltag_msgs::Apriltag& apriltag,
-                  int thickness) {
+                  int thickness, bool draw_corners) {
   const auto& p = apriltag.corners;
   cv::line(image, cv::Point2i(p[0].x, p[0].y), cv::Point2i(p[1].x, p[1].y),
            CV_RGB(255, 0, 0), thickness);
@@ -209,6 +209,14 @@ void DrawApriltag(cv::Mat& image, const apriltag_msgs::Apriltag& apriltag,
            CV_RGB(0, 0, 255), thickness);
   cv::line(image, cv::Point2i(p[2].x, p[2].y), cv::Point2i(p[1].x, p[1].y),
            CV_RGB(0, 0, 255), thickness);
+
+  if (draw_corners) {
+    int r = 2;
+    cv::circle(image, cv::Point2i(p[0].x, p[0].y), r, CV_RGB(255, 0, 0), -1);
+    cv::circle(image, cv::Point2i(p[1].x, p[1].y), r, CV_RGB(0, 255, 0), -1);
+    cv::circle(image, cv::Point2i(p[2].x, p[2].y), r, CV_RGB(0, 0, 255), -1);
+    cv::circle(image, cv::Point2i(p[3].x, p[3].y), r, CV_RGB(255, 0, 255), -1);
+  }
 
   cv::putText(image, std::to_string(apriltag.id),
               cv::Point2f(apriltag.center.x - 5, apriltag.center.y + 5),

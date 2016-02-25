@@ -99,11 +99,9 @@ class ApriltagDetectorUmich : public ApriltagDetector {
 
 /**
  * @brief DrawApriltag
- * @param image
- * @param apriltag
  */
 void DrawApriltag(cv::Mat& image, const apriltag_msgs::Apriltag& apriltag,
-                  int thickness = 1);
+                  int thickness = 1, bool draw_corners = true);
 
 /**
  * @brief DrawApriltags
