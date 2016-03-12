@@ -1,6 +1,6 @@
 #include "AprilTags/DisjointSets.h"
 #include <iostream>
-
+  
 namespace AprilTags {
 
 DisjointSets::DisjointSets(int n) : parent_(n), size_(n, 1) {
