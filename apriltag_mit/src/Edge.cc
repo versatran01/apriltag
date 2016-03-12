@@ -63,6 +63,8 @@ void MergeEdges(const std::vector<Edge> &edges, DisjointSets &dsets,
     const float mcost1 = s1.mmax - s1.mmin;
     const float tcost0 = s0.tmax - s0.tmin;
     const float tcost1 = s1.tmax - s1.tmin;
+
+    // TODO: This seems wrong
     const float tmean0 = (s0.tmin + s0.tmax) / 2;
     const float tmean1 = (s1.tmin + s1.tmax) / 2;
 

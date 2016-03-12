@@ -77,5 +77,5 @@ def mod2pi(a, b=0):
         return r
 
 
-def angle_dist_abs(theta):
-    return np.pi - abs(abs(theta) - np.pi)
+def angle_dist(a, b=0):
+    return np.pi - abs(abs(a - b) - np.pi)

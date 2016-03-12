@@ -1,6 +1,6 @@
 import unittest2 as unittest
 import numpy as np
-from apriltag_py.utils import mod2pi
+from apriltag_py.utils import mod2pi, angle_dist
 import numpy.testing as nt
 
 
@@ -22,6 +22,7 @@ class TestUtils(unittest.TestCase):
         nt.assert_almost_equal(mod2pi(self.pi2, self.pi4), 0)
         nt.assert_almost_equal(mod2pi(self.pi4, 0), 0)
         nt.assert_almost_equal(mod2pi(0, self.pi4), 0)
+        nt.assert_almost_equal(mod2pi(self.pi, -self.pi), 0)
 
         nt.assert_almost_equal(mod2pi(-self.pi_3), -self.pi_3)
         nt.assert_almost_equal(mod2pi(self.pi_3, self.pi2 - self.pi_3),
@@ -29,3 +30,15 @@ class TestUtils(unittest.TestCase):
 
         nt.assert_almost_equal(mod2pi(self.pi_3, self.pi_6), self.pi_6)
         nt.assert_almost_equal(mod2pi(self.pi_6, self.pi_3), -self.pi_6)
+
+    def test_angle_dist(self):
+        nt.assert_almost_equal(angle_dist(0, 0), 0)
+        nt.assert_almost_equal(angle_dist(self.pi2, 0), 0)
+        nt.assert_almost_equal(angle_dist(0, self.pi2), 0)
+
+        nt.assert_almost_equal(angle_dist(-self.pi_3), self.pi_3)
+        nt.assert_almost_equal(angle_dist(self.pi_3, self.pi2 - self.pi_3),
+                               self.pi_3 * 2)
+
+        nt.assert_almost_equal(angle_dist(self.pi_3, self.pi_6), self.pi_6)
+        nt.assert_almost_equal(angle_dist(self.pi_6, self.pi_3), self.pi_6)

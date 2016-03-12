@@ -4,15 +4,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 from timeit import default_timer as timer
 from collections import OrderedDict
-from apriltag_py.utils import DisjointSets, mod2pi, imshow
+from apriltag_py.utils import DisjointSets, mod2pi, angle_dist, imshow
 
 # %%
-fsize2 = (16, 10)
+fsize2 = (14, 10)
 times = OrderedDict()
 
 # %%
 cwd = os.getcwd()
-image_file = os.path.join(cwd, 'frame0003.png')
+image_file = os.path.join(cwd, 'frame0001.png')
 color = cv2.imread(image_file, cv2.IMREAD_COLOR)
 gray = cv2.cvtColor(color, cv2.COLOR_BGR2GRAY)
 imshow(color, title='raw')
@@ -48,6 +48,7 @@ times['3_polar'] = timer() - start
 imshow(im_mag, im_ang, figsize=fsize2, title=('mag', 'ang'))
 
 # %%
+mag_max = np.max(im_mag)
 mag_mean = np.mean(im_mag)
 mag_median = np.median(im_mag)
 mag_meme = (mag_mean + mag_median) / 2.0
@@ -110,8 +111,8 @@ times['4_calc_edges'] = t
 disp_edges = im_mag.copy()
 de = disp_edges.ravel()
 for e in edges:
-    de[e[0]] = 255
-    de[e[1]] = 255
+    de[e[0]] = mag_max * 2
+    de[e[1]] = mag_max * 2
 
 imshow(disp_edges, title='edges')
 
@@ -162,8 +163,8 @@ for e in edges:
         continue
 
     # get delta in angle
-    #d_ang0 = abs(mod2pi(stat0[3] - stat0[2]))
-    #d_ang1 = abs(mod2pi(stat1[3] - stat1[2]))
+    d_ang0 = angle_dist(stat0[3] - stat0[2])
+    d_ang1 = angle_dist(stat1[3] - stat1[2])
 
     # get min and max of merged ang
 
