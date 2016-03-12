@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from timeit import default_timer as timer
 from collections import OrderedDict
+from numba import jit
     
 # %%
 def imshow(*args, **kwargs):
@@ -22,6 +23,21 @@ def imshow(*args, **kwargs):
     for ax, t in zip(axes, title):
         ax.set_title(t)
     return np.ravel(axes)
+    
+@jit
+def mod2pi(theta):
+  twopi = np.pi * 2.0
+  twopi_inv = 1.0 / twopi
+  
+  abs_theta = abs(theta)
+  q = abs_theta * twopi_inv + 0.5
+  qi = int(q)
+  
+  r = abs_theta - qi * twopi;
+  if theta < 0:
+      return -r
+  else:
+      return r
 
 # %%
 fsize2 = (16, 10)
@@ -29,7 +45,7 @@ times = OrderedDict()
 
 # %%
 cwd = os.getcwd()
-image_file = os.path.join(cwd, 'frame0001.jpg')
+image_file = os.path.join(cwd, 'frame0001.png')
 color = cv2.imread(image_file, cv2.IMREAD_COLOR)
 gray = cv2.cvtColor(color, cv2.COLOR_BGR2GRAY)
 imshow(color, title='raw')
@@ -75,15 +91,63 @@ ax.axvline(mag_median, color='r')
 plt.show()
 
 # %%
+MIN_MAG = mag_mean
 num_pixels = np.size(im_mag)
-mask = im_mag > mag_mean
+mask = im_mag > MIN_MAG
+b = 5
+
+mask[:, :b] = 0
+mask[:, -b:] = 0
+mask[:b] = 0
+mask[-b:] = 0
+
 num_mask = np.count_nonzero(mask)
 imshow(mask,  title='mean: {}/{}'.format(num_mask, num_pixels))
 
 # %%
+edges = []
+h, w = np.shape(im_mag)
 
+start = timer()
+mr, mc = np.nonzero(mask)
 
+MAX_ANG_DIFF = np.deg2rad(1)
 
+for r, c in zip(mr, mc):
+    mag0 = im_mag[r, c]
+    ang0 = im_ang[r, c]
+    
+    pid0 = r * w + c
+    pid1s = (pid0 + 1, pid0 + w, pid0 + w + 1, pid0 + w - 1)
+    
+    for pid1 in pid1s:
+        mag1 = im_mag.ravel()[pid1]
+        ang1 = im_ang.ravel()[pid1]
+        cost = 0
+        if mag1 < MIN_MAG:
+            cost = -1
+        else:
+            ang_diff = abs(mod2pi(ang1 - ang0));
+            if ang_diff > MAX_ANG_DIFF:
+                cost = -1
+            else:
+                cost = ang_diff
+
+        if cost >= 0:
+            edges.append([pid0, pid1, cost])
+    
+t = timer() - start
+times['4_calc_edges'] = t
+
+disp_edges = np.zeros_like(im_mag, dtype='uint8')
+de = disp_edges.ravel()
+for e in edges:
+    pid0, pid1, cost = e
+    de[pid0] = 1
+    de[pid1] = 1
+    
+imshow(disp_edges, title='edges')
+    
 # %%
 total_time = 0.0
 for key, value in times.iteritems():
