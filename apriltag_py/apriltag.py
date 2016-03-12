@@ -12,7 +12,7 @@ times = OrderedDict()
 
 # %%
 cwd = os.getcwd()
-image_file = os.path.join(cwd, 'frame0001.png')
+image_file = os.path.join(cwd, 'frame0007.png')
 color = cv2.imread(image_file, cv2.IMREAD_COLOR)
 gray = cv2.cvtColor(color, cv2.COLOR_BGR2GRAY)
 imshow(color, title='raw')
@@ -20,6 +20,8 @@ imshow(color, title='raw')
 # %%
 # Gaussian blur with downsample
 gray_sample = gray
+
+IMAGE_SCALE = 0.5
 
 start = timer()
 gray_seg = cv2.pyrDown(gray)
@@ -29,11 +31,11 @@ imshow(gray_seg, title='seg')
 
 # %%
 # Calculate image gradient
-scale = 1 / 16.0
+SCHARR_SCALE = 1 / 16.0
 
 start = timer()
-Ix = cv2.Scharr(gray_seg, cv2.CV_32F, 1, 0, scale=scale)
-Iy = cv2.Scharr(gray_seg, cv2.CV_32F, 0, 1, scale=scale)
+Ix = cv2.Scharr(gray_seg, cv2.CV_32F, 1, 0, scale=SCHARR_SCALE)
+Iy = cv2.Scharr(gray_seg, cv2.CV_32F, 0, 1, scale=SCHARR_SCALE)
 times['2_scharr'] = timer() - start
 
 ax1, ax2 = imshow(Ix, Iy, figsize=fsize2, title=('Ix', 'Iy'))
@@ -57,17 +59,11 @@ ax.hist(im_mag.ravel(), 255)
 ax.axvline(mag_mean, color='m')
 ax.axvline(mag_median, color='r')
 
-
 # %%
 num_pixels = np.size(im_mag)
 MIN_MAG = mag_mean
 mask = im_mag > MIN_MAG
-b = 5
 
-mask[:, :b] = 0
-mask[:, -b:] = 0
-mask[:b] = 0
-mask[-b:] = 0
 
 num_mask = np.count_nonzero(mask)
 imshow(mask,  title='mean: {}/{}'.format(num_mask, num_pixels))
@@ -77,33 +73,39 @@ edges = []
 h, w = np.shape(im_mag)
 
 start = timer()
-mr, mc = np.nonzero(mask)
 
-MAX_ANG_DIFF = np.deg2rad(1)
+MAX_ANG_DIFF = np.deg2rad(5)
 COST_SCALE = 1024 / MAX_ANG_DIFF
 
-for r, c in zip(mr, mc):
-    mag0 = im_mag[r, c]
-    ang0 = im_ang[r, c]
+b = 5
+for c in xrange(w):
+    for r in xrange(h):
+        if not (b <= r < h - b and b <= c < w - b):
+            continue
+        mag0 = im_mag[r, c]
+        ang0 = im_ang[r, c]
 
-    pid0 = r * w + c
-    pid1s = (pid0 + 1, pid0 + w, pid0 + w + 1, pid0 + w - 1)
+        if mag0 < MIN_MAG:
+            continue
 
-    for pid1 in pid1s:
-        mag1 = im_mag.ravel()[pid1]
-        ang1 = im_ang.ravel()[pid1]
-        cost = 0
-        if mag1 < MIN_MAG:
-            cost = -1
-        else:
-            ang_diff = angle_dist(ang0 - ang1)
-            if ang_diff > MAX_ANG_DIFF:
+        pid0 = r * w + c
+        pid1s = (pid0 + 1, pid0 + w, pid0 + w + 1, pid0 + w - 1)
+
+        for pid1 in pid1s:
+            mag1 = im_mag.ravel()[pid1]
+            ang1 = im_ang.ravel()[pid1]
+            cost = 0
+            if mag1 < MIN_MAG:
                 cost = -1
             else:
-                cost = int(ang_diff * COST_SCALE)
+                ang_diff = angle_dist(ang0 - ang1)
+                if ang_diff > MAX_ANG_DIFF:
+                    cost = -1
+                else:
+                    cost = int(ang_diff * COST_SCALE)
 
-        if cost >= 0:
-            edges.append((pid0, pid1, cost))
+            if cost >= 0:
+                edges.append((pid0, pid1, cost))
 
 t = timer() - start
 times['4_calc_edges'] = t
@@ -126,7 +128,7 @@ times['5_sort_edges'] = t
 # %%
 # union find
 k_ang = 100.0
-k_mag = 1200.0
+k_mag = 360 / SCHARR_SCALE
 
 im_mag_vec = im_mag.ravel()
 im_ang_vec = im_ang.ravel()
@@ -176,9 +178,35 @@ for e in edges:
 #        continue
 
     # union these two sets
-#    sid01 = dsets.union(sid0, sid1)
-#    stats[sid01] = (min_mag01, max_mag01, min_ang01, max_ang01)
+    sid01 = dsets.union(sid0, sid1)
+    stats[sid01] = (min_mag01, max_mag01, 0, 0)
 
+# %%
+# cluster pixels
+MIN_SEGMENT_PIXELS = 160 * IMAGE_SCALE ** 2
+
+clusters = dict()
+for c in xrange(w):
+    for r in xrange(h):
+        pid = r * w + c
+        sid = dsets.find(pid)
+        mag = im_mag[r, c]
+        if dsets.set_size(sid) < MIN_SEGMENT_PIXELS:
+            continue
+
+        if sid in clusters:
+            clusters[sid].append((c, r, mag))
+        else:
+            clusters[sid] = [(c, r, mag)]
+
+disp_clusters = np.zeros_like(im_mag, dtype='uint8')
+disp_clusters = cv2.cvtColor(disp_clusters, cv2.COLOR_GRAY2BGR)
+for key, value in clusters.iteritems():
+    color = np.random.randint(0, 255, size=3)
+    for pixel in value:
+        c, r, _ = pixel
+        disp_clusters[r, c, :] = color
+imshow(disp_clusters)
 
 # %%
 total_time = 0.0
