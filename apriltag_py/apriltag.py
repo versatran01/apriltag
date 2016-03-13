@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from timeit import default_timer as timer
 from collections import OrderedDict
-from apriltag_py.utils import DisjointSets, mod2pi, angle_dist, imshow
+from apriltag_py.utils import DisjointSets, angle_dist, imshow, mod2pi
 
 # %%
 fsize2 = (14, 10)
@@ -12,7 +12,7 @@ times = OrderedDict()
 
 # %%
 cwd = os.getcwd()
-image_file = os.path.join(cwd, 'frame0006.png')
+image_file = os.path.join(cwd, 'frame0004.png')
 color = cv2.imread(image_file, cv2.IMREAD_COLOR)
 gray = cv2.cvtColor(color, cv2.COLOR_BGR2GRAY)
 imshow(color, title='raw')
@@ -127,7 +127,7 @@ times['5_sort_edges'] = t
 
 # %%
 # union find
-k_ang = 100.0
+k_ang = 300
 k_mag = 360 / SCHARR_SCALE
 
 im_mag_vec = im_mag.ravel()
@@ -135,6 +135,7 @@ im_ang_vec = im_ang.ravel()
 stats = np.vstack((im_mag_vec, im_mag_vec, im_ang_vec, im_ang_vec)).T
 dsets = DisjointSets(num_pixels)
 
+start = timer()
 for e in edges:
     pid0, pid1, cost = e
     sid0 = dsets.find(pid0)
@@ -144,42 +145,50 @@ for e in edges:
 
     size01 = dsets.set_size(sid0) + dsets.set_size(sid1)
 
-    stat0 = stats[sid0]
-    stat1 = stats[sid1]
+    min_mag0, max_mag0, min_ang0, max_ang0 = stats[sid0]
+    min_mag1, max_mag1, min_ang1, max_ang1 = stats[sid1]
 
     # get delta in magnitude both segments
-    d_mag0 = stat0[1] - stat0[0]
-    d_mag1 = stat1[1] - stat1[0]
+    d_mag0 = max_mag0 - min_mag0
+    d_mag1 = max_mag1 - min_mag1
 
     # assuming we want to merge these two segments
     # get min and max of merged mag
-    min_mag01 = min(stat0[0], stat1[0])
-    max_mag01 = max(stat0[1], stat1[1])
+    min_mag01 = min(min_mag0, min_mag1)
+    max_mag01 = max(max_mag0, max_mag1)
 
     # calculate delta in magnitude for merged segments
     d_mag01 = max_mag01 - min_mag01
 
     # check with criteria on magnitude
     # M(0 && 1) <= min(D(0), D(1)) + k_mag / size01
-    if not d_mag01 <= min(d_mag0, d_mag1) + k_mag / size01:
+    if d_mag01 > min(d_mag0, d_mag1) + k_mag / size01:
         continue
 
     # get delta in angle
-    d_ang0 = angle_dist(stat0[3] - stat0[2])
-    d_ang1 = angle_dist(stat1[3] - stat1[2])
+#    d_ang0 = angle_dist(max_ang0 - min_ang0)
+#    d_ang1 = angle_dist(max_ang1 - min_ang1)
+#    
+#    m_ang0 = (max_ang0 + min_ang0) / 2.0
+#    m_ang1 = (max_ang1 + min_ang1) / 2.0
+#    bshift = mod2pi(m_ang1, m_ang0) + m_ang0 - m_ang1
 
     # get min and max of merged ang
-
-#    min_ang01 = 0
-#    max_ang01 = 0
-#    d_ang01 = max_ang01 - min_ang01
+#    min_ang01 = min(min_ang0, min_ang1 + bshift)
+#    max_ang01 = max(max_ang0, max_ang1 + bshift)
+#    d_ang01 = angle_dist(min_ang01, max_ang01)
 #
-#    if not d_ang01 <= min(d_ang0, d_ang1) + k_ang / size01:
-#        continue
+#    if d_ang01 > min(d_ang0, d_ang1) + k_ang / size01:
+#        pass
 
     # union these two sets
     sid01 = dsets.union(sid0, sid1)
+#    stats[sid01] = (min_mag01, max_mag01, min_ang01, max_ang01)
     stats[sid01] = (min_mag01, max_mag01, 0, 0)
+
+t = timer() - start
+times['6_union_find'] = t
+
 
 # %%
 # cluster pixels

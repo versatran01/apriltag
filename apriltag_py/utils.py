@@ -79,3 +79,17 @@ def mod2pi(a, b=0):
 
 def angle_dist(a, b=0):
     return np.pi - abs(abs(a - b) - np.pi)
+
+
+def angle_union(range_a, range_b):
+    a0, a1 = range_a
+    b0, b1 = range_b
+    
+    ranges = np.array([[a0, a1], [a0, b0], [a0, b1],
+                       [a1, b0], [a1, b1], [b0, b1]])   
+    
+    dists = [angle_dist(rng[0], rng[1]) for rng in ranges]
+    i = np.argmax(dists)        
+    
+    return dists[i], ranges[i]
+    
