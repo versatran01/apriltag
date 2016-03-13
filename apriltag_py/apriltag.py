@@ -12,7 +12,7 @@ times = OrderedDict()
 
 # %%
 cwd = os.getcwd()
-image_file = os.path.join(cwd, 'frame0004.png')
+image_file = os.path.join(cwd, 'frame0000.png')
 color = cv2.imread(image_file, cv2.IMREAD_COLOR)
 gray = cv2.cvtColor(color, cv2.COLOR_BGR2GRAY)
 imshow(color, title='raw')
@@ -127,7 +127,7 @@ times['5_sort_edges'] = t
 
 # %%
 # union find
-k_ang = 300
+k_ang = 200
 k_mag = 360 / SCHARR_SCALE
 
 im_mag_vec = im_mag.ravel()
@@ -166,25 +166,25 @@ for e in edges:
         continue
 
     # get delta in angle
-#    d_ang0 = angle_dist(max_ang0 - min_ang0)
-#    d_ang1 = angle_dist(max_ang1 - min_ang1)
-#    
-#    m_ang0 = (max_ang0 + min_ang0) / 2.0
-#    m_ang1 = (max_ang1 + min_ang1) / 2.0
-#    bshift = mod2pi(m_ang1, m_ang0) + m_ang0 - m_ang1
+    d_ang0 = angle_dist(max_ang0 - min_ang0)
+    d_ang1 = angle_dist(max_ang1 - min_ang1)
+    
+    m_ang0 = (max_ang0 + min_ang0) / 2.0
+    m_ang1 = (max_ang1 + min_ang1) / 2.0
+    bshift = mod2pi(m_ang1, m_ang0) + m_ang0 - m_ang1
 
     # get min and max of merged ang
-#    min_ang01 = min(min_ang0, min_ang1 + bshift)
-#    max_ang01 = max(max_ang0, max_ang1 + bshift)
-#    d_ang01 = angle_dist(min_ang01, max_ang01)
-#
-#    if d_ang01 > min(d_ang0, d_ang1) + k_ang / size01:
-#        pass
+    min_ang01 = min(min_ang0, min_ang1 + bshift)
+    max_ang01 = max(max_ang0, max_ang1 + bshift)
+    d_ang01 = angle_dist(min_ang01, max_ang01)
+
+    if d_ang01 > min(d_ang0, d_ang1) + k_ang / size01:
+        continue
 
     # union these two sets
     sid01 = dsets.union(sid0, sid1)
-#    stats[sid01] = (min_mag01, max_mag01, min_ang01, max_ang01)
-    stats[sid01] = (min_mag01, max_mag01, 0, 0)
+    stats[sid01] = (min_mag01, max_mag01, min_ang01, max_ang01)
+#    stats[sid01] = (min_mag01, max_mag01, 0, 0)
 
 t = timer() - start
 times['6_union_find'] = t
