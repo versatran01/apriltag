@@ -12,7 +12,7 @@ times = OrderedDict()
 
 # %%
 cwd = os.getcwd()
-image_file = os.path.join(cwd, 'frame0007.png')
+image_file = os.path.join(cwd, 'frame0006.png')
 color = cv2.imread(image_file, cv2.IMREAD_COLOR)
 gray = cv2.cvtColor(color, cv2.COLOR_BGR2GRAY)
 imshow(color, title='raw')
@@ -24,6 +24,9 @@ gray_sample = gray
 IMAGE_SCALE = 0.5
 
 start = timer()
+#gray_blur = cv2.GaussianBlur(gray, (5, 5), 1)
+#gray_seg = cv2.resize(gray_blur, None, fx=IMAGE_SCALE, fy=IMAGE_SCALE,
+#                      method=cv2.INTER_LINEAR)
 gray_seg = cv2.pyrDown(gray)
 times['1_pyrdown'] = timer() - start
 
@@ -64,19 +67,16 @@ num_pixels = np.size(im_mag)
 MIN_MAG = mag_mean
 mask = im_mag > MIN_MAG
 
-
 num_mask = np.count_nonzero(mask)
 imshow(mask,  title='mean: {}/{}'.format(num_mask, num_pixels))
 
 # %%
-edges = []
-h, w = np.shape(im_mag)
-
-start = timer()
-
 MAX_ANG_DIFF = np.deg2rad(5)
 COST_SCALE = 1024 / MAX_ANG_DIFF
 
+start = timer()
+edges = []
+h, w = np.shape(im_mag)
 b = 5
 for c in xrange(w):
     for r in xrange(h):
@@ -183,8 +183,9 @@ for e in edges:
 
 # %%
 # cluster pixels
-MIN_SEGMENT_PIXELS = 160 * IMAGE_SCALE ** 2
+MIN_SEGMENT_PIXELS = 170 * IMAGE_SCALE ** 2
 
+start = timer()
 clusters = dict()
 for c in xrange(w):
     for r in xrange(h):
@@ -199,6 +200,9 @@ for c in xrange(w):
         else:
             clusters[sid] = [(c, r, mag)]
 
+t = timer() - start
+times['7_cluster_pixels'] = t
+
 disp_clusters = np.zeros_like(im_mag, dtype='uint8')
 disp_clusters = cv2.cvtColor(disp_clusters, cv2.COLOR_GRAY2BGR)
 for key, value in clusters.iteritems():
@@ -206,7 +210,7 @@ for key, value in clusters.iteritems():
     for pixel in value:
         c, r, _ = pixel
         disp_clusters[r, c, :] = color
-imshow(disp_clusters)
+imshow(disp_clusters, title='clusters')
 
 # %%
 total_time = 0.0
