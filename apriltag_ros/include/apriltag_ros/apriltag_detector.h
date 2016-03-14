@@ -27,24 +27,12 @@ class ApriltagDetector {
                    const TagFamily& tag_family);
   virtual ~ApriltagDetector() = default;
 
-  /**
-   * @brief set_black_border
-   * @param black_border
-   */
   void set_black_border(int black_border);
   int black_border() const;
 
-  /**
-   * @brief set_decimate
-   * @param decimate
-   */
   void set_decimate(int decimate);
   int decimate() const;
 
-  /**
-   * @brief set_refine
-   * @param refine
-   */
   void set_refine(bool refine);
   bool refine() const;
 
@@ -111,11 +99,9 @@ class ApriltagDetectorUmich : public ApriltagDetector {
 
 /**
  * @brief DrawApriltag
- * @param image
- * @param apriltag
  */
 void DrawApriltag(cv::Mat& image, const apriltag_msgs::Apriltag& apriltag,
-                  int thickness = 1);
+                  int thickness = 1, bool draw_corners = true);
 
 /**
  * @brief DrawApriltags
