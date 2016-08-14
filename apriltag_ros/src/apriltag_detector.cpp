@@ -1,8 +1,8 @@
 #include "apriltag_ros/apriltag_detector.h"
 
 #include <boost/make_shared.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 
 namespace apriltag_ros {
 

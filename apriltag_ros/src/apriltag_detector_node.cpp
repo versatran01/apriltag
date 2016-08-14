@@ -1,9 +1,9 @@
 #include "apriltag_ros/apriltag_detector_node.h"
 
-#include <boost/thread/lock_guard.hpp>
-#include <sensor_msgs/image_encodings.h>
 #include <apriltag_msgs/ApriltagArrayStamped.h>
 #include <cv_bridge/cv_bridge.h>
+#include <sensor_msgs/image_encodings.h>
+#include <boost/thread/lock_guard.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 

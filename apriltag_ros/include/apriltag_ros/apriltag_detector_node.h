@@ -1,10 +1,10 @@
 #ifndef APRILTAG_ROS_APRILTAG_DETECTOR_NODE_H_
 #define APRILTAG_ROS_APRILTAG_DETECTOR_NODE_H_
 
-#include <ros/ros.h>
-#include <sensor_msgs/Image.h>
 #include <dynamic_reconfigure/server.h>
 #include <image_transport/image_transport.h>
+#include <ros/ros.h>
+#include <sensor_msgs/Image.h>
 
 #include <apriltag_ros/ApriltagDetectorDynConfig.h>
 #include "apriltag_ros/apriltag_detector.h"

@@ -1,13 +1,13 @@
 #ifndef APRILTAG_ROS_APRILTAG_DETECTOR_H_
 #define APRILTAG_ROS_APRILTAG_DETECTOR_H_
 
-#include <memory>
 #include <cassert>
+#include <memory>
 
-#include <opencv2/core/core.hpp>
-#include <apriltag_msgs/Apriltag.h>
 #include <apriltag_mit/apriltag_mit.h>
+#include <apriltag_msgs/Apriltag.h>
 #include <apriltag_umich/apriltag_umich.h>
+#include <opencv2/core/core.hpp>
 
 namespace apriltag_ros {
 

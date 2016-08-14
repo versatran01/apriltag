@@ -10,17 +10,17 @@ endif()
 
 if(USE_ROS)
     find_package(catkin REQUIRED COMPONENTS roslib cmake_modules)
-    find_package(Eigen 3 REQUIRED)
+    find_package(Eigen3 REQUIRED)
     include_directories(${Eigen_INCLUDE_DIRS})
     catkin_package(
-        DEPENDS Eigen OpenCV
-        INCLUDE_DIRS include ${Eigen_INCLUDE_DIRS}
+        DEPENDS Eigen3 OpenCV
+        INCLUDE_DIRS include ${EIGEN3_INCLUDE_DIR}
         LIBRARIES ${PROJECT_NAME}
         CFG_EXTRAS apriltag_mit-extras.cmake
         )
 else()
     find_package(Eigen3 REQUIRED)
-    include_directories(${EIGEN3_INCLUDE_DIRS})
+    include_directories(${EIGEN3_INCLUDE_DIR})
     message(STATUS "Source:  " ${PROJECT_SOURCE_DIR})
     message(STATUS "Binary:  " ${PROJECT_BINARY_DIR})
     set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
@@ -35,7 +35,7 @@ include_directories(include
 
 include_directories(include
     ${OpenCV_INCLUDE_DIRS}
-    ${Eigen_INCLUDE_DIRS}
+    ${EIGEN3_INCLUDE_DIR}
     )
 
 file(GLOB CC_FILES ${PROJECT_SOURCE_DIR}/src/*.cc)
