@@ -11,7 +11,7 @@ endif()
 if(USE_ROS)
     find_package(catkin REQUIRED COMPONENTS roslib cmake_modules)
     find_package(Eigen3 REQUIRED)
-    include_directories(${Eigen_INCLUDE_DIRS})
+    include_directories(${EIGEN3_INCLUDE_DIR})
     catkin_package(
         DEPENDS Eigen3 OpenCV
         INCLUDE_DIRS include ${EIGEN3_INCLUDE_DIR}

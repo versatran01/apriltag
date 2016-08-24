@@ -202,25 +202,29 @@ void DrawApriltag(cv::Mat& image, const apriltag_msgs::Apriltag& apriltag,
                   int thickness, bool draw_corners) {
   const auto& p = apriltag.corners;
   cv::line(image, cv::Point2i(p[0].x, p[0].y), cv::Point2i(p[1].x, p[1].y),
-           CV_RGB(255, 0, 0), thickness);
+           CV_RGB(255, 0, 0), thickness, CV_AA);
   cv::line(image, cv::Point2i(p[0].x, p[0].y), cv::Point2i(p[3].x, p[3].y),
-           CV_RGB(0, 255, 0), thickness);
+           CV_RGB(0, 255, 0), thickness, CV_AA);
   cv::line(image, cv::Point2i(p[2].x, p[2].y), cv::Point2i(p[3].x, p[3].y),
-           CV_RGB(0, 0, 255), thickness);
+           CV_RGB(0, 0, 255), thickness, CV_AA);
   cv::line(image, cv::Point2i(p[2].x, p[2].y), cv::Point2i(p[1].x, p[1].y),
-           CV_RGB(0, 0, 255), thickness);
+           CV_RGB(0, 0, 255), thickness, CV_AA);
 
   if (draw_corners) {
-    int r = 2;
-    cv::circle(image, cv::Point2i(p[0].x, p[0].y), r, CV_RGB(255, 0, 0), -1);
-    cv::circle(image, cv::Point2i(p[1].x, p[1].y), r, CV_RGB(0, 255, 0), -1);
-    cv::circle(image, cv::Point2i(p[2].x, p[2].y), r, CV_RGB(0, 0, 255), -1);
-    cv::circle(image, cv::Point2i(p[3].x, p[3].y), r, CV_RGB(255, 0, 255), -1);
+    int r = thickness;
+    cv::circle(image, cv::Point2i(p[0].x, p[0].y), r, CV_RGB(255, 0, 0), -1,
+               CV_AA);
+    cv::circle(image, cv::Point2i(p[1].x, p[1].y), r, CV_RGB(0, 255, 0), -1,
+               CV_AA);
+    cv::circle(image, cv::Point2i(p[2].x, p[2].y), r, CV_RGB(0, 0, 255), -1,
+               CV_AA);
+    cv::circle(image, cv::Point2i(p[3].x, p[3].y), r, CV_RGB(255, 0, 255), -1,
+               CV_AA);
   }
 
   cv::putText(image, std::to_string(apriltag.id),
               cv::Point2f(apriltag.center.x - 5, apriltag.center.y + 5),
-              cv::FONT_HERSHEY_SIMPLEX, 1, CV_RGB(255, 0, 255), 2);
+              cv::FONT_HERSHEY_SIMPLEX, 1, CV_RGB(255, 0, 255), 2, CV_AA);
 }
 
 void DrawApriltags(cv::Mat& image, const ApriltagVec& apriltags) {

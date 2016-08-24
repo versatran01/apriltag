@@ -1,15 +1,15 @@
 #include <algorithm>
-#include <cmath>
 #include <climits>
+#include <cmath>
 
-#include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 
 #include "AprilTags/Edge.h"
 #include "AprilTags/GrayModel.h"
+#include "AprilTags/Gridder.h"
 #include "AprilTags/Line2D.h"
 #include "AprilTags/LineSegment2D.h"
-#include "AprilTags/Gridder.h"
 #include "AprilTags/MathUtil.h"
 #include "AprilTags/Segment.h"
 
@@ -25,6 +25,7 @@ TagDetector::TagDetector(const TagCodes &tag_codes, int black_border)
 void TagDetector::set_black_border(int black_border) {
   black_border_ = black_border;
 }
+
 int TagDetector::black_border() const { return black_border_; }
 
 int TagDetector::CalcFilterSize(float sigma) const {
