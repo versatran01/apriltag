@@ -1,10 +1,11 @@
-/* (C) 2013-2015, The Regents of The University of Michigan
+/* Copyright (C) 2013-2016, The Regents of The University of Michigan.
 All rights reserved.
 
-This software may be available under alternative licensing
-terms. Contact Edwin Olson, ebolson@umich.edu, for more information.
+This software was developed in the APRIL Robotics Lab under the
+direction of Edwin Olson, ebolson@umich.edu. This software may be
+available under alternative licensing terms; contact the address above.
 
-   Redistribution and use in source and binary forms, with or without
+Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
 
 1. Redistributions of source code must retain the above copyright notice, this
@@ -26,10 +27,29 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 The views and conclusions contained in the software and documentation are those
 of the authors and should not be interpreted as representing official policies,
-either expressed or implied, of the FreeBSD Project.
- */
+either expressed or implied, of the Regents of The University of Michigan.
+*/
 
+#include <stdlib.h>
+#include <math.h>
 #include "time_util.h"
+
+struct timeutil_rest
+{
+    int64_t acc_time;
+    int64_t start_time;
+};
+
+timeutil_rest_t *timeutil_rest_create()
+{
+    timeutil_rest_t *rest = calloc(1, sizeof(timeutil_rest_t));
+    return rest;
+}
+
+void timeutil_rest_destroy(timeutil_rest_t *rest)
+{
+    free(rest);
+}
 
 int64_t utime_now() // blacklist-ignore
 {
@@ -62,7 +82,8 @@ void utime_to_timespec(int64_t v, struct timespec *ts)
 
 int32_t timeutil_usleep(int64_t useconds)
 {
-    // unistd.h function
+    // unistd.h function, but usleep is obsoleted in POSIX.1-2008.
+    // TODO: Eventually, rewrite this to use nanosleep
     return usleep(useconds);
 }
 
@@ -70,4 +91,62 @@ uint32_t timeutil_sleep(unsigned int seconds)
 {
     // unistd.h function
     return sleep(seconds);
+}
+
+int32_t timeutil_sleep_hz(timeutil_rest_t *rest, double hz)
+{
+    int64_t max_delay = 1000000L/hz;
+    int64_t curr_time = utime_now();
+    int64_t diff = curr_time - rest->start_time;
+    int64_t delay = max_delay - diff;
+    if (delay < 0) delay = 0;
+
+    int32_t ret = timeutil_usleep(delay);
+    rest->start_time = utime_now();
+
+    return ret;
+}
+
+void timeutil_timer_reset(timeutil_rest_t *rest)
+{
+    rest->start_time = utime_now();
+    rest->acc_time = 0;
+}
+
+void timeutil_timer_start(timeutil_rest_t *rest)
+{
+    rest->start_time = utime_now();
+}
+
+void timeutil_timer_stop(timeutil_rest_t *rest)
+{
+    int64_t curr_time = utime_now();
+    int64_t diff = curr_time - rest->start_time;
+
+    rest->acc_time += diff;
+}
+
+bool timeutil_timer_timeout(timeutil_rest_t *rest, double timeout_s)
+{
+    int64_t timeout_us = (int64_t)(1000000L*timeout_s);
+    return rest->acc_time > timeout_us;
+}
+
+int64_t time_util_hhmmss_ss_to_utime(double time)
+{
+    int64_t utime = 0;
+
+    int itime = ((int) time);
+
+    double seconds = fmod(time, 100.0);
+    uint8_t minutes = (itime % 10000) / 100;
+    uint8_t hours =  itime / 10000;
+
+    utime += seconds *   100;
+    utime += minutes *  6000;
+    utime += hours   *360000;
+
+    utime *= 10000;
+
+    return utime;
 }

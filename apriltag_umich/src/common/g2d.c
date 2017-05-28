@@ -1,10 +1,11 @@
-/* (C) 2013-2015, The Regents of The University of Michigan
+/* Copyright (C) 2013-2016, The Regents of The University of Michigan.
 All rights reserved.
 
-This software may be available under alternative licensing
-terms. Contact Edwin Olson, ebolson@umich.edu, for more information.
+This software was developed in the APRIL Robotics Lab under the
+direction of Edwin Olson, ebolson@umich.edu. This software may be
+available under alternative licensing terms; contact the address above.
 
-   Redistribution and use in source and binary forms, with or without
+Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
 
 1. Redistributions of source code must retain the above copyright notice, this
@@ -26,8 +27,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 The views and conclusions contained in the software and documentation are those
 of the authors and should not be interpreted as representing official policies,
-either expressed or implied, of the FreeBSD Project.
- */
+either expressed or implied, of the Regents of The University of Michigan.
+*/
 
 #include <assert.h>
 #include <math.h>
@@ -35,19 +36,29 @@ either expressed or implied, of the FreeBSD Project.
 #include <string.h>
 
 #include "g2d.h"
-#include "math_util.h"
+#include "common/math_util.h"
 
 double g2d_distance(const double a[2], const double b[2])
 {
     return sqrtf(sq(a[0]-b[0]) + sq(a[1]-b[1]));
 }
 
+zarray_t *g2d_polygon_create_empty()
+{
+    return zarray_create(sizeof(double[2]));
+}
+
+void g2d_polygon_add(zarray_t *poly, double v[2])
+{
+    zarray_add(poly, v);
+}
+
 zarray_t *g2d_polygon_create_data(double v[][2], int sz)
 {
-    zarray_t *points = zarray_create(sizeof(double[2]));
+    zarray_t *points = g2d_polygon_create_empty();
 
     for (int i = 0; i < sz; i++)
-        zarray_add(points, v[i]);
+        g2d_polygon_add(points, v[i]);
 
     return points;
 }
@@ -651,20 +662,22 @@ static int double_sort_up(const void *_a, const void *_b)
   int xsz = g2d_polygon_rasterize(poly, y, xs);
   int xpos = 0;
   int inout = 0; // start off "out"
-  for (double x = x0; x < x1; x += res) {
-  while (x > xs[xpos] && xpos < xsz) {
-  xpos++;
-  inout ^= 1;
-  }
 
-  if (inout)
-  printf("y");
-  else
-  printf(" ");
+  for (double x = x0; x < x1; x += res) {
+      while (x > xs[xpos] && xpos < xsz) {
+        xpos++;
+        inout ^= 1;
+      }
+
+    if (inout)
+       printf("y");
+    else
+       printf(" ");
   }
   printf("\n");
 */
 
+// returns the number of x intercepts
 int g2d_polygon_rasterize(const zarray_t *poly, double y, double *x)
 {
     int sz = zarray_size(poly);

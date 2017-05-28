@@ -13,4 +13,4 @@ image_u8_t *image_u8_create_from_gray(unsigned int width, unsigned int height,
 #ifdef __cplusplus
 }
 #endif
-#endif  // _IMAGE_U8_EXT_H
+#endif // _IMAGE_U8_EXT_H

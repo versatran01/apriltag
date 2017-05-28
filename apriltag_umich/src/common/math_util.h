@@ -1,10 +1,11 @@
-/* (C) 2013-2015, The Regents of The University of Michigan
+/* Copyright (C) 2013-2016, The Regents of The University of Michigan.
 All rights reserved.
 
-This software may be available under alternative licensing
-terms. Contact Edwin Olson, ebolson@umich.edu, for more information.
+This software was developed in the APRIL Robotics Lab under the
+direction of Edwin Olson, ebolson@umich.edu. This software may be
+available under alternative licensing terms; contact the address above.
 
-   Redistribution and use in source and binary forms, with or without
+Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
 
 1. Redistributions of source code must retain the above copyright notice, this
@@ -26,8 +27,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 The views and conclusions contained in the software and documentation are those
 of the authors and should not be interpreted as representing official policies,
-either expressed or implied, of the FreeBSD Project.
- */
+either expressed or implied, of the Regents of The University of Michigan.
+*/
 
 #ifndef _MATHUTIL_H
 #define _MATHUTIL_H
@@ -38,6 +39,10 @@ either expressed or implied, of the FreeBSD Project.
 #include <stdint.h>
 #include <assert.h>
 #include <string.h> // memcpy
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #ifndef M_TWOPI
 # define M_TWOPI       6.2831853071795862319959  /* 2*pi */
@@ -53,9 +58,16 @@ either expressed or implied, of the FreeBSD Project.
 #define max(A, B) (A < B ? B : A)
 #define min(A, B) (A < B ? A : B)
 
+  /* DEPRECATE, threshold meaningless without context.
 static inline int dequals(double a, double b)
 {
     double thresh = 1e-9;
+    return (fabs(a-b) < thresh);
+}
+  */
+
+static inline int dequals_mag(double a, double b, double thresh)
+{
     return (fabs(a-b) < thresh);
 }
 
@@ -201,7 +213,8 @@ static inline int dblcmp (double d1, double d2)
         return  0;
 }
 
-
-
+#ifdef __cplusplus
+}
+#endif
 
 #endif

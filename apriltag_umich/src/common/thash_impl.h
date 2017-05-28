@@ -1,10 +1,11 @@
-/* (C) 2013-2015, The Regents of The University of Michigan
+/* Copyright (C) 2013-2016, The Regents of The University of Michigan.
 All rights reserved.
 
-This software may be available under alternative licensing
-terms. Contact Edwin Olson, ebolson@umich.edu, for more information.
+This software was developed in the APRIL Robotics Lab under the
+direction of Edwin Olson, ebolson@umich.edu. This software may be
+available under alternative licensing terms; contact the address above.
 
-   Redistribution and use in source and binary forms, with or without
+Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
 
 1. Redistributions of source code must retain the above copyright notice, this
@@ -26,8 +27,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 The views and conclusions contained in the software and documentation are those
 of the authors and should not be interpreted as representing official policies,
-either expressed or implied, of the FreeBSD Project.
- */
+either expressed or implied, of the Regents of The University of Michigan.
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -81,6 +82,8 @@ either expressed or implied, of the FreeBSD Project.
 
 struct TFN(_entry)
 {
+    // XXX Better to store the hash value and to reserve a special
+    // hash value to mean invalid?
     uint8_t  valid;
     TKEYTYPE key;
     TVALTYPE value;
@@ -100,6 +103,8 @@ static inline TTYPENAME *TFN(create_capacity)(int capacity)
 {
     // must be this large to not trigger rehash
     int _nentries = THASH_FACTOR_REALLOC*capacity;
+    if (_nentries < 8)
+        _nentries = 8;
 
     // but must also be a power of 2
     int nentries = _nentries;
@@ -123,6 +128,9 @@ static inline TTYPENAME *TFN(create)()
 
 static inline void TFN(destroy)(TTYPENAME *hash)
 {
+    if (!hash)
+        return;
+
     free(hash->entries);
     free(hash);
 }
@@ -200,6 +208,9 @@ static inline int TFN(get_volatile)(TTYPENAME *hash, TKEYTYPE *key, TVALTYPE **v
 
 static inline int TFN(get)(TTYPENAME *hash, TKEYTYPE *key, TVALTYPE *value)
 {
+    // XXX see implementation in zhash.c (implement in terms of
+    // get_volatile)
+
     uint32_t code = TKEYHASH(key);
     uint32_t entry_idx = code & (hash->nentries - 1);
 
@@ -244,7 +255,7 @@ static inline int TFN(put)(TTYPENAME *hash, TKEYTYPE *key, TVALTYPE *value, TKEY
 //        TFN(performance)(hash);
 
         // rehash!
-        TTYPENAME *newhash = TFN(create_capacity)(hash->size);
+        TTYPENAME *newhash = TFN(create_capacity)(hash->size + 1);
 
         for (int entry_idx = 0; entry_idx < hash->nentries; entry_idx++) {
             if (hash->entries[entry_idx].valid) {
@@ -266,6 +277,60 @@ static inline int TFN(put)(TTYPENAME *hash, TKEYTYPE *key, TVALTYPE *value, TKEY
     }
 
     return 0;
+}
+
+static inline int TFN(remove)(TTYPENAME *hash, TKEYTYPE *key, TKEYTYPE *oldkey, TVALTYPE *oldvalue)
+{
+    uint32_t code = TKEYHASH(key);
+    uint32_t entry_idx = code & (hash->nentries - 1);
+
+    while (hash->entries[entry_idx].valid) {
+        if (TKEYEQUAL(key, &hash->entries[entry_idx].key)) {
+
+            if (oldkey)
+                *oldkey = hash->entries[entry_idx].key;
+            if (oldvalue)
+                *oldvalue = hash->entries[entry_idx].value;
+
+            hash->entries[entry_idx].valid = 0;
+            hash->size--;
+
+            // re-put following entries
+            entry_idx = (entry_idx + 1) & (hash->nentries - 1);
+            while (hash->entries[entry_idx].valid) {
+                TKEYTYPE key = hash->entries[entry_idx].key;
+                TVALTYPE value = hash->entries[entry_idx].value;
+                hash->entries[entry_idx].valid = 0;
+                hash->size--;
+
+                if (TFN(put)(hash, &key, &value, NULL, NULL)) {
+                    assert(0);
+                }
+
+                entry_idx = (entry_idx + 1) & (hash->nentries - 1);
+            }
+
+            return 1;
+        }
+
+        entry_idx = (entry_idx + 1) & (hash->nentries - 1);
+    }
+
+    return 0;
+}
+
+static inline TTYPENAME *TFN(copy)(TTYPENAME *hash)
+{
+    TTYPENAME *newhash = TFN(create_capacity)(hash->size);
+
+    for (int entry_idx = 0; entry_idx < hash->nentries; entry_idx++) {
+        if (hash->entries[entry_idx].valid) {
+            if (TFN(put)(newhash, &hash->entries[entry_idx].key, &hash->entries[entry_idx].value, NULL, NULL))
+                assert(0); // shouldn't already be present.
+        }
+    }
+
+    return newhash;
 }
 
 typedef struct TFN(iterator) TFN(iterator_t);
@@ -313,6 +378,7 @@ static inline void TFN(iterator_remove)(TFN(iterator_t) *iter)
         TKEYTYPE key = hash->entries[entry_idx].key;
         TVALTYPE value = hash->entries[entry_idx].value;
         hash->entries[entry_idx].valid = 0;
+        hash->size--;
 
         if (TFN(put)(hash, &key, &value, NULL, NULL)) {
             assert(0);

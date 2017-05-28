@@ -1,10 +1,11 @@
-/* (C) 2013-2015, The Regents of The University of Michigan
+/* Copyright (C) 2013-2016, The Regents of The University of Michigan.
 All rights reserved.
 
-This software may be available under alternative licensing
-terms. Contact Edwin Olson, ebolson@umich.edu, for more information.
+This software was developed in the APRIL Robotics Lab under the
+direction of Edwin Olson, ebolson@umich.edu. This software may be
+available under alternative licensing terms; contact the address above.
 
-   Redistribution and use in source and binary forms, with or without
+Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
 
 1. Redistributions of source code must retain the above copyright notice, this
@@ -26,8 +27,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 The views and conclusions contained in the software and documentation are those
 of the authors and should not be interpreted as representing official policies,
-either expressed or implied, of the FreeBSD Project.
- */
+either expressed or implied, of the Regents of The University of Michigan.
+*/
 
 #ifndef _APRILTAG_H
 #define _APRILTAG_H
@@ -81,7 +82,7 @@ struct apriltag_family
     // a human-readable name, e.g., "tag36h11"
     char *name;
 
-    // some implementations may preprocess codes in order to
+    // some detector implementations may preprocess codes in order to
     // accelerate decoding.  They put their data here. (Do not use the
     // same apriltag_family instance in more than one implementation)
     void *impl;
@@ -114,7 +115,8 @@ struct apriltag_quad_thresh_params
     // [0,255]). .
     int min_white_black_diff;
 
-    // should the thresholded image be deglitched? This
+    // should the thresholded image be deglitched? Only useful for
+    // very noisy images
     int deglitch;
 };
 
@@ -248,7 +250,15 @@ apriltag_detector_t *apriltag_detector_create();
 
 // add a family to the apriltag detector. caller still "owns" the family.
 // a single instance should only be provided to one apriltag detector instance.
-void apriltag_detector_add_family(apriltag_detector_t *td, apriltag_family_t *fam);
+void apriltag_detector_add_family_bits(apriltag_detector_t *td, apriltag_family_t *fam, int bits_corrected);
+
+// Tunable, but really, 2 is a good choice. Values of >=3
+// consume prohibitively large amounts of memory, and otherwise
+// you want the largest value possible.
+static inline void apriltag_detector_add_family(apriltag_detector_t *td, apriltag_family_t *fam)
+{
+    apriltag_detector_add_family_bits(td, fam, 2);
+}
 
 // does not deallocate the family.
 void apriltag_detector_remove_family(apriltag_detector_t *td, apriltag_family_t *fam);
@@ -271,6 +281,10 @@ void apriltag_detection_destroy(apriltag_detection_t *det);
 
 // destroys the array AND the detections within it.
 void apriltag_detections_destroy(zarray_t *detections);
+
+// Renders the apriltag with with 1px white border.
+// Caller is responsible for calling image_u8_destroy on the image
+image_u8_t *apriltag_to_image(apriltag_family_t *fam, int idx);
 
 #ifdef __cplusplus
 }

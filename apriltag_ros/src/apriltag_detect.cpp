@@ -1,14 +1,14 @@
+#include "apriltag_ros/apriltag_detector.h"
 #include <boost/program_options.hpp>
 #include <iostream>
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
-#include "apriltag_ros/apriltag_detector.h"
 
 namespace bpo = boost::program_options;
 using namespace apriltag_ros;
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   int type;
   int family;
   int decimate;
@@ -40,7 +40,7 @@ int main(int argc, char** argv) {
                    .run(),
                var_map);
     bpo::notify(var_map);
-  } catch (const std::exception& e) {
+  } catch (const std::exception &e) {
     std::cout << e.what() << "\n\n";
     return 1;
   }
@@ -58,13 +58,13 @@ int main(int argc, char** argv) {
     detector->set_black_border(black_border);
     detector->set_decimate(decimate);
     detector->set_refine(refine);
-  } catch (const std::exception& e) {
+  } catch (const std::exception &e) {
     std::cout << e.what() << "\n";
     return 1;
   }
 
-  const auto& images = var_map["image"].as<std::vector<std::string>>();
-  for (const auto& imfile : images) {
+  const auto &images = var_map["image"].as<std::vector<std::string>>();
+  for (const auto &imfile : images) {
     std::cout << imfile << " ... ";
     const auto gray = cv::imread(imfile, cv::IMREAD_GRAYSCALE);
     if (gray.empty()) {

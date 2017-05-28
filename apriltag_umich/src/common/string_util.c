@@ -1,10 +1,11 @@
-/* (C) 2013-2015, The Regents of The University of Michigan
+/* Copyright (C) 2013-2016, The Regents of The University of Michigan.
 All rights reserved.
 
-This software may be available under alternative licensing
-terms. Contact Edwin Olson, ebolson@umich.edu, for more information.
+This software was developed in the APRIL Robotics Lab under the
+direction of Edwin Olson, ebolson@umich.edu. This software may be
+available under alternative licensing terms; contact the address above.
 
-   Redistribution and use in source and binary forms, with or without
+Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
 
 1. Redistributions of source code must retain the above copyright notice, this
@@ -26,8 +27,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 The views and conclusions contained in the software and documentation are those
 of the authors and should not be interpreted as representing official policies,
-either expressed or implied, of the FreeBSD Project.
- */
+either expressed or implied, of the Regents of The University of Michigan.
+*/
 
 #include <assert.h>
 #include <ctype.h>
@@ -186,6 +187,46 @@ zarray_t *str_split(const char *str, const char *delim)
     return parts;
 }
 
+// split on one or more spaces.
+zarray_t *str_split_spaces(const char *str)
+{
+  zarray_t *parts = zarray_create(sizeof(char*));
+  size_t len = strlen(str);
+  size_t pos = 0;
+
+  while (pos < len) {
+
+    while (pos < len && str[pos] == ' ')
+      pos++;
+
+    // produce a token?
+    if (pos < len) {
+      // yes!
+      size_t off0 = pos;
+      while (pos < len && str[pos] != ' ')
+	pos++;
+      size_t off1 = pos;
+
+      size_t len = off1 - off0;
+      char *tok = malloc(len + 1);
+      memcpy(tok, &str[off0], len);
+      tok[len] = 0;
+      zarray_add(parts, &tok);
+    }
+  }
+
+  return parts;
+}
+
+void str_split_destroy(zarray_t *za)
+{
+    if (!za)
+        return;
+
+    zarray_vmap(za, free);
+    zarray_destroy(za);
+}
+
 char *str_trim(char *str)
 {
     assert(str != NULL);
@@ -223,6 +264,8 @@ int str_indexof(const char *haystack, const char *needle)
     // use signed types for hlen/nlen because hlen - nlen can be negative.
     int hlen = (int) strlen(haystack);
     int nlen = (int) strlen(needle);
+
+    if (nlen > hlen) return -1;
 
     for (int i = 0; i <= hlen - nlen; i++) {
         if (!strncmp(&haystack[i], needle, nlen))
@@ -459,7 +502,7 @@ char string_feeder_next(string_feeder_t *sf)
     return c;
 }
 
-char *string_feeder_next_length(string_feeder_t *sf, int length)
+char *string_feeder_next_length(string_feeder_t *sf, size_t length)
 {
     assert(sf != NULL);
     assert(length >= 0);
@@ -482,7 +525,7 @@ char string_feeder_peek(string_feeder_t *sf)
     return sf->s[sf->pos];
 }
 
-char *string_feeder_peek_length(string_feeder_t *sf, int length)
+char *string_feeder_peek_length(string_feeder_t *sf, size_t length)
 {
     assert(sf != NULL);
     assert(length >= 0);
@@ -534,14 +577,20 @@ bool str_ends_with(const char *haystack, const char *needle)
     return !strncmp(&haystack[lens - lenneedle], needle, lenneedle);
 }
 
-bool str_starts_with(const char *haystack, const char *needle)
+inline bool str_starts_with(const char *haystack, const char *needle)
 {
     assert(haystack != NULL);
     assert(needle != NULL);
 
-    size_t lenneedle = strlen(needle);
+    // haystack[pos] doesn't have to be compared to zero; if it were
+    // zero, it either doesn't match needle (in which case the loop
+    // terminates) or it matches needle[pos] (in which case the loop
+    // terminates).
+    int pos = 0;
+    while (haystack[pos] == needle[pos] && needle[pos] != 0)
+        pos++;
 
-    return !strncmp(haystack, needle, lenneedle);
+    return (needle[pos] == 0);
 }
 
 bool str_starts_with_any(const char *haystack, const char **needles, int num_needles)
@@ -617,4 +666,109 @@ char *str_replace(const char *haystack, const char *needle, const char *replacem
     char *res = string_buffer_to_string(sb);
     string_buffer_destroy(sb);
     return res;
+}
+
+char *str_replace_many(const char *_haystack, ...)
+{
+    va_list ap;
+    va_start(ap, _haystack);
+
+    char *haystack = strdup(_haystack);
+
+    while (true) {
+        char *needle = va_arg(ap, char*);
+        if (!needle)
+            break;
+
+        char *replacement = va_arg(ap, char*);
+        char *tmp = str_replace(haystack, needle, replacement);
+        free(haystack);
+        haystack = tmp;
+    }
+
+    va_end(ap);
+
+    return haystack;
+}
+
+static void buffer_appendf(char **_buf, int *bufpos, void *fmt, ...)
+{
+    char *buf = *_buf;
+    va_list ap;
+
+    int salloc = 128;
+    char *s = malloc(salloc);
+
+    va_start(ap, fmt);
+    int slen = vsnprintf(s, salloc, fmt, ap);
+    va_end(ap);
+
+    if (slen >= salloc) {
+        s = realloc(s, slen + 1);
+        va_start(ap, fmt);
+        vsprintf((char*) s, fmt, ap);
+        va_end(ap);
+    }
+
+    buf = realloc(buf, *bufpos + slen + 1);
+    *_buf = buf;
+
+    memcpy(&buf[*bufpos], s, slen + 1); // get trailing \0
+    (*bufpos) += slen;
+
+    free(s);
+}
+
+static int is_variable_character(char c)
+{
+    if (c >= 'a' && c <= 'z')
+        return 1;
+
+    if (c >= 'A' && c <= 'Z')
+        return 1;
+
+    if (c >= '0' && c <= '9')
+        return 1;
+
+    if (c == '_')
+        return 1;
+
+    return 0;
+}
+
+char *str_expand_envs(const char *in)
+{
+    size_t inlen = strlen(in);
+    size_t inpos = 0;
+
+    char *out = NULL;
+    int  outpos = 0;
+
+    while (inpos < inlen) {
+
+        if (in[inpos] != '$') {
+            buffer_appendf(&out, &outpos, "%c", in[inpos]);
+            inpos++;
+            continue;
+
+        } else {
+            inpos++; // consume '$'
+
+            char *varname = NULL;
+            int  varnamepos = 0;
+
+            while (varnamepos < sizeof(varname) && inpos < inlen && is_variable_character(in[inpos])) {
+                buffer_appendf(&varname, &varnamepos, "%c", in[inpos]);
+                inpos++;
+            }
+
+            char *env = getenv(varname);
+            if (env)
+                buffer_appendf(&out, &outpos, "%s", env);
+
+            free(varname);
+        }
+    }
+
+    return out;
 }

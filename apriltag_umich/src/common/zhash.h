@@ -1,10 +1,11 @@
-/* (C) 2013-2015, The Regents of The University of Michigan
+/* Copyright (C) 2013-2016, The Regents of The University of Michigan.
 All rights reserved.
 
-This software may be available under alternative licensing
-terms. Contact Edwin Olson, ebolson@umich.edu, for more information.
+This software was developed in the APRIL Robotics Lab under the
+direction of Edwin Olson, ebolson@umich.edu. This software may be
+available under alternative licensing terms; contact the address above.
 
-   Redistribution and use in source and binary forms, with or without
+Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
 
 1. Redistributions of source code must retain the above copyright notice, this
@@ -26,8 +27,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 The views and conclusions contained in the software and documentation are those
 of the authors and should not be interpreted as representing official policies,
-either expressed or implied, of the FreeBSD Project.
- */
+either expressed or implied, of the Regents of The University of Michigan.
+*/
 
 #ifndef _ZHASH_H
 #define _ZHASH_H
@@ -54,16 +55,6 @@ extern "C" {
  *     Note: if zhash stores pointers, user must be careful to manually manage the lifetime
  *     of the memory they point to.
  *
- * If a zhash stores pointers, it is not possible for this interface to prevent
- * "deep" modifications, even when a const zhash_t* is used. In this case, the
- * user should infer the intention of the function from the const-ness of the
- * zhash_t*. It is a violation of the intention of a function to perform
- * "deep" modifications to zhash data via a const zhash_t* (i.e. via
- * zhash_get() and zhash_get_volatile(), zhash_iterator_init_const(),
- * zhash_keys(), zhash_values(), etc).
- * Functions which have a non-const zhash_t* intend the possibility of deep
- * modifications (i.e. zhash_put(), zhash_remove(), zhash_clear(),
- * zhash_[v]map_[values|keys](), zhash_iterator_init(), etc).
  */
 
 typedef struct zhash zhash_t;
@@ -75,10 +66,7 @@ struct zhash_iterator
 {
     zhash_t *zh;
     const zhash_t *czh;
-
-    // these point to the next bucket/bucket-entry to be examined.
-    int bucket;
-    int idx;
+    int last_entry; // points to the last entry returned by _next
 };
 
 typedef struct zhash_iterator zhash_iterator_t;
@@ -381,6 +369,69 @@ uint32_t zhash_str_hash(const void *a);
  */
 int zhash_str_equals(const void *a, const void *b);
 
+void zhash_debug(zhash_t *zh);
+
+    static inline zhash_t *zhash_str_str_create(void)
+    {
+        return zhash_create(sizeof(char*), sizeof(char*),
+                            zhash_str_hash, zhash_str_equals);
+    }
+
+
+
+// for zhashes that map strings to strings, this is a convenience
+// function that allows easier retrieval of values. NULL is returned
+// if the key is not found.
+static inline char *zhash_str_str_get(zhash_t *zh, const char *key)
+{
+    char *value;
+    if (zhash_get(zh, &key, &value))
+        return value;
+    return NULL;
+}
+
+    static inline void zhash_str_str_put(zhash_t *zh, char *key, char *value)
+    {
+        char *oldkey, *oldval;
+        if (zhash_put(zh, &key, &value, &oldkey, &oldval)) {
+            free(oldkey);
+            free(oldval);
+        }
+    }
+
+    static inline void zhash_str_str_destroy(zhash_t *zh)
+    {
+        zhash_iterator_t zit;
+        zhash_iterator_init(zh, &zit);
+
+        char *key, *value;
+        while (zhash_iterator_next(&zit, &key, &value)) {
+            free(key);
+            free(value);
+        }
+
+        zhash_destroy(zh);
+    }
+
+
+static inline uint32_t zhash_int_hash(const void *_a)
+{
+    assert(_a != NULL);
+
+    uint32_t a = *((int*) _a);
+    return a;
+}
+
+static inline int zhash_int_equals(const void *_a, const void *_b)
+{
+    assert(_a != NULL);
+    assert(_b != NULL);
+
+    int a = *((int*) _a);
+    int b = *((int*) _b);
+
+    return a==b;
+}
 
 #ifdef __cplusplus
 }

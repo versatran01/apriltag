@@ -1,10 +1,11 @@
-/* (C) 2013-2015, The Regents of The University of Michigan
+/* Copyright (C) 2013-2016, The Regents of The University of Michigan.
 All rights reserved.
 
-This software may be available under alternative licensing
-terms. Contact Edwin Olson, ebolson@umich.edu, for more information.
+This software was developed in the APRIL Robotics Lab under the
+direction of Edwin Olson, ebolson@umich.edu. This software may be
+available under alternative licensing terms; contact the address above.
 
-   Redistribution and use in source and binary forms, with or without
+Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
 
 1. Redistributions of source code must retain the above copyright notice, this
@@ -26,20 +27,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 The views and conclusions contained in the software and documentation are those
 of the authors and should not be interpreted as representing official policies,
-either expressed or implied, of the FreeBSD Project.
- */
+either expressed or implied, of the Regents of The University of Michigan.
+*/
 
 #include <math.h>
 #include <stdio.h>
 
-#include "matd.h"
-#include "zarray.h"
-#include "homography.h"
-
-static inline float sq(float v)
-{
-    return v*v;
-}
+#include "common/matd.h"
+#include "common/zarray.h"
+#include "common/homography.h"
+#include "common/math_util.h"
 
 // correspondences is a list of float[4]s, consisting of the points x
 // and y concatenated. We will compute a homography such that y = Hx
@@ -227,7 +224,6 @@ matd_t *homography_compute(zarray_t *correspondences, int flags)
 
         for (int i = 0; i < 3; i++)
             for (int j = 0; j < 3; j++)
-                // MATD_EL(H, i, j) = MATD_EL(Ainv, 3*i+j, 0)/ scale;
                 MATD_EL(H, i, j) = MATD_EL(svd.U, 3*i+j, 8);
 
         matd_destroy(svd.U);
@@ -260,11 +256,12 @@ matd_t *homography_compute(zarray_t *correspondences, int flags)
 // [  0 fy cy 0 ]
 // [  0  0  1 0 ]
 //
-// And that the homography is equal to the projection matrix times the model matrix,
-// recover the model matrix (which is returned). Note that the third column of the model
-// matrix is missing in the expresison below, reflecting the fact that the homography assumes
-// all points are at z=0 (i.e., planar) and that the element of z is thus omitted.
-// (3x1 instead of 4x1).
+// And that the homography is equal to the projection matrix times the
+// model matrix, recover the model matrix (which is returned). Note
+// that the third column of the model matrix is missing in the
+// expresison below, reflecting the fact that the homography assumes
+// all points are at z=0 (i.e., planar) and that the element of z is
+// thus omitted.  (3x1 instead of 4x1).
 //
 // [ fx 0  cx 0 ] [ R00  R01  TX ]    [ H00 H01 H02 ]
 // [  0 fy cy 0 ] [ R10  R11  TY ] =  [ H10 H11 H12 ]
@@ -300,7 +297,8 @@ matd_t *homography_to_pose(const matd_t *H, double fx, double fy, double cx, dou
     double length2 = sqrtf(R01*R01 + R11*R11 + R21*R21);
     double s = 1.0 / sqrtf(length1 * length2);
 
-    // get sign of S by requiring the tag to be behind the camera.
+    // get sign of S by requiring the tag to be in front the camera;
+    // we assume camera looks in the -Z direction.
     if (TZ > 0)
         s *= -1;
 
@@ -384,7 +382,8 @@ matd_t *homography_to_model_view(const matd_t *H, double F, double G, double A, 
     double length2 = sqrtf(R01*R01 + R11*R11 + R21*R21);
     double s = 1.0 / sqrtf(length1 * length2);
 
-    // get sign of S by requiring the tag to be behind the camera.
+    // get sign of S by requiring the tag to be in front of the camera
+    // (which is Z < 0) for our conventions.
     if (TZ > 0)
         s *= -1;
 

@@ -1,10 +1,11 @@
-/* (C) 2013-2015, The Regents of The University of Michigan
+/* Copyright (C) 2013-2016, The Regents of The University of Michigan.
 All rights reserved.
 
-This software may be available under alternative licensing
-terms. Contact Edwin Olson, ebolson@umich.edu, for more information.
+This software was developed in the APRIL Robotics Lab under the
+direction of Edwin Olson, ebolson@umich.edu. This software may be
+available under alternative licensing terms; contact the address above.
 
-   Redistribution and use in source and binary forms, with or without
+Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
 
 1. Redistributions of source code must retain the above copyright notice, this
@@ -26,17 +27,18 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 The views and conclusions contained in the software and documentation are those
 of the authors and should not be interpreted as representing official policies,
-either expressed or implied, of the FreeBSD Project.
- */
+either expressed or implied, of the Regents of The University of Michigan.
+*/
 
 #ifndef _STRING_UTIL_H
 #define _STRING_UTIL_H
 
+#include <stdio.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <ctype.h>
 
-#include "zarray.h"
+#include "common/zarray.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -96,6 +98,9 @@ int str_diff_idx(const char * a, const char * b);
  */
 zarray_t *str_split(const char *str, const char *delim);
 
+zarray_t *str_split_spaces(const char *str);
+
+void str_split_destroy(zarray_t *s);
 
 /*
  * Determines if str1 exactly matches str2 (more efficient than strcmp(...) == 0)
@@ -209,6 +214,10 @@ char *str_substring(const char *str, size_t startidx, long endidx);
  */
 int str_indexof(const char *haystack, const char *needle);
 
+    static inline int str_contains(const char *haystack, const char *needle) {
+        return str_indexof(haystack, needle) >= 0;
+    }
+
 // same as above, but returns last match
 int str_last_indexof(const char *haystack, const char *needle);
 
@@ -244,6 +253,7 @@ char *str_touppercase(char *s);
  */
 char *str_replace(const char *haystack, const char *needle, const char *replacement);
 
+    char *str_replace_many(const char *_haystack, ...);
 //////////////////////////////////////////////////////
 // String Buffer
 
@@ -359,7 +369,7 @@ char string_feeder_next(string_feeder_t *sf);
  *
  * Note: Calling once the end of the string has already been read will throw an assertion.
  */
-char *string_feeder_next_length(string_feeder_t *sf, int length);
+char *string_feeder_next_length(string_feeder_t *sf, size_t length);
 
 /**
  * Retrieves the next available character from the supplied string feeder
@@ -382,7 +392,7 @@ char string_feeder_peek(string_feeder_t *sf);
  *
  * Note: Calling once the end of the string has already been read will throw an assertion.
  */
-char *string_feeder_peek_length(string_feeder_t *sf, int length);
+char *string_feeder_peek_length(string_feeder_t *sf, size_t length);
 
 /**
  * Retrieves the line number of the current position in the supplied
@@ -441,6 +451,12 @@ void string_feeder_require(string_feeder_t *sf, const char *str);
     }
 #endif
 */
+
+
+// find everything that looks like an env variable and expand it
+// using getenv. Caller should free the result.
+// e.g. "$HOME/abc" ==> "/home/ebolson/abc"
+char *str_expand_envs(const char *in);
 
 #ifdef __cplusplus
 }

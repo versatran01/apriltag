@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8)
 project(apriltag_umich)
 
-set(USE_ROS TRUE)
+set(USE_ROS FALSE)
 include(cmake/apriltag_umich-extras.cmake)
 
 if(NOT CMAKE_BUILD_TYPE)
@@ -35,7 +35,6 @@ include_directories(
 file(GLOB C_FILES
     ${PROJECT_SOURCE_DIR}/src/*.c
     ${PROJECT_SOURCE_DIR}/src/common/*.c)
-list(REMOVE_ITEM C_FILES ${PROJECT_SOURCE_DIR}/src/apriltag_demo.c)
 
 add_library(${PROJECT_NAME} SHARED ${C_FILES})
 target_link_libraries(${PROJECT_NAME} ${CMAKE_THREAD_LIBS_INIT} m)

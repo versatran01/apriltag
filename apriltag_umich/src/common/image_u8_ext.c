@@ -1,7 +1,7 @@
 #include "image_u8_ext.h"
 
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 
 image_u8_t *image_u8_create_from_gray(unsigned int width, unsigned int height,
                                       uint8_t *gray) {
@@ -16,5 +16,3 @@ image_u8_t *image_u8_create_from_gray(unsigned int width, unsigned int height,
 
   return im;
 }
-
-

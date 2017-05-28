@@ -1,10 +1,11 @@
-/* (C) 2013-2015, The Regents of The University of Michigan
+/* Copyright (C) 2013-2016, The Regents of The University of Michigan.
 All rights reserved.
 
-This software may be available under alternative licensing
-terms. Contact Edwin Olson, ebolson@umich.edu, for more information.
+This software was developed in the APRIL Robotics Lab under the
+direction of Edwin Olson, ebolson@umich.edu. This software may be
+available under alternative licensing terms; contact the address above.
 
-   Redistribution and use in source and binary forms, with or without
+Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
 
 1. Redistributions of source code must retain the above copyright notice, this
@@ -26,8 +27,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 The views and conclusions contained in the software and documentation are those
 of the authors and should not be interpreted as representing official policies,
-either expressed or implied, of the FreeBSD Project.
- */
+either expressed or implied, of the Regents of The University of Michigan.
+*/
 
 #ifndef _PNM_H
 #define _PNM_H
@@ -38,6 +39,7 @@ either expressed or implied, of the FreeBSD Project.
 extern "C" {
 #endif
 
+#define PNM_FORMAT_BINARY 4
 #define PNM_FORMAT_GRAY 5
 #define PNM_FORMAT_RGB  6
 
@@ -48,9 +50,10 @@ struct pnm
 {
     int width, height;
     int format;
+    int max; // 1 = binary, 255 = one byte, 65535 = two bytes
 
     uint32_t buflen;
-    uint8_t *buf;
+    uint8_t *buf; // if max=65535, in big endian
 };
 
 pnm_t *pnm_create_from_file(const char *path);
