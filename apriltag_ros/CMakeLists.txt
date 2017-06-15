@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(apriltag_ros)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wno-deprecated-declarations")
+set (CMAKE_CXX_STANDARD 11)
 
 find_package(OpenCV REQUIRED)
 find_package(Boost REQUIRED COMPONENTS program_options)
@@ -18,7 +18,6 @@ catkin_package(
     LIBRARIES ${PROJECT_NAME}
     CATKIN_DEPENDS roscpp dynamic_reconfigure message_runtime image_transport
     cv_bridge apriltag_mit apriltag_umich apriltag_msgs
-    DEPENDS OpenCV
     )
 
 include_directories(

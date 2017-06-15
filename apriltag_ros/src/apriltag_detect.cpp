@@ -56,8 +56,8 @@ int main(int argc, char **argv) {
     detector = ApriltagDetector::Create(static_cast<DetectorType>(type),
                                         static_cast<TagFamily>(family));
     detector->set_black_border(black_border);
-    detector->set_decimate(decimate);
-    detector->set_refine(refine);
+    //    detector->set_decimate(decimate);
+    //    detector->set_refine(refine);
   } catch (const std::exception &e) {
     std::cout << e.what() << "\n";
     return 1;

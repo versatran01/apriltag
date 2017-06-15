@@ -8,7 +8,7 @@
     <param name="type" type="int" value="0"/>
 
     <remap from="~image" to="$(arg image)"/>
-    <remap from="~apriltags" to="apriltags"/>
-    <remap from="~image_detection" to="image_detection"/>
+    <remap from="~tags" to="tags"/>
+    <remap from="~disp" to="disp"/>
   </node>
 </launch>

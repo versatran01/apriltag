@@ -7,7 +7,4 @@
   <license>GPLv3</license>
 
   <buildtool_depend>catkin</buildtool_depend>
-  <depend>roslib</depend>
-  <test_depend>rosunit</test_depend>
-
 </package>

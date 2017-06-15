@@ -1,22 +1,21 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 2.8.3)
 project(apriltag_umich)
 
-set(USE_ROS FALSE)
-include(cmake/apriltag_umich-extras.cmake)
+set(USE_ROS TRUE)
+set (CMAKE_CXX_STANDARD 11)
 
-if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE RelWithDebInfo)
-endif()
-
-find_package (Threads)
+find_package(Eigen3 REQUIRED)
+find_package(OpenCV REQUIRED)
+find_package (Threads REQUIRED)
+include_directories(include
+    ${OpenCV_INCLUDE_DIRS}
+    ${EIGEN3_INCLUDE_DIR}
+    )
 
 if(USE_ROS)
-    find_package(catkin REQUIRED COMPONENTS roslib)
-    find_package(OpenCV REQUIRED)
     catkin_package(
         INCLUDE_DIRS include src src/common
         LIBRARIES ${PROJECT_NAME}
-        CFG_EXTRAS apriltag_umich-extras.cmake
         )
 else()
     message(STATUS "Source: " ${PROJECT_SOURCE_DIR})
@@ -38,14 +37,3 @@ file(GLOB C_FILES
 
 add_library(${PROJECT_NAME} SHARED ${C_FILES})
 target_link_libraries(${PROJECT_NAME} ${CMAKE_THREAD_LIBS_INIT} m)
-
-#if(CATKIN_ENABLE_TESTING)
-if(FALSE)
-    include_directories(${catkin_INCLUDE_DIRS})
-    catkin_add_gtest(test_${PROJECT_NAME} test/test_${PROJECT_NAME}.cpp)
-    target_link_libraries(test_${PROJECT_NAME}
-        ${PROJECT_NAME}
-        ${catkin_LIBRARIES}
-        ${OpenCV_LIBRARIES}
-        )
-endif()

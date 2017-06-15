@@ -1,18 +1,18 @@
 #include "apriltag_ros/apriltag_detector_node.h"
 
 #include <apriltag_msgs/ApriltagArrayStamped.h>
-#include <cv_bridge/cv_bridge.h>
-#include <sensor_msgs/image_encodings.h>
 #include <boost/thread/lock_guard.hpp>
+#include <cv_bridge/cv_bridge.h>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
+#include <sensor_msgs/image_encodings.h>
 
 namespace apriltag_ros {
 
 using namespace sensor_msgs;
 using apriltag_msgs::ApriltagArrayStamped;
 
-ApriltagDetectorNode::ApriltagDetectorNode(const ros::NodeHandle& pnh)
+ApriltagDetectorNode::ApriltagDetectorNode(const ros::NodeHandle &pnh)
     : pnh_(pnh), it_(pnh_), cfg_server_(pnh) {
   cfg_server_.setCallback(
       boost::bind(&ApriltagDetectorNode::ConfigCb, this, _1, _2));
@@ -20,12 +20,12 @@ ApriltagDetectorNode::ApriltagDetectorNode(const ros::NodeHandle& pnh)
   // Setup connect callback
   auto connect_cb = boost::bind(&ApriltagDetectorNode::ConnectCb, this);
   boost::lock_guard<boost::mutex> lock(connect_mutex_);
-  pub_apriltags_ = pnh_.advertise<ApriltagArrayStamped>("apriltags", 1,
-                                                        connect_cb, connect_cb);
-  pub_detection_ = it_.advertise("image_detection", 1, connect_cb, connect_cb);
+  pub_tags_ =
+      pnh_.advertise<ApriltagArrayStamped>("tags", 1, connect_cb, connect_cb);
+  pub_disp_ = it_.advertise("disp", 1, connect_cb, connect_cb);
 }
 
-void ApriltagDetectorNode::ImageCb(const ImageConstPtr& image_msg) {
+void ApriltagDetectorNode::ImageCb(const ImageConstPtr &image_msg) {
   const auto gray =
       cv_bridge::toCvShare(image_msg, image_encodings::MONO8)->image;
 
@@ -33,27 +33,27 @@ void ApriltagDetectorNode::ImageCb(const ImageConstPtr& image_msg) {
   auto apriltags = detector_->Detect(gray);
 
   // Refine
-  if (config_.refine) {
-    RefineApriltags(gray, apriltags);
-  }
+  //  if (config_.refine) {
+  //    RefineApriltags(gray, apriltags);
+  //  }
 
   // Publish apriltags
   auto apriltag_array_msg = boost::make_shared<ApriltagArrayStamped>();
   apriltag_array_msg->header = image_msg->header;
   apriltag_array_msg->apriltags = apriltags;
-  pub_apriltags_.publish(apriltag_array_msg);
+  pub_tags_.publish(apriltag_array_msg);
 
   // Publish detection image if needed
-  if (pub_detection_.getNumSubscribers()) {
+  if (pub_disp_.getNumSubscribers()) {
     cv::Mat disp;
     cv::cvtColor(gray, disp, CV_GRAY2BGR);
     DrawApriltags(disp, apriltags);
     cv_bridge::CvImage cv_img(image_msg->header, image_encodings::BGR8, disp);
-    pub_detection_.publish(cv_img.toImageMsg());
+    pub_disp_.publish(cv_img.toImageMsg());
   }
 }
 
-void ApriltagDetectorNode::ConfigCb(ConfigT& config, int level) {
+void ApriltagDetectorNode::ConfigCb(ConfigT &config, int level) {
   if (level < 0) {
     ROS_INFO("%s: %s", pnh_.getNamespace().c_str(),
              "Initializing reconfigure server");
@@ -65,16 +65,16 @@ void ApriltagDetectorNode::ConfigCb(ConfigT& config, int level) {
                                          static_cast<TagFamily>(config.family));
   }
   detector_->set_black_border(config.black_border);
-  detector_->set_decimate(config.decimate);
-  detector_->set_refine(config.refine);
+  //  detector_->set_decimate(config.decimate);
+  //  detector_->set_refine(config.refine);
   // Save config
   config_ = config;
 }
 
 void ApriltagDetectorNode::ConnectCb() {
   boost::lock_guard<boost::mutex> lock(connect_mutex_);
-  if (pub_apriltags_.getNumSubscribers() == 0 &&
-      pub_detection_.getNumSubscribers() == 0) {
+  if (pub_tags_.getNumSubscribers() == 0 &&
+      pub_disp_.getNumSubscribers() == 0) {
     ROS_DEBUG("%s: No subscribers, shutting down", pnh_.getNamespace().c_str());
     sub_image_.shutdown();
   } else if (!sub_image_) {
@@ -84,16 +84,16 @@ void ApriltagDetectorNode::ConnectCb() {
   }
 }
 
-}  // namespace apriltag_ros
+} // namespace apriltag_ros
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   ros::init(argc, argv, "apriltag_detector_node");
   ros::NodeHandle pnh("~");
 
   try {
     apriltag_ros::ApriltagDetectorNode node(pnh);
     ros::spin();
-  } catch (const std::exception& e) {
+  } catch (const std::exception &e) {
     ROS_ERROR("%s: %s", pnh.getNamespace().c_str(), e.what());
   }
 }

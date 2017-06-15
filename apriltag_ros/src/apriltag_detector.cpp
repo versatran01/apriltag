@@ -25,13 +25,13 @@ void ApriltagDetector::set_black_border(int black_border) {
 
 int ApriltagDetector::black_border() const { return black_border_; }
 
-void ApriltagDetector::set_decimate(int decimate) {
-  decimate_ = (decimate >= 1) ? decimate : 1;
-}
-int ApriltagDetector::decimate() const { return decimate_; }
+// void ApriltagDetector::set_decimate(int decimate) {
+//  decimate_ = (decimate >= 1) ? decimate : 1;
+//}
+// int ApriltagDetector::decimate() const { return decimate_; }
 
-void ApriltagDetector::set_refine(bool refine) { refine_ = refine; }
-bool ApriltagDetector::refine() const { return refine_; }
+// void ApriltagDetector::set_refine(bool refine) { refine_ = refine; }
+// bool ApriltagDetector::refine() const { return refine_; }
 
 int ApriltagDetector::tag_bits() const { return tag_bits_; }
 const std::string &ApriltagDetector::tag_family() const {
@@ -94,23 +94,23 @@ void ApriltagDetectorMit::SetBlackBorder(int black_border) {
 
 ApriltagVec ApriltagDetectorMit::DetectImpl(const cv::Mat &image) {
   // Decimate image
-  cv::Mat im_scaled;
-  if (decimate_ > 1) {
-    const double fx = 1.0 / decimate_;
-    cv::resize(image, im_scaled, cv::Size(0, 0), fx, fx);
-  } else {
-    im_scaled = image;
-  }
+  //  cv::Mat im_scaled;
+  //  if (decimate_ > 1) {
+  //    const double fx = 1.0 / decimate_;
+  //    cv::resize(image, im_scaled, cv::Size(0, 0), fx, fx);
+  //  } else {
+  //    im_scaled = image;
+  //  }
 
   // Detection
-  auto detections = tag_detector_->ExtractTags(im_scaled);
+  auto detections = tag_detector_->ExtractTags(image);
 
   // Handle decimation
-  if (decimate_ > 1) {
-    for (mit::TagDetection &td : detections) {
-      td.ScaleTag(decimate_);
-    }
-  }
+  //  if (decimate_ > 1) {
+  //    for (mit::TagDetection &td : detections) {
+  //      td.ScaleTag(decimate_);
+  //    }
+  //  }
 
   // Convert to  Apriltag message
   ApriltagVec apriltags;
@@ -164,8 +164,8 @@ ApriltagVec ApriltagDetectorUmich::DetectImpl(const cv::Mat &image) {
   umich::ImageU8Ptr image_u8(
       image_u8_create_from_gray(image.cols, image.rows, image.data));
   // Handle options
-  tag_detector_->quad_decimate = decimate_;
-  tag_detector_->refine_edges = refine_;
+  //  tag_detector_->quad_decimate = decimate_;
+  //  tag_detector_->refine_edges = refine_;
 
   // Detection
   umich::ZarrayPtr detections(
@@ -189,8 +189,8 @@ ApriltagVec ApriltagDetectorUmich::DetectImpl(const cv::Mat &image) {
     apriltag.center.y = td->c[1];
     for (size_t i = 0; i < 4; ++i) {
       // Umich's order of corners is different from mit's
-      apriltag.corners[i].x = td->p[3 - i][0];
-      apriltag.corners[i].y = td->p[3 - i][1];
+      apriltag.corners[i].x = td->p[i][0];
+      apriltag.corners[i].y = td->p[i][1];
     }
     apriltags.push_back(apriltag);
   }

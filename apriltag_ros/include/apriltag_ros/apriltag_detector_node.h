@@ -6,8 +6,8 @@
 #include <ros/ros.h>
 #include <sensor_msgs/Image.h>
 
-#include <apriltag_ros/ApriltagDetectorDynConfig.h>
 #include "apriltag_ros/apriltag_detector.h"
+#include <apriltag_ros/ApriltagDetectorDynConfig.h>
 
 namespace apriltag_ros {
 
@@ -15,26 +15,29 @@ namespace it = image_transport;
 namespace dr = dynamic_reconfigure;
 
 class ApriltagDetectorNode {
- public:
+public:
   using ConfigT = ApriltagDetectorDynConfig;
 
-  explicit ApriltagDetectorNode(const ros::NodeHandle& pnh);
-  void ImageCb(const sensor_msgs::ImageConstPtr& image_msg);
+  explicit ApriltagDetectorNode(const ros::NodeHandle &pnh);
+  void ImageCb(const sensor_msgs::ImageConstPtr &image_msg);
   void ConnectCb();
-  void ConfigCb(ConfigT& config, int level);
+  void ConfigCb(ConfigT &config, int level);
 
- private:
+private:
   ros::NodeHandle pnh_;
   it::ImageTransport it_;
   it::Subscriber sub_image_;
-  ros::Publisher pub_apriltags_;
-  it::Publisher pub_detection_;
-  dr::Server<ConfigT> cfg_server_;
+
   ConfigT config_;
-  ApriltagDetectorPtr detector_;
   boost::mutex connect_mutex_;
+  dr::Server<ConfigT> cfg_server_;
+
+  ros::Publisher pub_tags_;
+  it::Publisher pub_disp_;
+
+  ApriltagDetectorPtr detector_;
 };
 
-}  // namespace apriltag_ros
+} // namespace apriltag_ros
 
-#endif  // APRILTAG_ROS_APRILTAG_DETECTOR_NODE_H_
+#endif // APRILTAG_ROS_APRILTAG_DETECTOR_NODE_H_
