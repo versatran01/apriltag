@@ -1,7 +1,7 @@
 #include "apriltag_ros/apriltag_detector.h"
 #include <gtest/gtest.h>
-#include <ros/package.h>
 #include <opencv2/highgui/highgui.hpp>
+#include <ros/package.h>
 
 using testing::Test;
 using testing::Values;
@@ -9,7 +9,7 @@ using testing::WithParamInterface;
 using namespace apriltag_ros;
 
 class SampleImageTest : public Test {
- protected:
+protected:
   SampleImageTest()
       : package_name_("apriltag_mit"),
         package_path_(ros::package::getPath(package_name_)),
@@ -22,36 +22,44 @@ class SampleImageTest : public Test {
 
 class ApriltagDetectorMitTest : public SampleImageTest,
                                 public WithParamInterface<std::string> {
- public:
+public:
   ApriltagDetectorMitTest()
-      : tag_detector_(ApriltagDetector::create("mit", GetParam())) {}
+      : tag_detector_(ApriltagDetector::Create(DetectorType::Mit, GetParam())) {
+  }
 
- protected:
+protected:
   ApriltagDetectorPtr tag_detector_;
 };
 
 class ApriltagDetectorUmichTest : public SampleImageTest,
                                   public WithParamInterface<std::string> {
- public:
+public:
   ApriltagDetectorUmichTest()
-      : tag_detector_(ApriltagDetector::create("umich", GetParam())) {}
+      : tag_detector_(
+            ApriltagDetector::Create(DetectorType::Umich, GetParam())) {}
 
- protected:
+protected:
   ApriltagDetectorPtr tag_detector_;
 };
 
 TEST_P(ApriltagDetectorMitTest, Detection) {
-  tag_detector_->detect(test_image_);
-  EXPECT_EQ(4, tag_detector_->apriltags().size());
+  const auto tags = tag_detector_->Detect(test_image_);
+  EXPECT_EQ(4, tags.size());
 }
 
 INSTANTIATE_TEST_CASE_P(ThreeTagFamilies, ApriltagDetectorMitTest,
-                        Values("t36h11", "t25h9", "t16h5"));
+                        Values(TagFamily::tf16h5, TagFamily::tf25h9,
+                               TagFamily::tf36h11));
 
 TEST_P(ApriltagDetectorUmichTest, Detection) {
-  tag_detector_->detect(test_image_);
-  EXPECT_EQ(4, tag_detector_->apriltags().size());
+  const auto tags = tag_detector_->Detect(test_image_);
+  EXPECT_EQ(4, tags.size());
 }
 
 INSTANTIATE_TEST_CASE_P(ThreeTagFamilies, ApriltagDetectorUmichTest,
-                        Values("t36h11", "t25h9"));
+                        Values(TagFamily::tf36h11, TagFamily::tf25h9));
+
+int main(int argc, char **argv) {
+  testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
+}

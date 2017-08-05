@@ -1,7 +1,7 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.3)
 project(apriltag_ros)
 
-set (CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 11)
 
 find_package(OpenCV REQUIRED)
 find_package(Boost REQUIRED COMPONENTS program_options)
@@ -41,3 +41,6 @@ add_dependencies(${PROJECT_NAME}
     ${PROJECT_NAME}_gencpp
     ${${PROJECT_NAME}_EXPORTED_TARGETS}
     )
+
+#catkin_add_gtest(test_apriltag_detector test/test_apriltag_detector.cpp)
+#target_link_libraries(test_apriltag_detector ${PROJECT_NAME})
