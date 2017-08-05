@@ -1,7 +1,7 @@
-#include "opencv2/opencv.hpp"
-#include <iterator>
 #include "AprilTags/TagDetection.h"
 #include "AprilTags/MathUtil.h"
+#include "opencv2/opencv.hpp"
+#include <iterator>
 
 namespace AprilTags {
 
@@ -20,7 +20,8 @@ float TagRadius(const std::vector<cv::Point2f> &p) {
 cv::Point2f TagDetection::Project(const cv::Point2f &p) const {
   float z = H(2, 0) * p.x + H(2, 1) * p.y + H(2, 2);
   // prevents returning a pair with -NaN, for which gcc 4.4 flubs isnan
-  if (z == 0.0) return {0, 0};
+  if (z == 0.0)
+    return {0, 0};
 
   const float x = (H(0, 0) * p.x + H(0, 1) * p.y + H(0, 2)) / z;
   const float y = (H(1, 0) * p.x + H(1, 1) * p.y + H(1, 2)) / z;
@@ -85,4 +86,4 @@ cv::Matx33f CalcHomography(const std::vector<cv::Point2f> &p) {
   return Hf;
 }
 
-}  // namespace AprilTags
+} // namespace AprilTags

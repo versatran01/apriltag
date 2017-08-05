@@ -1,16 +1,15 @@
 #include <iostream>
 #include <numeric>
 
-#include "AprilTags/TagFamily.h"
 #include "AprilTags/MathUtil.h"
+#include "AprilTags/TagFamily.h"
 
 namespace AprilTags {
 
 using namespace std;
 
 TagFamily::TagFamily(const TagCodes &tag_codes)
-    : tag_codes_(tag_codes),
-      num_codes_(tag_codes.codes.size()),
+    : tag_codes_(tag_codes), num_codes_(tag_codes.codes.size()),
       error_recovery_bits_(1) {}
 
 unsigned TagFamily::payload_bits() const { return tag_codes_.payload_bits; }
@@ -73,7 +72,8 @@ TagDetection TagFamily::DecodeQuad(const Quad &quad, const FloatImage &image,
   const auto code = quad.ToTagCode(image, dimension_bits(), black_border);
 
   // We get a bad code, just return a bad tag detection
-  if (code == 0) return TagDetection();
+  if (code == 0)
+    return TagDetection();
 
   auto td = Decode(code);
   td.RotatePoints(quad.p);
@@ -95,7 +95,8 @@ code_t Rotate90DegCwise(code_t w, int d) {
       int b = r + d * c;
       wr = wr << 1;
 
-      if ((w & (one << b)) != 0) wr |= 1;
+      if ((w & (one << b)) != 0)
+        wr |= 1;
     }
   }
   return wr;
@@ -106,4 +107,4 @@ unsigned HammingDistance(code_t a, code_t b) {
   return __builtin_popcountll(a ^ b);
 }
 
-}  // namespace AprilTags
+} // namespace AprilTags

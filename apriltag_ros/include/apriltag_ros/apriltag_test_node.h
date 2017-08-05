@@ -23,36 +23,36 @@ using message_filters::sync_policies::ExactTime;
 using message_filters::sync_policies::ApproximateTime;
 
 class Track {
- public:
- private:
+public:
+private:
 };
 
 class Tracker {
- public:
- private:
+public:
+private:
   std::vector<Track> tracks_;
 };
 
 template <class M>
 class BagSubscriber : public message_filters::SimpleFilter<M> {
- public:
-  void newMessage(const boost::shared_ptr<const M>& msg) {
+public:
+  void newMessage(const boost::shared_ptr<const M> &msg) {
     this->signalMessage(msg);
   }
 };
 
 class ApriltagTestNode {
- public:
+public:
   using ExactPolicy = ExactTime<Image, CameraInfo>;
   using ExactSync = message_filters::Synchronizer<ExactPolicy>;
 
-  explicit ApriltagTestNode(const ros::NodeHandle& pnh);
+  explicit ApriltagTestNode(const ros::NodeHandle &pnh);
 
   void process();
-  void cameraCb(const ImageConstPtr& image_msg,
-                const CameraInfoConstPtr& cinfo_msg);
+  void cameraCb(const ImageConstPtr &image_msg,
+                const CameraInfoConstPtr &cinfo_msg);
 
- private:
+private:
   ros::NodeHandle pnh_;
   BagSubscriber<Image> sub_image_;
   BagSubscriber<CameraInfo> sub_cinfo_;
@@ -64,15 +64,15 @@ class ApriltagTestNode {
   ApriltagDetectorPtr detector_;
 };
 
-void drawDetection(const std::vector<ApriltagDetection>& detections,
-                   cv::Mat& image);
+void drawDetection(const std::vector<ApriltagDetection> &detections,
+                   cv::Mat &image);
 
-cv::Mat tagView(const std::vector<ApriltagDetection>& detections,
-                const cv::Mat& image, int corner_win_size,
+cv::Mat tagView(const std::vector<ApriltagDetection> &detections,
+                const cv::Mat &image, int corner_win_size,
                 int tags_per_row = 4);
 
-void drawGrid(cv::Mat& image, int rows, int cols, int size,
-              const cv::Scalar& color);
-}  // namespace apritlag_ros
+void drawGrid(cv::Mat &image, int rows, int cols, int size,
+              const cv::Scalar &color);
+} // namespace apritlag_ros
 
-#endif  // APRILTAG_ROS_APRILTAG_TEST_NODE_H_
+#endif // APRILTAG_ROS_APRILTAG_TEST_NODE_H_

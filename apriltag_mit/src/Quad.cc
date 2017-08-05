@@ -1,19 +1,14 @@
-#include <opencv2/calib3d/calib3d.hpp>
-#include "AprilTags/MathUtil.h"
-#include "AprilTags/Line2D.h"
 #include "AprilTags/Quad.h"
+#include "AprilTags/Line2D.h"
+#include "AprilTags/MathUtil.h"
 #include "AprilTags/Segment.h"
+#include <opencv2/calib3d/calib3d.hpp>
 
 namespace AprilTags {
 
 Quad::Quad(const std::vector<cv::Point2f> &p)
-    : p(p),
-      segments(),
-      obs_perimeter(),
-      p0_(p[0]),
-      p3_(p[3]),
-      p01_(p[1] - p[0]),
-      p32_(p[2] - p[3]) {}
+    : p(p), segments(), obs_perimeter(), p0_(p[0]), p3_(p[3]),
+      p01_(p[1] - p[0]), p32_(p[2] - p[3]) {}
 
 cv::Point2f Quad::Interpolate(const cv::Point2f &p) const {
   const float kx = (p.x + 1) / 2;
@@ -39,7 +34,8 @@ GrayModel Quad::MakeGrayModel(const FloatImage &image,
     const float yn = (yb + 0.5f) / lb;
     for (int xb = -1; xb <= lb; ++xb) {
       // Skip if inside quad boundary
-      if (IsInsideInnerBorder(xb, yb, lb)) continue;
+      if (IsInsideInnerBorder(xb, yb, lb))
+        continue;
 
       const float xn = (xb + 0.5f) / lb;
       // Convert to image coordinates
@@ -48,7 +44,8 @@ GrayModel Quad::MakeGrayModel(const FloatImage &image,
       int yi = pi.y + 0.5;
 
       // Skip if outside image
-      if (!IsInsideImage(xi, yi, image)) continue;
+      if (!IsInsideImage(xi, yi, image))
+        continue;
 
       const float v = image.get(xi, yi);
       if (IsOnOuterBorder(xb, yb, lb)) {
@@ -143,7 +140,8 @@ void Quad::Search(std::vector<Segment *> &path, Segment &parent, int depth,
         // cout << "ttheta=" << ttheta << endl;
         // the magic value is -2*PI. It should be exact,
         // but we allow for (lots of) numeric imprecision.
-        if (total_theta < -7 || total_theta > -5) bad = true;
+        if (total_theta < -7 || total_theta > -5)
+          bad = true;
       }
 
       if (!bad) {
@@ -199,4 +197,4 @@ void Quad::Search(std::vector<Segment *> &path, Segment &parent, int depth,
   }
 }
 
-}  // namespace AprilTags
+} // namespace AprilTags

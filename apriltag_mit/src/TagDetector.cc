@@ -111,8 +111,9 @@ DisjointSets TagDetector::ExtractEdges(const FloatImage &im_mag,
   return dsets;
 }
 
-TagDetector::Clusters TagDetector::ClusterPixels(
-    DisjointSets &dsets, const FloatImage &im_mag) const {
+TagDetector::Clusters
+TagDetector::ClusterPixels(DisjointSets &dsets,
+                           const FloatImage &im_mag) const {
   const int height = im_mag.height();
   const int width = im_mag.width();
 
@@ -258,8 +259,8 @@ void TagDetector::ChainSegments(std::vector<Segment> &segments,
   }
 }
 
-std::vector<Quad> TagDetector::SearchQuads(
-    std::vector<Segment> &segments) const {
+std::vector<Quad>
+TagDetector::SearchQuads(std::vector<Segment> &segments) const {
   std::vector<Quad> quads;
 
   // TODO: need to look at this
@@ -272,20 +273,22 @@ std::vector<Quad> TagDetector::SearchQuads(
   return quads;
 }
 
-std::vector<TagDetection> TagDetector::DecodeQuads(
-    const std::vector<Quad> &quads, const FloatImage &image) const {
+std::vector<TagDetection>
+TagDetector::DecodeQuads(const std::vector<Quad> &quads,
+                         const FloatImage &image) const {
   std::vector<TagDetection> detections;
 
   for (const Quad &quad : quads) {
     const auto td = tag_family_.DecodeQuad(quad, image, black_border());
-    if (td.good) detections.push_back(td);
+    if (td.good)
+      detections.push_back(td);
   }
 
   return detections;
 }
 
-std::vector<TagDetection> TagDetector::ResolveOverlap(
-    const std::vector<TagDetection> &detections) const {
+std::vector<TagDetection>
+TagDetector::ResolveOverlap(const std::vector<TagDetection> &detections) const {
   std::vector<TagDetection> good_detections;
   good_detections.reserve(detections.size());
 
@@ -435,4 +438,4 @@ std::vector<int> IndexFromNonZero(const cv::Mat mat) {
   return pids;
 }
 
-}  // namespace AprilTags
+} // namespace AprilTags

@@ -13,7 +13,8 @@ DisjointSets::DisjointSets(int n) : parent_(n), size_(n, 1) {
 int DisjointSets::Find(int id) {
   // terminal case: a node is its own parent
   const int parent = parent_[id];
-  if (parent == id) return id;
+  if (parent == id)
+    return id;
 
   // otherwise, recurse...
   int root = Find(parent);
@@ -28,7 +29,8 @@ int DisjointSets::Union(int id0, int id1) {
   const int root0 = Find(id0);
   const int root1 = Find(id1);
 
-  if (root0 == root1) return root0;
+  if (root0 == root1)
+    return root0;
 
   const int sz0 = size_[root0];
   const int sz1 = size_[root1];
@@ -46,4 +48,4 @@ int DisjointSets::Union(int id0, int id1) {
 
 int DisjointSets::GetSetSize(int id) { return size_[Find(id)]; }
 
-}  // namespace AprilTags
+} // namespace AprilTags

@@ -1,8 +1,8 @@
 #include "apriltag_umich/apriltag_umich.h"
 
-#include <ros/package.h>
 #include <gtest/gtest.h>
 #include <opencv2/highgui/highgui.hpp>
+#include <ros/package.h>
 
 using namespace apriltag_umich;
 using ::testing::Test;
@@ -10,7 +10,7 @@ using ::testing::WithParamInterface;
 using ::testing::Values;
 
 class SampleImageTest : public Test {
- protected:
+protected:
   SampleImageTest()
       : package_name_("apriltag_mit"),
         package_path_(ros::package::getPath(package_name_)),
@@ -26,13 +26,13 @@ class SampleImageTest : public Test {
 
 class TagFamilyTest : public SampleImageTest,
                       public WithParamInterface<apriltag_family_t *> {
- public:
+public:
   TagFamilyTest()
       : tag_family_(GetParam()), tag_detector_(apriltag_detector_create()) {
     apriltag_detector_add_family(tag_detector_.get(), tag_family_.get());
   }
 
- protected:
+protected:
   TagFamilyPtr tag_family_;
   TagDetectorPtr tag_detector_;
 };
