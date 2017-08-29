@@ -14,7 +14,7 @@ include_directories(include
 if(USE_ROS)
     find_package(catkin REQUIRED COMPONENTS roslib)
     catkin_package(
-        DEPENDS OpenCV Eigen3
+        DEPENDS OpenCV EIGEN3
         INCLUDE_DIRS
         include ${EIGEN3_INCLUDE_DIR} ${OpenCV_INCLUDE_DIRS}
         LIBRARIES ${PROJECT_NAME}
@@ -41,6 +41,3 @@ else()
     add_library(${PROJECT_NAME} SHARED ${CC_FILES})
     target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBRARIES})
 endif()
-
-
-

@@ -37,9 +37,6 @@ target_link_libraries(apriltag_detect ${PROJECT_NAME})
 
 add_dependencies(${PROJECT_NAME}
     ${catkin_EXPORTED_TARGETS}
-    ${PROJECT_NAME}_gencfg
-    ${PROJECT_NAME}_gencpp
-    ${${PROJECT_NAME}_EXPORTED_TARGETS}
     )
 
 #catkin_add_gtest(test_apriltag_detector test/test_apriltag_detector.cpp)
