@@ -84,7 +84,7 @@ void IntensityModel::Fit() {
 
   // If we get here, either nobs < 6 or the matrix inverse generated
   // an underflow, so use a constant model.
-  c_.setZero(); // need the cast to avoid operator= ambiguity wrt. const-ness
+  c_.setZero();  // need the cast to avoid operator= ambiguity wrt. const-ness
   c_[3] = b_[3] / num_obs_;
 }
 
@@ -107,4 +107,4 @@ bool IsInsideInnerBorder(int x, int y, int l) {
   return (y >= 1 && y < (l - 1) && x >= 1 && x < (l - 1));
 }
 
-} // namespace AprilTags
+}  // namespace AprilTags

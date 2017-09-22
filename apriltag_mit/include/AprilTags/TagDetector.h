@@ -1,28 +1,29 @@
 #ifndef APRILTAGS_TAGDETECTOR_H_
 #define APRILTAGS_TAGDETECTOR_H_
 
-#include <unordered_map>
 #include <opencv2/core/core.hpp>
+#include <unordered_map>
 
+#include "AprilTags/DisjointSets.h"
+#include "AprilTags/FloatImage.h"
+#include "AprilTags/GrayModel.h"
+#include "AprilTags/Quad.h"
 #include "AprilTags/TagDetection.h"
 #include "AprilTags/TagFamily.h"
-#include "AprilTags/FloatImage.h"
-#include "AprilTags/Quad.h"
-#include "AprilTags/GrayModel.h"
-#include "AprilTags/DisjointSets.h"
 
 namespace AprilTags {
 
 class TagDetector {
  public:
   using Clusters = std::unordered_map<int, std::vector<cv::Point3f>>;
+  using TagDetectionVec = std::vector<TagDetection>;
 
-  explicit TagDetector(const TagCodes& tag_codes, int black_border = 1);
+  explicit TagDetector(const TagCodes& tag_codes, unsigned black_border = 1);
 
-  std::vector<TagDetection> ExtractTags(const cv::Mat& image) const;
+  TagDetectionVec ExtractTags(const cv::Mat& image) const;
 
-  void set_black_border(int black_border);
-  int black_border() const;
+  void set_black_border(unsigned black_border) { black_border_ = black_border; }
+  unsigned black_border() const { return black_border_; }
 
  private:
   const TagFamily tag_family_;
@@ -100,8 +101,7 @@ class TagDetector {
    * @param detections
    * @return
    */
-  std::vector<TagDetection> ResolveOverlap(
-      const std::vector<TagDetection>& detections) const;
+  TagDetectionVec ResolveOverlap(const TagDetectionVec& detections) const;
 
   /**
    * @brief black_border_ Number of bits of black border of the tag
@@ -116,7 +116,7 @@ class TagDetector {
    * However, filtering makes it harder to decode very small tags. Resonable
    * values are 0, 0.8, 1.5
    */
-  float decode_sigma_ = 0.8;
+  float decode_sigma_ = 0.8f;
 
   /**
    * @brief segment_sigma_ Gaussian smoothing kernel applied to image
@@ -124,7 +124,7 @@ class TagDetector {
    * have some filtering, since the loss of small details won't hurt.
    * Recommended value is 0.8.
    */
-  float segment_sigma_ = 0.8;
+  float segment_sigma_ = 0.8f;
 };
 
 void ConvertToGray(cv::InputArray in, cv::OutputArray out);

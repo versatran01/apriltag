@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <climits>
 #include <cmath>
+#include <iostream>
 
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -19,14 +20,8 @@
 
 namespace AprilTags {
 
-TagDetector::TagDetector(const TagCodes &tag_codes, int black_border)
+TagDetector::TagDetector(const TagCodes &tag_codes, unsigned black_border)
     : tag_family_(tag_codes), black_border_(black_border) {}
-
-void TagDetector::set_black_border(int black_border) {
-  black_border_ = black_border;
-}
-
-int TagDetector::black_border() const { return black_border_; }
 
 int TagDetector::CalcFilterSize(float sigma) const {
   return static_cast<int>(std::max(3.0f, 3 * sigma)) | 1;
@@ -58,8 +53,9 @@ void TagDetector::CalcPolar(const FloatImage &image, FloatImage &im_mag,
                             FloatImage &im_theta) const {
   cv::Mat Ix, Iy;
   // Need to scale the gradient magnitude, because Scharr is 3, 10, 3
-  cv::Scharr(image.mat(), Ix, CV_32F, 1, 0, 1 / 16.0);
-  cv::Scharr(image.mat(), Iy, CV_32F, 0, 1, 1 / 16.0);
+  const double scale = 1 / 16.0;
+  cv::Scharr(image.mat(), Ix, CV_32F, 1, 0, scale);
+  cv::Scharr(image.mat(), Iy, CV_32F, 0, 1, scale);
   cv::cartToPolar(Ix, Iy, im_mag.mat(), im_theta.mat());
 }
 
@@ -67,7 +63,7 @@ DisjointSets TagDetector::ExtractEdges(const FloatImage &im_mag,
                                        const FloatImage &im_theta) const {
   const int width = im_mag.width();
   const int height = im_mag.height();
-  const size_t num_pixels = width * height;
+  const auto num_pixels = static_cast<size_t>(width * height);
 
   std::vector<Edge> edges;
   edges.reserve(num_pixels);
@@ -111,9 +107,8 @@ DisjointSets TagDetector::ExtractEdges(const FloatImage &im_mag,
   return dsets;
 }
 
-TagDetector::Clusters
-TagDetector::ClusterPixels(DisjointSets &dsets,
-                           const FloatImage &im_mag) const {
+TagDetector::Clusters TagDetector::ClusterPixels(
+    DisjointSets &dsets, const FloatImage &im_mag) const {
   const int height = im_mag.height();
   const int width = im_mag.width();
 
@@ -259,8 +254,8 @@ void TagDetector::ChainSegments(std::vector<Segment> &segments,
   }
 }
 
-std::vector<Quad>
-TagDetector::SearchQuads(std::vector<Segment> &segments) const {
+std::vector<Quad> TagDetector::SearchQuads(
+    std::vector<Segment> &segments) const {
   std::vector<Quad> quads;
 
   // TODO: need to look at this
@@ -273,22 +268,21 @@ TagDetector::SearchQuads(std::vector<Segment> &segments) const {
   return quads;
 }
 
-std::vector<TagDetection>
-TagDetector::DecodeQuads(const std::vector<Quad> &quads,
-                         const FloatImage &image) const {
-  std::vector<TagDetection> detections;
+std::vector<TagDetection> TagDetector::DecodeQuads(
+    const std::vector<Quad> &quads, const FloatImage &image) const {
+  TagDetectionVec detections;
+  detections.reserve(quads.size());
 
   for (const Quad &quad : quads) {
     const auto td = tag_family_.DecodeQuad(quad, image, black_border());
-    if (td.good)
-      detections.push_back(td);
+    if (td.good) detections.push_back(td);
   }
 
   return detections;
 }
 
-std::vector<TagDetection>
-TagDetector::ResolveOverlap(const std::vector<TagDetection> &detections) const {
+std::vector<TagDetection> TagDetector::ResolveOverlap(
+    const std::vector<TagDetection> &detections) const {
   std::vector<TagDetection> good_detections;
   good_detections.reserve(detections.size());
 
@@ -324,7 +318,8 @@ TagDetector::ResolveOverlap(const std::vector<TagDetection> &detections) const {
   return good_detections;
 }
 
-std::vector<TagDetection> TagDetector::ExtractTags(const cv::Mat &image) const {
+TagDetector::TagDetectionVec TagDetector::ExtractTags(
+    const cv::Mat &image) const {
   FloatImage im_orig(image);
 
   // ===========================================================================
@@ -438,4 +433,4 @@ std::vector<int> IndexFromNonZero(const cv::Mat mat) {
   return pids;
 }
 
-} // namespace AprilTags
+}  // namespace AprilTags

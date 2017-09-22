@@ -23,4 +23,4 @@ LineSegment2D LineSegment2D::LsqFitXyw(const std::vector<cv::Point3f> &xyws) {
   return LineSegment2D(p_min, p_max);
 }
 
-} // namespace AprilTags
+}  // namespace AprilTags

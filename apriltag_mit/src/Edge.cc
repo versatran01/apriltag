@@ -7,12 +7,10 @@ namespace AprilTags {
 
 int Edge::EdgeCost(float theta0, float theta1, float mag1) {
   // mag0 was checked by the main routine so no need to recheck here
-  if (mag1 < kMinMag)
-    return -1;
+  if (mag1 < kMinMag) return -1;
 
   const float theta_diff = std::abs(Mod2Pi(theta1 - theta0));
-  if (theta_diff > kMaxThetaDiff)
-    return -1;
+  if (theta_diff > kMaxThetaDiff) return -1;
 
   const float norm_diff = theta_diff / kMaxThetaDiff;
   return norm_diff * kWeightScale;
@@ -31,8 +29,7 @@ std::vector<Edge> CalcLocalEdges(int x, int y, const FloatImage &im_mag,
                         pid0 + width - 1};
   int n = 4;
   // Handle a corner case when pixel is on left border
-  if (x == 0)
-    n = 3;
+  if (x == 0) n = 3;
 
   for (int i = 0; i < n; ++i) {
     const auto pid1 = pid1s[i];
@@ -53,8 +50,7 @@ void MergeEdges(const std::vector<Edge> &edges, DisjointSets &dsets,
     const int id0 = dsets.Find(e.pid0);
     const int id1 = dsets.Find(e.pid1);
 
-    if (id0 == id1)
-      continue;
+    if (id0 == id1) continue;
 
     const int sz0 = dsets.GetSetSize(id0);
     const int sz1 = dsets.GetSetSize(id1);
@@ -101,4 +97,4 @@ void MergeEdges(const std::vector<Edge> &edges, DisjointSets &dsets,
   }
 }
 
-} // namespace AprilTags
+}  // namespace AprilTags

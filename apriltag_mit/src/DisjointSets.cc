@@ -3,21 +3,20 @@
 
 namespace AprilTags {
 
-DisjointSets::DisjointSets(int n) : parent_(n), size_(n, 1) {
+DisjointSets::DisjointSets(size_t n) : parent_(n), size_(n, 1) {
   for (size_t i = 0; i < n; ++i) {
     // everyone is their own cluster of size 1
     parent_[i] = i;
   }
 }
 
-int DisjointSets::Find(int id) {
+size_t DisjointSets::Find(size_t id) {
   // terminal case: a node is its own parent
-  const int parent = parent_[id];
-  if (parent == id)
-    return id;
+  const auto parent = parent_[id];
+  if (parent == id) return id;
 
   // otherwise, recurse...
-  int root = Find(parent);
+  auto root = Find(parent);
 
   // short circuit the path
   parent_[id] = root;
@@ -25,15 +24,14 @@ int DisjointSets::Find(int id) {
   return root;
 }
 
-int DisjointSets::Union(int id0, int id1) {
-  const int root0 = Find(id0);
-  const int root1 = Find(id1);
+size_t DisjointSets::Union(size_t id0, size_t id1) {
+  const auto root0 = Find(id0);
+  const auto root1 = Find(id1);
 
-  if (root0 == root1)
-    return root0;
+  if (root0 == root1) return root0;
 
-  const int sz0 = size_[root0];
-  const int sz1 = size_[root1];
+  const auto sz0 = size_[root0];
+  const auto sz1 = size_[root1];
 
   if (sz0 > sz1) {
     parent_[root1] = root0;
@@ -46,6 +44,6 @@ int DisjointSets::Union(int id0, int id1) {
   }
 }
 
-int DisjointSets::GetSetSize(int id) { return size_[Find(id)]; }
+size_t DisjointSets::GetSetSize(size_t id) { return size_[Find(id)]; }
 
-} // namespace AprilTags
+}  // namespace AprilTags

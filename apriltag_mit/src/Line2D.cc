@@ -32,8 +32,7 @@ cv::Point2f Line2D::IntersectionWidth(const Line2D &line) const {
   float det = m00 * m11 - m01 * m10;
 
   // parallel lines? if so, return (-1,0).
-  if (fabs(det) < 1e-10)
-    return cv::Point2f(-1, 0);
+  if (std::abs(det) < 1e-10) return cv::Point2f(-1, 0);
 
   // inverse of 'm'
   float i00 = m11 / det;
@@ -107,4 +106,4 @@ void Line2D::NormalizeP() {
   }
 }
 
-} // namespace
+}  // namespace

@@ -1,24 +1,25 @@
 #ifndef APRILTAGS_DISJOINTSETS_H_
 #define APRILTAGS_DISJOINTSETS_H_
 
+#include <cstddef>
 #include <vector>
 
 namespace AprilTags {
 
 class DisjointSets {
  public:
-  explicit DisjointSets(int n);
+  explicit DisjointSets(size_t n);
 
-  int GetSetSize(int id);
+  size_t GetSetSize(size_t id);
 
-  int Find(int id);
+  size_t Find(size_t id);
 
   //! Returns the id of the merged node.
-  int Union(int id0, int id1);
+  size_t Union(size_t id0, size_t id1);
 
  private:
-  std::vector<int> parent_;
-  std::vector<int> size_;
+  std::vector<size_t> parent_;
+  std::vector<size_t> size_;
 };
 
 }  // namespace AprilTags

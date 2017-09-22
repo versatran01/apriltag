@@ -28,4 +28,4 @@ bool IsInsideImage(int x, int y, const FloatImage &image) {
   return IsInsideImage(x, y, image.width(), image.height());
 }
 
-} // namespace AprilTags
+}  // namespace AprilTags
