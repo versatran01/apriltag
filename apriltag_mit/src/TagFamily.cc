@@ -16,7 +16,7 @@ unsigned TagFamily::payload_bits() const { return tag_codes_.payload_bits; }
 unsigned TagFamily::dimension_bits() const { return tag_codes_.dimension_bits; }
 unsigned TagFamily::min_hamming() const { return tag_codes_.min_hamming; }
 const std::vector<code_t> &TagFamily::codes() const { return tag_codes_.codes; }
-size_t TagFamily::num_codes() const { return num_codes(); }
+size_t TagFamily::num_codes() const { return num_codes_; }
 
 void TagFamily::set_error_recovery_bits(unsigned error_recovery_bits) {
   error_recovery_bits_ = error_recovery_bits;
