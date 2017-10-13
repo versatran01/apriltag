@@ -6,8 +6,8 @@ extern "C" {
 #include "tag36h11.h"
 #include "tag25h9.h"
 #include "tag16h5.h"
-#include "image_u8_ext.h"
-#include "zarray.h"
+#include "common/image_u8_ext.h"
+#include "common/zarray.h"
 }
 
 #include <memory>

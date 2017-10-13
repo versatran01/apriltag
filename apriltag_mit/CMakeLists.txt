@@ -15,8 +15,7 @@ if(USE_ROS)
     find_package(catkin REQUIRED COMPONENTS roslib)
     catkin_package(
         DEPENDS OpenCV EIGEN3
-        INCLUDE_DIRS
-        include ${EIGEN3_INCLUDE_DIR} ${OpenCV_INCLUDE_DIRS}
+        INCLUDE_DIRS include
         LIBRARIES ${PROJECT_NAME}
         )
 
@@ -25,11 +24,20 @@ if(USE_ROS)
     add_library(${PROJECT_NAME} SHARED ${CC_FILES})
     target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBRARIES})
 
-    catkin_add_gtest(test_apriltag_mit test/test_apriltag_mit.cpp)
-    target_link_libraries(test_apriltag_mit
-        ${catkin_LIBRARIES}
-        ${PROJECT_NAME}
+    if(CATKIN_ENABLE_TESTING)
+        catkin_add_gtest(test_apriltag_mit test/test_apriltag_mit.cpp)
+        target_link_libraries(test_apriltag_mit
+            ${catkin_LIBRARIES}
+            ${PROJECT_NAME}
+            )
+    endif()
+
+    install(TARGETS ${PROJECT_NAME}
+        ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+        LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+        RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
         )
+    install(DIRECTORY include/${PROJECT_NAME}/ DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION})
 else()
     message(STATUS "Source:  " ${PROJECT_SOURCE_DIR})
     message(STATUS "Binary:  " ${PROJECT_BINARY_DIR})

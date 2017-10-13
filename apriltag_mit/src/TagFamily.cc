@@ -1,8 +1,8 @@
 #include <iostream>
 #include <numeric>
 
-#include "AprilTags/MathUtil.h"
-#include "AprilTags/TagFamily.h"
+#include "apriltag_mit/AprilTags/MathUtil.h"
+#include "apriltag_mit/AprilTags/TagFamily.h"
 
 namespace AprilTags {
 
