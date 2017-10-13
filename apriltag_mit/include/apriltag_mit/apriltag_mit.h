@@ -1,10 +1,10 @@
 #pragma once
 
-#include "AprilTags/Tag16h5.h"
-#include "AprilTags/Tag25h9.h"
-#include "AprilTags/Tag36h11.h"
-#include "AprilTags/TagDetection.h"
-#include "AprilTags/TagDetector.h"
+#include "apriltag_mit/AprilTags/Tag16h5.h"
+#include "apriltag_mit/AprilTags/Tag25h9.h"
+#include "apriltag_mit/AprilTags/Tag36h11.h"
+#include "apriltag_mit/AprilTags/TagDetection.h"
+#include "apriltag_mit/AprilTags/TagDetector.h"
 
 #include <boost/shared_ptr.hpp>
 

@@ -4,8 +4,8 @@
 #include <vector>
 #include <unordered_set>
 
-#include "AprilTags/FloatImage.h"
-#include "AprilTags/DisjointSets.h"
+#include "apriltag_mit/AprilTags/FloatImage.h"
+#include "apriltag_mit/AprilTags/DisjointSets.h"
 
 namespace AprilTags {
 

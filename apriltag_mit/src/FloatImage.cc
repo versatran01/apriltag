@@ -1,4 +1,4 @@
-#include "AprilTags/FloatImage.h"
+#include "apriltag_mit/AprilTags/FloatImage.h"
 #include <opencv2/imgproc/imgproc.hpp>
 
 namespace AprilTags {

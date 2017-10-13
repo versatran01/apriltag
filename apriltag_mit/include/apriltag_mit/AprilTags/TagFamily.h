@@ -4,11 +4,11 @@
 #include <cmath>
 #include <vector>
 
-#include "AprilTags/TagCodes.h"
-#include "AprilTags/TagDetection.h"
-#include "AprilTags/Quad.h"
-#include "AprilTags/GrayModel.h"
-#include "AprilTags/FloatImage.h"
+#include "apriltag_mit/AprilTags/TagCodes.h"
+#include "apriltag_mit/AprilTags/TagDetection.h"
+#include "apriltag_mit/AprilTags/Quad.h"
+#include "apriltag_mit/AprilTags/GrayModel.h"
+#include "apriltag_mit/AprilTags/FloatImage.h"
 
 namespace AprilTags {
 

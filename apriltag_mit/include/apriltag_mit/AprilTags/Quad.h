@@ -2,9 +2,9 @@
 #define APRILTAGS_QUAD_H_
 
 #include <opencv2/core/core.hpp>
-#include "AprilTags/GrayModel.h"
-#include "AprilTags/FloatImage.h"
-#include "AprilTags/TagCodes.h"
+#include "apriltag_mit/AprilTags/GrayModel.h"
+#include "apriltag_mit/AprilTags/FloatImage.h"
+#include "apriltag_mit/AprilTags/TagCodes.h"
 
 namespace AprilTags {
 

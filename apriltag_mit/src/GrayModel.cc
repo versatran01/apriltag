@@ -1,7 +1,7 @@
 #include <Eigen/Dense>
 #include <Eigen/LU>
 
-#include "AprilTags/GrayModel.h"
+#include "apriltag_mit/AprilTags/GrayModel.h"
 
 namespace AprilTags {
 

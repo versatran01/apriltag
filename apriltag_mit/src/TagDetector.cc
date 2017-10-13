@@ -5,17 +5,17 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
-#include "AprilTags/Edge.h"
-#include "AprilTags/GrayModel.h"
-#include "AprilTags/Gridder.h"
-#include "AprilTags/Line2D.h"
-#include "AprilTags/LineSegment2D.h"
-#include "AprilTags/MathUtil.h"
-#include "AprilTags/Segment.h"
+#include "apriltag_mit/AprilTags/Edge.h"
+#include "apriltag_mit/AprilTags/GrayModel.h"
+#include "apriltag_mit/AprilTags/Gridder.h"
+#include "apriltag_mit/AprilTags/Line2D.h"
+#include "apriltag_mit/AprilTags/LineSegment2D.h"
+#include "apriltag_mit/AprilTags/MathUtil.h"
+#include "apriltag_mit/AprilTags/Segment.h"
 
-#include "AprilTags/TagDetector.h"
+#include "apriltag_mit/AprilTags/TagDetector.h"
 
-#include "AprilTags/timer.h"
+#include "apriltag_mit/AprilTags/timer.h"
 
 namespace AprilTags {
 

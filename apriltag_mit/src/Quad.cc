@@ -1,7 +1,7 @@
-#include "AprilTags/Quad.h"
-#include "AprilTags/Line2D.h"
-#include "AprilTags/MathUtil.h"
-#include "AprilTags/Segment.h"
+#include "apriltag_mit/AprilTags/Quad.h"
+#include "apriltag_mit/AprilTags/Line2D.h"
+#include "apriltag_mit/AprilTags/MathUtil.h"
+#include "apriltag_mit/AprilTags/Segment.h"
 #include <opencv2/calib3d/calib3d.hpp>
 
 namespace AprilTags {

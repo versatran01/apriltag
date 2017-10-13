@@ -6,8 +6,8 @@
 #include <vector>
 #include <opencv2/core/core.hpp>
 
-#include "AprilTags/MathUtil.h"
-#include "AprilTags/Segment.h"
+#include "apriltag_mit/AprilTags/MathUtil.h"
+#include "apriltag_mit/AprilTags/Segment.h"
 
 namespace AprilTags {
 

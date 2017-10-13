@@ -1,5 +1,5 @@
-#include "AprilTags/TagDetection.h"
-#include "AprilTags/MathUtil.h"
+#include "apriltag_mit/AprilTags/TagDetection.h"
+#include "apriltag_mit/AprilTags/MathUtil.h"
 #include "opencv2/opencv.hpp"
 #include <iterator>
 

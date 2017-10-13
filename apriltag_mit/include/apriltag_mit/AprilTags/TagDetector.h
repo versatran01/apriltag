@@ -4,12 +4,12 @@
 #include <unordered_map>
 #include <opencv2/core/core.hpp>
 
-#include "AprilTags/TagDetection.h"
-#include "AprilTags/TagFamily.h"
-#include "AprilTags/FloatImage.h"
-#include "AprilTags/Quad.h"
-#include "AprilTags/GrayModel.h"
-#include "AprilTags/DisjointSets.h"
+#include "apriltag_mit/AprilTags/TagDetection.h"
+#include "apriltag_mit/AprilTags/TagFamily.h"
+#include "apriltag_mit/AprilTags/FloatImage.h"
+#include "apriltag_mit/AprilTags/Quad.h"
+#include "apriltag_mit/AprilTags/GrayModel.h"
+#include "apriltag_mit/AprilTags/DisjointSets.h"
 
 namespace AprilTags {
 

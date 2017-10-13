@@ -39,5 +39,14 @@ add_dependencies(${PROJECT_NAME}
     ${catkin_EXPORTED_TARGETS}
     )
 
-#catkin_add_gtest(test_apriltag_detector test/test_apriltag_detector.cpp)
-#target_link_libraries(test_apriltag_detector ${PROJECT_NAME})
+install(TARGETS ${PROJECT_NAME} apriltag_detector_node apriltag_detect
+    ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+    )
+install(DIRECTORY include/${PROJECT_NAME}/ DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION})
+
+# if(CATKIN_ENABLE_TESTING)
+#     catkin_add_gtest(test_apriltag_detector test/test_apriltag_detector.cpp)
+#     target_link_libraries(test_apriltag_detector ${PROJECT_NAME})
+# endif()

@@ -1,7 +1,7 @@
-#include "AprilTags/Edge.h"
-#include "AprilTags/DisjointSets.h"
-#include "AprilTags/FloatImage.h"
-#include "AprilTags/MathUtil.h"
+#include "apriltag_mit/AprilTags/Edge.h"
+#include "apriltag_mit/AprilTags/DisjointSets.h"
+#include "apriltag_mit/AprilTags/FloatImage.h"
+#include "apriltag_mit/AprilTags/MathUtil.h"
 
 namespace AprilTags {
 

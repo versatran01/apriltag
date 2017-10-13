@@ -42,7 +42,7 @@
 
 #pragma once
 
-#include "AprilTags/TagCodes.h"
+#include "apriltag_mit/AprilTags/TagCodes.h"
 
 namespace AprilTags {
 

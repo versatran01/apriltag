@@ -4,7 +4,7 @@
 #include <vector>
 #include <opencv2/core/core.hpp>
 
-#include "AprilTags/TagCodes.h"
+#include "apriltag_mit/AprilTags/TagCodes.h"
 
 namespace AprilTags {
 
