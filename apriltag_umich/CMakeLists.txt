@@ -12,7 +12,7 @@ if(USE_ROS)
     include_directories(${catkin_INCLUDE_DIRS})
 
     catkin_package(
-        INCLUDE_DIRS include
+        INCLUDE_DIRS include src
         LIBRARIES ${PROJECT_NAME}
         )
 
