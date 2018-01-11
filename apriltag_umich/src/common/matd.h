@@ -277,7 +277,7 @@ static inline int matd_is_vector(const matd_t *a)
 static inline int matd_is_vector_len(const matd_t *a, int len)
 {
     assert(a != NULL);
-    return (a->ncols == 1 && a->nrows == len) || (a->ncols == len && a->nrows == 1);
+    return (a->ncols == 1 && (int)a->nrows == len) || ((int)a->ncols == len && a->nrows == 1);
 }
 
 /**
