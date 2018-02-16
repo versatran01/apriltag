@@ -23,8 +23,6 @@ int main(int argc, char **argv) {
       "Tag family, 0 - tf36h11, 1 - tf25h9, 2 - tf16h5")(
       "decimate,d", bpo::value<int>(&decimate)->default_value(1),
       "Decimate image, 1 - no decimation")(
-      "refine,r", bpo::value<bool>(&refine)->default_value(false),
-      "Refine detection using cornerSubPix")(
       "border,b", bpo::value<int>(&black_border)->default_value(1),
       "Black border around the tag")("image,i",
                                      bpo::value<std::vector<std::string>>(),
@@ -56,8 +54,6 @@ int main(int argc, char **argv) {
     detector = ApriltagDetector::Create(static_cast<DetectorType>(type),
                                         static_cast<TagFamily>(family));
     detector->set_black_border(black_border);
-    //    detector->set_decimate(decimate);
-    //    detector->set_refine(refine);
   } catch (const std::exception &e) {
     std::cout << e.what() << "\n";
     return 1;
@@ -75,12 +71,6 @@ int main(int argc, char **argv) {
     // detect
     auto apriltags = detector->Detect(gray);
     std::cout << apriltags.size() << " tags";
-
-    // refine
-    if (refine) {
-      std::cout << " [refined] ";
-      RefineApriltags(gray, apriltags);
-    }
 
     // draw
     cv::Mat disp;

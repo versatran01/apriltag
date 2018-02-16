@@ -3,11 +3,11 @@
 
 extern "C" {
 #include "apriltag.h"
-#include "tag36h11.h"
-#include "tag25h9.h"
-#include "tag16h5.h"
 #include "common/image_u8_ext.h"
 #include "common/zarray.h"
+#include "tag16h5.h"
+#include "tag25h9.h"
+#include "tag36h11.h"
 }
 
 #include <memory>
@@ -47,6 +47,6 @@ using TagDetectionPtr = std::unique_ptr<apriltag_detection_t, FreeTagDetection>;
 using ImageU8Ptr = std::unique_ptr<image_u8_t, FreeImageU8>;
 using ZarrayPtr = std::unique_ptr<zarray_t, FreeZarray>;
 
-}  // namespace apriltag_umich
+} // namespace apriltag_umich
 
-#endif  // APRILTAG_UMICH_H_
+#endif // APRILTAG_UMICH_H_

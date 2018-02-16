@@ -32,11 +32,6 @@ void ApriltagDetectorNode::ImageCb(const ImageConstPtr &image_msg) {
   // Detect
   auto apriltags = detector_->Detect(gray);
 
-  // Refine
-  //  if (config_.refine) {
-  //    RefineApriltags(gray, apriltags);
-  //  }
-
   // Publish apriltags
   auto apriltag_array_msg = boost::make_shared<ApriltagArrayStamped>();
   apriltag_array_msg->header = image_msg->header;
@@ -65,8 +60,9 @@ void ApriltagDetectorNode::ConfigCb(ConfigT &config, int level) {
                                          static_cast<TagFamily>(config.family));
   }
   detector_->set_black_border(config.black_border);
-  //  detector_->set_decimate(config.decimate);
-  //  detector_->set_refine(config.refine);
+  detector_->set_decimate(config.decimate);
+  detector_->set_nthreads(config.nthreads);
+
   // Save config
   config_ = config;
 }
@@ -75,6 +71,7 @@ void ApriltagDetectorNode::ConnectCb() {
   boost::lock_guard<boost::mutex> lock(connect_mutex_);
   if (pub_tags_.getNumSubscribers() == 0 &&
       pub_disp_.getNumSubscribers() == 0) {
+    // Shutting down if nobody subscribes
     ROS_DEBUG("%s: No subscribers, shutting down", pnh_.getNamespace().c_str());
     sub_image_.shutdown();
   } else if (!sub_image_) {

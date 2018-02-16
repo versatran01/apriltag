@@ -30,14 +30,13 @@ public:
   void set_black_border(int black_border);
   int black_border() const;
 
-  /// Temporarily disable these
-  //  void set_decimate(int decimate);
-  //  int decimate() const;
+  void set_decimate(int decimate);
+  int decimate() const;
 
-  //  void set_refine(bool refine);
-  //  bool refine() const;
+  void set_nthreads(int nthreads);
+  int nthreads() const;
 
-  int tag_bits() const;
+  int payload() const;
   const std::string &tag_family() const;
 
   /**
@@ -59,11 +58,13 @@ public:
 protected:
   virtual ApriltagVec DetectImpl(const cv::Mat &image) = 0;
   virtual void SetBlackBorder(int black_border) = 0;
+  virtual void SetDecimate(int decimate) = 0;
+  virtual void SetNThreads(int nthreads) = 0;
 
-  //  int decimate_{1};
-  //  bool refine_{false};
+  int decimate_{1};
+  int nthreads_{1};
   int black_border_{1};
-  int tag_bits_{6}; // default to t36h11
+  int payload_{6};
   DetectorType detector_type_;
   TagFamily tag_family_;
   std::string tag_family_str_;
@@ -77,8 +78,12 @@ using ApriltagDetectorPtr = ApriltagDetector::Ptr;
 class ApriltagDetectorMit : public ApriltagDetector {
 public:
   explicit ApriltagDetectorMit(const TagFamily &tag_family);
+
   ApriltagVec DetectImpl(const cv::Mat &image) override;
+
   void SetBlackBorder(int black_border) override;
+  void SetDecimate(int decimate) override;
+  void SetNThreads(int nthreads) override;
 
 private:
   apriltag_mit::TagDetectorPtr tag_detector_;
@@ -90,49 +95,35 @@ private:
 class ApriltagDetectorUmich : public ApriltagDetector {
 public:
   explicit ApriltagDetectorUmich(const TagFamily &tag_family);
+
   ApriltagVec DetectImpl(const cv::Mat &image) override;
+
   void SetBlackBorder(int black_border) override;
+  void SetDecimate(int decimate) override;
+  void SetNThreads(int nthreads) override;
 
 private:
   apriltag_umich::TagFamilyPtr tag_family_;
   apriltag_umich::TagDetectorPtr tag_detector_;
 };
 
-/**
- * @brief DrawApriltag
- */
+/// Draw a single apriltag on image
 void DrawApriltag(cv::Mat &image, const apriltag_msgs::Apriltag &apriltag,
                   int thickness = 2, bool draw_corners = true);
 
-/**
- * @brief DrawApriltags
- * @param image
- * @param apriltags
- */
+/// Draw a vector of apriltags on image
 void DrawApriltags(cv::Mat &image, const ApriltagVec &apriltags);
 
-/**
- * @brief TagFamilyToTagBits
- * @param tag_family
- * @return
- */
-int TagFamilyToTagBits(const TagFamily &tag_family);
+/// Convert tag family to tag bits, eg. tf36h11 -> 6
+int TagFamilyToPayload(const TagFamily &tag_family);
 
-/**
- * @brief DetectorTypeToString
- * @param detector_type
- * @return
- */
+/// Convert detector type to string
 std::string DetectorTypeToString(const DetectorType &detector_type);
 
-/**
- * @brief RefineApriltags
- * @param image
- * @param apriltags
- */
-void RefineApriltags(const cv::Mat &image, ApriltagVec &apriltags,
-                     int win_size = 5);
+/// Disable
+// void RefineApriltags(const cv::Mat &image, ApriltagVec &apriltags,
+//                     int win_size = 5);
 
-} // apriltag_ros
+} // namespace apriltag_ros
 
 #endif // APRILTAG_ROS_APRILTAG_DETECTOR_H_
