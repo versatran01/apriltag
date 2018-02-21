@@ -9,6 +9,7 @@ add_message_files(
     FILES
     Apriltag.msg
     ApriltagArrayStamped.msg
+    ApriltagPoseStamped.msg
     )
 
 generate_messages(DEPENDENCIES geometry_msgs std_msgs)
