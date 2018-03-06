@@ -6,6 +6,7 @@
     name="apriltag_detector" output="screen" ns="$(arg camera)">
     <param name="family" type="int" value="0"/>
     <param name="type" type="int" value="0"/>
+    <param name="black_border" type="int" value="2"/>
 
     <remap from="~image" to="$(arg image)"/>
     <remap from="~tags" to="tags"/>

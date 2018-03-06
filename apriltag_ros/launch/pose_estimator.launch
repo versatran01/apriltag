@@ -1,0 +1,20 @@
+<launch>
+  <arg name="camera" default="camera"/>
+
+  <include file="$(find apriltag_ros)/launch/detector.launch">
+    <arg name="camera" value="$(arg camera)"/>
+  </include>
+
+  <node pkg="apriltag_ros" name="apriltag_pose_estimator"
+    type="apriltag_pose_estimator" output="screen" ns="$(arg camera)">
+    <remap from="~apriltags" to="tags"/>
+    <remap from="~camera_info" to="camera_info"/>
+    <remap from="~transform" to="transform_cam_apriltag"/>
+    <rosparam param="tag_descriptions">
+      "0": 0.04
+      "1": 0.04
+      "20": 0.04
+    </rosparam>
+  </node>
+
+</launch>
