@@ -27,8 +27,6 @@ include_directories(
     ${OpenCV_INCLUDE_DIRS}
     )
 
-message(ERROR ${OpenCV_INCLUDE_DIRS})
-message(ERROR ${OpenCV_LIBRARIES})
 add_library(${PROJECT_NAME} src/apriltag_detector.cpp)
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${Boost_LIBRARIES})
 
