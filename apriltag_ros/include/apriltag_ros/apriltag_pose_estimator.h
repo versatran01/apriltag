@@ -3,6 +3,7 @@
 
 #include <ros/ros.h>
 #include <sensor_msgs/CameraInfo.h>
+#include <tf2_ros/transform_broadcaster.h>
 #include <image_geometry/pinhole_camera_model.h>
 #include <apriltag_msgs/ApriltagArrayStamped.h>
 #include <apriltag_msgs/ApriltagPoseStamped.h>
@@ -26,10 +27,12 @@ class ApriltagPoseEstimator {
   ros::NodeHandle pnh_;
   ros::Publisher pub_poses_;
   ros::Subscriber sub_apriltags_, sub_cinfo_;
+  tf2_ros::TransformBroadcaster tf2_br_;
   ig::PinholeCameraModel cam_model_;
   std::map<int, am::Apriltag> map_;
   std::string frame_id_;
   boost::mutex connect_mutex_;
+  bool broadcast_tf_;
 };
 
 }  // namespace apriltag_ros

@@ -4,6 +4,8 @@
 #include <boost/thread/lock_guard.hpp>
 #include <geometry_msgs/TransformStamped.h>
 
+#include <Eigen/Dense>
+
 namespace apriltag_ros {
 
 cv::Mat QuatFromRvec(const cv::Mat &r) {
@@ -42,6 +44,8 @@ ApriltagPoseEstimator::ApriltagPoseEstimator(const ros::NodeHandle &pnh)
   pub_poses_ = pnh_.advertise<apriltag_msgs::ApriltagPoseStamped>(
       "apriltag_poses", 1, connect_cb, connect_cb);
   InitApriltagMap();
+  pnh_.param("broadcast_tf", broadcast_tf_, false);
+
 }
 
 void ApriltagPoseEstimator::ConnectCb() {
@@ -56,8 +60,7 @@ void ApriltagPoseEstimator::ConnectCb() {
   }
 }
 
-void ApriltagPoseEstimator::ApriltagsCb(
-    const am::ApriltagArrayStampedConstPtr &apriltags_msg) {
+void ApriltagPoseEstimator::ApriltagsCb(const am::ApriltagArrayStampedConstPtr &apriltags_msg) {
   if (!cam_model_.initialized() || map_.empty()) return;
 
   am::ApriltagPoseStamped apriltag_poses;
@@ -92,8 +95,8 @@ void ApriltagPoseEstimator::ApriltagsCb(
         continue;
       }
 
+      /*
       const auto cQw = QuatFromRvec(rvec);
-
       geometry_msgs::Pose pose_msg;
       const auto *pt = tvec.ptr<double>();
       pose_msg.position.x = pt[0];
@@ -105,6 +108,46 @@ void ApriltagPoseEstimator::ApriltagsCb(
       pose_msg.orientation.x = pq[1];
       pose_msg.orientation.y = pq[2];
       pose_msg.orientation.z = pq[3];
+      */
+
+      cv::Matx33d r;
+      cv::Rodrigues(rvec, r);
+      Eigen::Matrix3d wRo;
+      wRo << r(0,0), r(0,1), r(0,2), r(1,0), r(1,1), r(1,2), r(2,0), r(2,1), r(2,2);
+
+      Eigen::Matrix4d transform;
+      transform.topLeftCorner(3,3) = wRo;
+      transform.col(3).head(3) << tvec.at<double>(0), tvec.at<double>(1), tvec.at<double>(2);
+      transform.row(3) << 0,0,0,1;
+
+      Eigen::Matrix3d rot = transform.block(0, 0, 3, 3);
+      Eigen::Quaternion<double> rot_quaternion = Eigen::Quaternion<double>(rot);
+
+      geometry_msgs::Pose pose_msg;
+      pose_msg.position.x = transform(0, 3);
+      pose_msg.position.y = transform(1, 3);
+      pose_msg.position.z = transform(2, 3);
+      pose_msg.orientation.x = rot_quaternion.x();
+      pose_msg.orientation.y = rot_quaternion.y();
+      pose_msg.orientation.z = rot_quaternion.z();
+      pose_msg.orientation.w = rot_quaternion.w();
+
+      if(broadcast_tf_) {
+        geometry_msgs::TransformStamped transformStamped;
+        transformStamped.header = apriltags_msg->header;
+        transformStamped.child_frame_id = "tag_" + std::to_string(apriltag.id);
+
+        transformStamped.transform.translation.x = transform(0, 3);
+        transformStamped.transform.translation.y = transform(1, 3);
+        transformStamped.transform.translation.z = transform(2, 3);
+
+        transformStamped.transform.rotation.x = rot_quaternion.x();
+        transformStamped.transform.rotation.y = rot_quaternion.y();
+        transformStamped.transform.rotation.z = rot_quaternion.z();
+        transformStamped.transform.rotation.w = rot_quaternion.w();
+
+        tf2_br_.sendTransform(transformStamped);
+      }
 
       apriltag_poses.apriltags.push_back(apriltag);
       apriltag_poses.posearray.poses.push_back(pose_msg);
@@ -129,8 +172,7 @@ void ApriltagPoseEstimator::InitApriltagMap() {
     return;
 
   std::map<std::string,double>::iterator tags_it;
-  for(tags_it = map_tags.begin(); tags_it != map_tags.end(); tags_it++)
-  {
+  for(tags_it = map_tags.begin(); tags_it != map_tags.end(); tags_it++) {
     am::Apriltag tag;
     tag.family = "mit"; //TODO make these params? Or get from detections?
     tag.border = 1;
