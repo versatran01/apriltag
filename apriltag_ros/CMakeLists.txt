@@ -3,7 +3,6 @@ project(apriltag_ros)
 
 set(CMAKE_CXX_STANDARD 11)
 
-find_package(Eigen3 REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(Boost REQUIRED COMPONENTS program_options)
 find_package(catkin REQUIRED COMPONENTS
@@ -26,7 +25,6 @@ include_directories(
     ${catkin_INCLUDE_DIRS}
     ${Boost_INCLUDE_DIRS}
     ${OpenCV_INCLUDE_DIRS}
-    ${Eigen_INCLUDE_DIRS}
     )
 
 add_library(${PROJECT_NAME} src/apriltag_detector.cpp)

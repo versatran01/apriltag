@@ -4,9 +4,13 @@
 #include <boost/thread/lock_guard.hpp>
 #include <geometry_msgs/TransformStamped.h>
 
-#include <Eigen/Dense>
+#include <tf2/LinearMath/Quaternion.h>
+#include <tf2/LinearMath/Matrix3x3.h>
 
 namespace apriltag_ros {
+
+namespace am = apriltag_msgs;
+namespace ig = image_geometry;
 
 cv::Mat QuatFromRvec(const cv::Mat &r) {
   // theta = norm(r)
@@ -112,39 +116,33 @@ void ApriltagPoseEstimator::ApriltagsCb(const am::ApriltagArrayStampedConstPtr &
 
       cv::Matx33d r;
       cv::Rodrigues(rvec, r);
-      Eigen::Matrix3d wRo;
-      wRo << r(0,0), r(0,1), r(0,2), r(1,0), r(1,1), r(1,2), r(2,0), r(2,1), r(2,2);
 
-      Eigen::Matrix4d transform;
-      transform.topLeftCorner(3,3) = wRo;
-      transform.col(3).head(3) << tvec.at<double>(0), tvec.at<double>(1), tvec.at<double>(2);
-      transform.row(3) << 0,0,0,1;
-
-      Eigen::Matrix3d rot = transform.block(0, 0, 3, 3);
-      Eigen::Quaternion<double> rot_quaternion = Eigen::Quaternion<double>(rot);
+      tf2::Matrix3x3 wRo(r(0,0), r(0,1), r(0,2), r(1,0), r(1,1), r(1,2), r(2,0), r(2,1), r(2,2));
+      tf2::Quaternion tf_quat;
+      wRo.getRotation(tf_quat);
 
       geometry_msgs::Pose pose_msg;
-      pose_msg.position.x = transform(0, 3);
-      pose_msg.position.y = transform(1, 3);
-      pose_msg.position.z = transform(2, 3);
-      pose_msg.orientation.x = rot_quaternion.x();
-      pose_msg.orientation.y = rot_quaternion.y();
-      pose_msg.orientation.z = rot_quaternion.z();
-      pose_msg.orientation.w = rot_quaternion.w();
+      pose_msg.position.x = tvec.at<double>(0);
+      pose_msg.position.y = tvec.at<double>(1);
+      pose_msg.position.z = tvec.at<double>(2);
+      pose_msg.orientation.x = tf_quat.x();
+      pose_msg.orientation.y = tf_quat.y();
+      pose_msg.orientation.z = tf_quat.z();
+      pose_msg.orientation.w = tf_quat.w();
 
       if(broadcast_tf_) {
         geometry_msgs::TransformStamped transformStamped;
         transformStamped.header = apriltags_msg->header;
         transformStamped.child_frame_id = "tag_" + std::to_string(apriltag.id);
 
-        transformStamped.transform.translation.x = transform(0, 3);
-        transformStamped.transform.translation.y = transform(1, 3);
-        transformStamped.transform.translation.z = transform(2, 3);
+        transformStamped.transform.translation.x = tvec.at<double>(0);
+        transformStamped.transform.translation.y = tvec.at<double>(1);
+        transformStamped.transform.translation.z = tvec.at<double>(2);
 
-        transformStamped.transform.rotation.x = rot_quaternion.x();
-        transformStamped.transform.rotation.y = rot_quaternion.y();
-        transformStamped.transform.rotation.z = rot_quaternion.z();
-        transformStamped.transform.rotation.w = rot_quaternion.w();
+        transformStamped.transform.rotation.x = tf_quat.x();
+        transformStamped.transform.rotation.y = tf_quat.y();
+        transformStamped.transform.rotation.z = tf_quat.z();
+        transformStamped.transform.rotation.w = tf_quat.w();
 
         tf2_br_.sendTransform(transformStamped);
       }
