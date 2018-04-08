@@ -6,6 +6,8 @@
 
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2/LinearMath/Matrix3x3.h>
+#include <XmlRpcException.h>
+
 
 namespace apriltag_ros {
 
@@ -75,8 +77,11 @@ void ApriltagPoseEstimator::ApriltagsCb(const am::ApriltagArrayStampedConstPtr &
   for (const am::Apriltag &apriltag : apriltags_msg->apriltags) {
     auto search = map_.find(apriltag.id);
     if (search != map_.end()) {
+
+      const auto des_pair = search->second;
+      const am::Apriltag &map_tag = des_pair.first;
+
       // Add points to img_pts
-      const am::Apriltag &map_tag = search->second;
       for (const auto &c : apriltag.corners) {
         img_pts.emplace_back(c.x, c.y);
       }
@@ -99,21 +104,6 @@ void ApriltagPoseEstimator::ApriltagsCb(const am::ApriltagArrayStampedConstPtr &
         continue;
       }
 
-      /*
-      const auto cQw = QuatFromRvec(rvec);
-      geometry_msgs::Pose pose_msg;
-      const auto *pt = tvec.ptr<double>();
-      pose_msg.position.x = pt[0];
-      pose_msg.position.y = pt[1];
-      pose_msg.position.z = pt[2];
-
-      const auto *pq = cQw.ptr<double>();
-      pose_msg.orientation.w = pq[0];
-      pose_msg.orientation.x = pq[1];
-      pose_msg.orientation.y = pq[2];
-      pose_msg.orientation.z = pq[3];
-      */
-
       cv::Matx33d r;
       cv::Rodrigues(rvec, r);
 
@@ -131,9 +121,15 @@ void ApriltagPoseEstimator::ApriltagsCb(const am::ApriltagArrayStampedConstPtr &
       pose_msg.orientation.w = tf_quat.w();
 
       if(broadcast_tf_) {
+
+        AprilTagDescription description = des_pair.second;
+        std::string child_frame_id = description.frame_name();
+        if(child_frame_id.empty())
+          child_frame_id = "tag_" + std::to_string(apriltag.id);
+
         geometry_msgs::TransformStamped transformStamped;
         transformStamped.header = apriltags_msg->header;
-        transformStamped.child_frame_id = "tag_" + std::to_string(apriltag.id);
+        transformStamped.child_frame_id = child_frame_id;
 
         transformStamped.transform.translation.x = tvec.at<double>(0);
         transformStamped.transform.translation.y = tvec.at<double>(1);
@@ -161,6 +157,7 @@ void ApriltagPoseEstimator::ApriltagsCb(const am::ApriltagArrayStampedConstPtr &
 
 void ApriltagPoseEstimator::InitApriltagMap() {
 
+  /*
   // Construct a map of strings
   std::map<std::string,double> map_tags;
   pnh_.getParam("tag_descriptions", map_tags);
@@ -168,20 +165,39 @@ void ApriltagPoseEstimator::InitApriltagMap() {
   //Return if no tags are specified on parameter server.
   if(map_tags.empty())
     return;
+  */
 
-  std::map<std::string,double>::iterator tags_it;
-  for(tags_it = map_tags.begin(); tags_it != map_tags.end(); tags_it++) {
+  std::map<int, AprilTagDescription> descriptions;
+
+  XmlRpc::XmlRpcValue april_tag_descriptions;
+  if(!pnh_.getParam("tag_descriptions", april_tag_descriptions)){
+    ROS_WARN("No april tags specified");
+    return;
+  }
+  else{
+    try{
+      descriptions = parse_tag_descriptions(april_tag_descriptions);
+    } catch(XmlRpc::XmlRpcException e){
+      ROS_ERROR_STREAM("Error loading tag descriptions: "<<e.getMessage());
+    }
+  }
+
+  std::map<int,AprilTagDescription>::iterator description_itr;
+  for(description_itr = descriptions.begin(); description_itr != descriptions.end(); description_itr++) {
+
+    AprilTagDescription description = description_itr->second;
+    double tag_size = description.size();
+
     am::Apriltag tag;
     tag.family = "mit"; //TODO make these params? Or get from detections?
     tag.border = 1;
     tag.bits = 6;
 
-    tag.id = std::atoi(tags_it->first.c_str());
+    tag.id = description_itr->first;
     tag.center.x = 0.0;
     tag.center.y = 0.0;
     tag.center.z = 0.0;
 
-    double tag_size = tags_it->second;
     double s = tag_size/2.0;
     geometry_msgs::Point pt;
     pt.x = -s; pt.y = -s; pt.z = 0.0; tag.corners[0] = pt;
@@ -189,12 +205,43 @@ void ApriltagPoseEstimator::InitApriltagMap() {
     pt.x =  s; pt.y =  s; pt.z = 0.0; tag.corners[2] = pt;
     pt.x = -s; pt.y =  s; pt.z = 0.0; tag.corners[3] = pt;
 
-    map_[tag.id] = tag;
+    //TODO Only save the frame_id from description as string?
+    auto des = std::make_pair(tag, description);
+    map_.insert(std::pair<int, std::pair<am::Apriltag, AprilTagDescription> >(tag.id, des) );
 
     ROS_INFO_STREAM("tag is: " << tag);
   }
 
   ROS_INFO("%s: apritlag map initialized", pnh_.getNamespace().c_str());
+}
+
+std::map<int, AprilTagDescription> ApriltagPoseEstimator::parse_tag_descriptions(XmlRpc::XmlRpcValue& tag_descriptions){
+  std::map<int, AprilTagDescription> descriptions;
+  ROS_ASSERT(tag_descriptions.getType() == XmlRpc::XmlRpcValue::TypeArray);
+  for (int32_t i = 0; i < tag_descriptions.size(); ++i) {
+    XmlRpc::XmlRpcValue& tag_description = tag_descriptions[i];
+    ROS_ASSERT(tag_description.getType() == XmlRpc::XmlRpcValue::TypeStruct);
+    ROS_ASSERT(tag_description["id"].getType() == XmlRpc::XmlRpcValue::TypeInt);
+    ROS_ASSERT(tag_description["size"].getType() == XmlRpc::XmlRpcValue::TypeDouble);
+
+    int id = (int)tag_description["id"];
+    double size = (double)tag_description["size"];
+
+    std::string frame_name;
+    if(tag_description.hasMember("frame_id")){
+      ROS_ASSERT(tag_description["frame_id"].getType() == XmlRpc::XmlRpcValue::TypeString);
+      frame_name = (std::string)tag_description["frame_id"];
+    }
+    else{
+      std::stringstream frame_name_stream;
+      frame_name_stream << "tag_" << id;
+      frame_name = frame_name_stream.str();
+    }
+    AprilTagDescription description(id, size, frame_name);
+    ROS_INFO_STREAM("Loaded tag config: "<<id<<", size: "<<size<<", frame_name: "<<frame_name);
+    descriptions.insert(std::make_pair(id, description));
+  }
+  return descriptions;
 }
 
 void ApriltagPoseEstimator::CinfoCb(
