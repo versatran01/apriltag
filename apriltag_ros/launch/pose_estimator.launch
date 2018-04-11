@@ -12,6 +12,7 @@
     <remap from="~apriltags" to="tags"/>
     <remap from="~camera_info" to="camera_info"/>
     <remap from="~transform" to="transform_cam_apriltag"/>
+    <param name="broadcast_tf" type="bool" value="true"/>
     <rosparam param="tag_descriptions">[
       {id: 0, size: 0.163513},
       {id: 100, size: 0.03, frame_id: my_tag}]
