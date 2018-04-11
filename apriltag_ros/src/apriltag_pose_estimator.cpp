@@ -71,9 +71,6 @@ void ApriltagPoseEstimator::ApriltagsCb(const am::ApriltagArrayStampedConstPtr &
 
   am::ApriltagPoseStamped apriltag_poses;
 
-  // Prepare points for solve pnp
-  std::vector<cv::Point2d> img_pts;
-  std::vector<cv::Point3d> obj_pts;
   for (const am::Apriltag &apriltag : apriltags_msg->apriltags) {
     auto search = map_.find(apriltag.id);
     if (search != map_.end()) {
@@ -81,10 +78,13 @@ void ApriltagPoseEstimator::ApriltagsCb(const am::ApriltagArrayStampedConstPtr &
       const auto des_pair = search->second;
       const am::Apriltag &map_tag = des_pair.first;
 
+      std::vector<cv::Point2d> img_pts;
       // Add points to img_pts
       for (const auto &c : apriltag.corners) {
         img_pts.emplace_back(c.x, c.y);
       }
+
+      std::vector<cv::Point3d> obj_pts;
       // Add points to obj_pts
       for (const auto &c : map_tag.corners) {
         obj_pts.emplace_back(c.x, c.y, c.z);
