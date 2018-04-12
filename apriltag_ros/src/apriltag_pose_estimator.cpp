@@ -42,16 +42,26 @@ cv::Mat QuatFromRvec(const cv::Mat &r) {
 
 ApriltagPoseEstimator::ApriltagPoseEstimator(const ros::NodeHandle &pnh)
     : pnh_(pnh) {
-  sub_cinfo_ =
-      pnh_.subscribe("camera_info", 1, &ApriltagPoseEstimator::CinfoCb, this);
 
-  auto connect_cb = boost::bind(&ApriltagPoseEstimator::ConnectCb, this);
-  boost::lock_guard<boost::mutex> lock(connect_mutex_);
-  pub_poses_ = pnh_.advertise<apriltag_msgs::ApriltagPoseStamped>(
-      "apriltag_poses", 1, connect_cb, connect_cb);
-  InitApriltagMap();
   pnh_.param("broadcast_tf", broadcast_tf_, false);
+  bool auto_disconnect = true;
+  pnh_.param("auto_disconnect", auto_disconnect, true);
 
+  sub_cinfo_ = pnh_.subscribe("camera_info", 1, &ApriltagPoseEstimator::CinfoCb, this);
+
+  if(auto_disconnect){
+    auto connect_cb = boost::bind(&ApriltagPoseEstimator::ConnectCb, this);
+    boost::lock_guard<boost::mutex> lock(connect_mutex_);
+    pub_poses_ = pnh_.advertise<apriltag_msgs::ApriltagPoseStamped>("apriltag_poses", 1, connect_cb, connect_cb);
+  }
+  else{
+    pub_poses_ = pnh_.advertise<apriltag_msgs::ApriltagPoseStamped>("apriltag_poses", 1);
+    ROS_WARN("%s: Subscribing", pnh_.getNamespace().c_str());
+    sub_apriltags_ = pnh_.subscribe("apriltags", 1,
+                                    &ApriltagPoseEstimator::ApriltagsCb, this);
+  }
+
+  InitApriltagMap();
 }
 
 void ApriltagPoseEstimator::ConnectCb() {
