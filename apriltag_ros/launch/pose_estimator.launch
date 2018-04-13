@@ -1,10 +1,12 @@
 <launch>
   <arg name="camera" default="camera"/>
   <arg name="image" default="image_raw"/>
+  <arg name="border_size" default="2"/>
 
   <include file="$(find apriltag_ros)/launch/detector.launch">
     <arg name="camera" value="$(arg camera)"/>
     <arg name="image" value="$(arg image)"/>
+    <arg name="border_size" value="$(arg border_size)"/>
   </include>
 
   <node pkg="apriltag_ros" name="apriltag_pose_estimator"

@@ -2,11 +2,13 @@
   <arg name="camera" default="camera"/>
   <arg name="image" default="image_raw"/>
 
+  <arg name="border_size" default="2"/>
+
   <node pkg="apriltag_ros" type="apriltag_detector_node"
     name="apriltag_detector" output="screen" ns="$(arg camera)">
     <param name="family" type="int" value="0"/>
     <param name="type" type="int" value="0"/>
-    <param name="black_border" type="int" value="2"/>
+    <param name="black_border" type="int" value="$(arg border_size)"/>
 
     <remap from="~image" to="$(arg image)"/>
     <remap from="~tags" to="tags"/>
