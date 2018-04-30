@@ -7,7 +7,7 @@ find_package(OpenCV REQUIRED)
 find_package(Boost REQUIRED COMPONENTS program_options)
 find_package(catkin REQUIRED COMPONENTS
     roscpp dynamic_reconfigure message_generation
-    image_transport image_geometry cv_bridge
+    image_transport image_geometry cv_bridge tf2_ros tf2_geometry_msgs
     apriltag_mit apriltag_umich apriltag_msgs
     )
 
@@ -17,7 +17,7 @@ catkin_package(
     INCLUDE_DIRS include
     LIBRARIES ${PROJECT_NAME}
     CATKIN_DEPENDS roscpp dynamic_reconfigure message_runtime image_transport image_geometry
-    cv_bridge apriltag_mit apriltag_umich apriltag_msgs
+    cv_bridge tf2_ros tf2_geometry_msgs apriltag_mit apriltag_umich apriltag_msgs
     )
 
 include_directories(

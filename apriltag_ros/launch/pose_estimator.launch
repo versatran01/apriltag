@@ -1,8 +1,12 @@
 <launch>
   <arg name="camera" default="camera"/>
+  <arg name="image" default="image_raw"/>
+  <arg name="border_size" default="2"/>
 
   <include file="$(find apriltag_ros)/launch/detector.launch">
     <arg name="camera" value="$(arg camera)"/>
+    <arg name="image" value="$(arg image)"/>
+    <arg name="border_size" value="$(arg border_size)"/>
   </include>
 
   <node pkg="apriltag_ros" name="apriltag_pose_estimator"
@@ -10,10 +14,11 @@
     <remap from="~apriltags" to="tags"/>
     <remap from="~camera_info" to="camera_info"/>
     <remap from="~transform" to="transform_cam_apriltag"/>
-    <rosparam param="tag_descriptions">
-      "0": 0.04
-      "1": 0.04
-      "20": 0.04
+    <param name="broadcast_tf" type="bool" value="true"/>
+    <param name="auto_disconnect" type="bool" value="true"/>
+    <rosparam param="tag_descriptions">[
+      {id: 0, size: 0.163513},
+      {id: 100, size: 0.03, frame_id: my_tag}]
     </rosparam>
   </node>
 
