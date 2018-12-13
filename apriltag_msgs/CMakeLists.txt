@@ -1,16 +1,15 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.5)
 project(apriltag_msgs)
 
 find_package(catkin REQUIRED
-   COMPONENTS std_msgs geometry_msgs message_generation)
+             COMPONENTS std_msgs geometry_msgs message_generation)
 
-add_message_files(
-    DIRECTORY msg
-    FILES
-    Apriltag.msg
-    ApriltagArrayStamped.msg
-    ApriltagPoseStamped.msg
-    )
+add_message_files(DIRECTORY
+                  msg
+                  FILES
+                  Apriltag.msg
+                  ApriltagArrayStamped.msg
+                  ApriltagPoseStamped.msg)
 
 generate_messages(DEPENDENCIES geometry_msgs std_msgs)
 
