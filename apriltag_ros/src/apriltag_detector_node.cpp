@@ -1,60 +1,39 @@
 #include "apriltag_ros/apriltag_detector_node.h"
+#include <apriltag_msgs/ApriltagsStamped.h>
 
 #include <cv_bridge/cv_bridge.h>
-#include <sensor_msgs/image_encodings.h>
-#include <boost/thread/lock_guard.hpp>
-#include <boost/timer/timer.hpp>
-#include <opencv2/highgui/highgui.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
 
 namespace apriltag_ros {
 
-// using apriltag_msgs::ApriltagArrayStamped;
-
 ApriltagDetectorNode::ApriltagDetectorNode(const ros::NodeHandle &pnh)
-    : pnh_(pnh),
-      it_(pnh),
-      cfg_server_(pnh),
-      detector_(ApriltagFamily::tf36h11) {
+    : pnh_(pnh), it_(pnh), cfg_server_(pnh) {
+  ROS_INFO("Inside Ctor");
   cfg_server_.setCallback(
       boost::bind(&ApriltagDetectorNode::ConfigCb, this, _1, _2));
+  ROS_INFO("After set cb");
+
   sub_image_ = it_.subscribe("image", 1, &ApriltagDetectorNode::ImageCb, this);
-
-  // Setup connect callback
-  //  auto connect_cb = boost::bind(&ApriltagDetectorNode::ConnectCb, this);
-  //  boost::lock_guard<boost::mutex> lock(connect_mutex_);
-  //  pub_tags_ =
-  //      pnh_.advertise<ApriltagArrayStamped>("tags", 1, connect_cb,
-  //      connect_cb);
-  //  pub_disp_ = it_.advertise("disp", 1, connect_cb, connect_cb);
-
-  detector_.set_decimate(2);
-  detector_.set_nthreads(2);
+  pub_apriltags_ =
+      pnh_.advertise<apriltag_msgs::ApriltagsStamped>("apriltags", 1);
+  pub_detection_ = it_.advertise("detection", 1);
 }
 
 void ApriltagDetectorNode::ImageCb(
     const sensor_msgs::ImageConstPtr &image_msg) {
   const auto gray = cv_bridge::toCvShare(image_msg, "mono8")->image;
 
-  // Detect
-  boost::timer::auto_cpu_timer t;
+  apriltag_msgs::ApriltagsStamped tag_msg;
+  tag_msg.header = image_msg->header;
+  tag_msg.tags = detector_.Detect(gray, max_hamming_);
+  pub_apriltags_.publish(tag_msg);
 
-  detector_.Detect(gray);
-
-  // Publish apriltags
-  //  auto apriltag_array_msg = boost::make_shared<ApriltagArrayStamped>();
-  //  apriltag_array_msg->header = image_msg->header;
-  //  apriltag_array_msg->apriltags = apriltags;
-  //  pub_tags_.publish(apriltag_array_msg);
-
-  // Publish detection image if needed
-  //  if (pub_disp_.getNumSubscribers()) {
-  //    cv::Mat disp;
-  //    cv::cvtColor(gray, disp, CV_GRAY2BGR);
-  //    DrawApriltags(disp, apriltags);
-  //    cv_bridge::CvImage cv_img(image_msg->header, image_encodings::BGR8,
-  //    disp); pub_disp_.publish(cv_img.toImageMsg());
-  //  }
+  if (pub_detection_.getNumSubscribers()) {
+    cv::Mat color;
+    cv::cvtColor(gray, color, cv::COLOR_GRAY2BGR);
+    DrawApriltags(color, tag_msg.tags);
+    pub_detection_.publish(
+        cv_bridge::CvImage(tag_msg.header, "bgr8", color).toImageMsg());
+  }
 }
 
 void ApriltagDetectorNode::ConfigCb(ConfigT &config, int level) {
@@ -62,24 +41,33 @@ void ApriltagDetectorNode::ConfigCb(ConfigT &config, int level) {
     ROS_INFO("%s: %s", pnh_.getNamespace().c_str(),
              "Initializing reconfigure server");
   }
+  max_hamming_ = config.max_hamming;
+  detector_.set_decimate(config.decimate);
+  detector_.set_nthreads(config.nthreads);
+  detector_.set_sigma(config.sigma);
 
-  // Save config
-  config_ = config;
+  if (config.tag36h11) {
+    detector_.AddFamily(ApriltagFamily::tag36h11);
+  } else {
+    detector_.RemoveFamily(ApriltagFamily::tag36h11);
+  }
+
+  if (config.tag25h9) {
+    detector_.AddFamily(ApriltagFamily::tag25h9);
+  } else {
+    detector_.RemoveFamily(ApriltagFamily::tag25h9);
+  }
+
+  if (config.tag16h5) {
+    detector_.AddFamily(ApriltagFamily::tag16h5);
+  } else {
+    detector_.RemoveFamily(ApriltagFamily::tag16h5);
+  }
+  ROS_INFO(
+      "decimate: %d, nthreads: %d, sigma: %f, max_hamming: %d, families: %zu",
+      detector_.decimate(), detector_.nthreads(), detector_.sigma(),
+      max_hamming_, detector_.NumFamilies());
 }
-
-// void ApriltagDetectorNode::ConnectCb() {
-//  boost::lock_guard<boost::mutex> lock(connect_mutex_);
-//  if (pub_tags_.getNumSubscribers() == 0 &&
-//      pub_disp_.getNumSubscribers() == 0) {
-//    // Shutting down if nobody subscribes
-//    ROS_DEBUG("%s: No subscribers, shutting down",
-//    pnh_.getNamespace().c_str()); sub_image_.shutdown();
-//  } else if (!sub_image_) {
-//    ROS_DEBUG("%s: Resubscribing", pnh_.getNamespace().c_str());
-//    sub_image_ =
-//        it_.subscribe("image", 1, &ApriltagDetectorNode::ImageCb, this);
-//  }
-//}
 
 }  // namespace apriltag_ros
 

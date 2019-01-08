@@ -3,13 +3,15 @@
 #include <map>
 #include <memory>
 
+#include <apriltag_msgs/Apriltag.h>
 #include <apriltag/apriltag.hpp>
 #include <opencv2/core/core.hpp>
 
 namespace apriltag_ros {
 
 /// For now only support old tag family
-enum class ApriltagFamily { tf36h11, tf25h9, tf16h5 };
+enum class ApriltagFamily { tag36h11, tag25h9, tag16h5 };
+using apriltag_msgs::Apriltag;
 
 class ApriltagDetector {
  public:
@@ -20,8 +22,13 @@ class ApriltagDetector {
   explicit ApriltagDetector(const ApriltagFamily &family) { AddFamily(family); }
   //  explicit ApriltagDetector(const std::vector<ApriltagFamily> &families);
 
+  int nthreads() const { return td_->nthreads; }
   void set_nthreads(int nthreads) { td_->nthreads = nthreads; }
+
+  int decimate() const { return td_->quad_decimate; }
   void set_decimate(int decimate) { td_->quad_decimate = decimate; }
+
+  double sigma() const { return td_->quad_sigma; }
   void set_sigma(double sigma) { td_->quad_sigma = sigma; }
 
   /**
@@ -30,16 +37,12 @@ class ApriltagDetector {
    * @note corner starts from lower-left and goes counter-clockwise, and detect
    * does not need knowledge of the camera intrinsics
    */
-  void Detect(const cv::Mat &gray);
+  std::vector<Apriltag> Detect(const cv::Mat &gray, int max_hamming) const;
 
-  /**
-   * @brief Create creates an instance of ApriltagDetector
-   * @param type mit or umich
-   * @param tag_family 36h11, 25h9, 16h5
-   */
-  //  static SPtr Create(const TagFamily &tag_family);
+  size_t NumFamilies() const { return tfs_.size(); }
   bool AddFamily(const ApriltagFamily &family);
   bool RemoveFamily(const ApriltagFamily &family);
+  void ClearFamily();
 
  private:
   apriltag::FamilyUPtr MakeFamily(const ApriltagFamily &family) const;
@@ -50,16 +53,12 @@ class ApriltagDetector {
 };
 
 /// Draw a single apriltag on image
-// void DrawApriltag(cv::Mat &image, const apriltag_msgs::Apriltag &apriltag,
-//                  int thickness = 2, bool draw_corners = true);
+void DrawApriltag(cv::Mat &image, const Apriltag &apriltag, int thickness = 2,
+                  bool draw_corners = true, bool draw_id = true);
 
 /// Draw a vector of apriltags on image
-// void DrawApriltags(cv::Mat &image, const ApriltagVec &apriltags);
-
-/// Convert tag family to tag bits, eg. tf36h11 -> 6
-// int TagFamilyToPayload(const TagFamily &tag_family);
-
-/// Convert detector type to string
-// std::string DetectorTypeToString(const DetectorType &detector_type);
+void DrawApriltags(cv::Mat &image, const std::vector<Apriltag> &apriltags,
+                   int thickness = 2, bool draw_corners = true,
+                   bool draw_id = true);
 
 }  // namespace apriltag_ros

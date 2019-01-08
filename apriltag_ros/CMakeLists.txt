@@ -11,7 +11,8 @@ find_package(catkin REQUIRED
                         image_transport
                         image_geometry
                         cv_bridge
-                        apriltag)
+                        apriltag
+                        apriltag_msgs)
 
 generate_dynamic_reconfigure_options(cfg/ApriltagDetectorDyn.cfg)
 
@@ -25,7 +26,8 @@ catkin_package(INCLUDE_DIRS
                image_transport
                image_geometry
                cv_bridge
-               apriltag)
+               apriltag
+               apriltag_msgs)
 
 add_library(${PROJECT_NAME} src/apriltag_detector.cpp)
 target_include_directories(${PROJECT_NAME}

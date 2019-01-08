@@ -4,12 +4,7 @@ project(apriltag_msgs)
 find_package(catkin REQUIRED
              COMPONENTS std_msgs geometry_msgs message_generation)
 
-add_message_files(DIRECTORY
-                  msg
-                  FILES
-                  Apriltag.msg
-                  ApriltagArrayStamped.msg
-                  ApriltagPoseStamped.msg)
+add_message_files(DIRECTORY msg FILES Apriltag.msg ApriltagsStamped.msg)
 
 generate_messages(DEPENDENCIES geometry_msgs std_msgs)
 

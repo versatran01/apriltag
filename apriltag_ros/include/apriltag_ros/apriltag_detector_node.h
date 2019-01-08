@@ -15,8 +15,6 @@ class ApriltagDetectorNode {
 
   explicit ApriltagDetectorNode(const ros::NodeHandle &pnh);
   void ImageCb(const sensor_msgs::ImageConstPtr &image_msg);
-
-  void ConnectCb();
   void ConfigCb(ConfigT &config, int level);
 
  private:
@@ -24,14 +22,13 @@ class ApriltagDetectorNode {
   image_transport::ImageTransport it_;
   image_transport::Subscriber sub_image_;
 
-  ConfigT config_;
-  boost::mutex connect_mutex_;
   dynamic_reconfigure::Server<ConfigT> cfg_server_;
 
-  ros::Publisher pub_tags_;
-  image_transport::Publisher pub_disp_;
+  ros::Publisher pub_apriltags_;
+  image_transport::Publisher pub_detection_;
 
   ApriltagDetector detector_;
+  int max_hamming_;
 };
 
 }  // namespace apriltag_ros
