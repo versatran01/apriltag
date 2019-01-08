@@ -20,6 +20,8 @@ namespace apriltag {
 struct FreeFamily {
   void operator()(apriltag_family_t *tf) const {
     free(tf->codes);
+    free(tf->bit_x);
+    free(tf->bit_y);
     free(tf);
   }
 };
@@ -30,19 +32,12 @@ struct FreeDetector {
   }
 };
 
-struct FreeDetection {
-  void operator()(apriltag_detection_t *det) const {
-    apriltag_detection_destroy(det);
-  }
-};
-
-struct FreeZarray {
-  void operator()(zarray_t *za) const { zarray_destroy(za); }
+struct FreeDetectionZa {
+  void operator()(zarray_t *za) const { apriltag_detections_destroy(za); }
 };
 
 using FamilyUPtr = std::unique_ptr<apriltag_family_t, FreeFamily>;
 using DetectorUPtr = std::unique_ptr<apriltag_detector_t, FreeDetector>;
-using DetectionUPtr = std::unique_ptr<apriltag_detection_t, FreeDetection>;
-using ZarrayUPtr = std::unique_ptr<zarray_t, FreeZarray>;
+using DetectionZaUPtr = std::unique_ptr<zarray_t, FreeDetectionZa>;
 
 }  // namespace apriltag

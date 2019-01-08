@@ -28,7 +28,8 @@ void ApriltagDetector::Detect(const cv::Mat &gray) {
                    .stride = gray.cols,
                    .buf = gray.data};
 
-  apriltag::ZarrayUPtr detections(apriltag_detector_detect(td_.get(), &im));
+  apriltag::DetectionZaUPtr detections(
+      apriltag_detector_detect(td_.get(), &im));
   std::cout << zarray_size(detections.get()) << " tags detected" << std::endl;
 
   // Draw detection outlines
