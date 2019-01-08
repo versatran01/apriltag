@@ -1,129 +1,65 @@
-#ifndef APRILTAG_ROS_APRILTAG_DETECTOR_H_
-#define APRILTAG_ROS_APRILTAG_DETECTOR_H_
+#pragma once
 
-#include <cassert>
+#include <map>
 #include <memory>
 
-#include <apriltag_mit/apriltag_mit.h>
-#include <apriltag_msgs/Apriltag.h>
-#include <apriltag_umich/apriltag_umich.h>
+#include <apriltag/apriltag.hpp>
 #include <opencv2/core/core.hpp>
 
 namespace apriltag_ros {
 
-using ApriltagVec = std::vector<apriltag_msgs::Apriltag>;
+/// For now only support old tag family
+enum class ApriltagFamily { tf36h11, tf25h9, tf16h5 };
 
-enum class DetectorType { Mit, Umich };
-enum class TagFamily { tf36h11, tf25h9, tf16h5 };
-
-/**
- * @brief The ApriltagDetector class
- */
 class ApriltagDetector {
-public:
-  using Ptr = boost::shared_ptr<ApriltagDetector>;
+ public:
+  using SPtr = std::shared_ptr<ApriltagDetector>;
+  using UPtr = std::unique_ptr<ApriltagDetector>;
 
-  ApriltagDetector(const DetectorType &detector_type,
-                   const TagFamily &tag_family);
-  virtual ~ApriltagDetector() = default;
+  ApriltagDetector() = default;
+  explicit ApriltagDetector(const ApriltagFamily &family) { AddFamily(family); }
+  //  explicit ApriltagDetector(const std::vector<ApriltagFamily> &families);
 
-  void set_black_border(int black_border);
-  int black_border() const;
-
-  void set_decimate(int decimate);
-  int decimate() const;
-
-  void set_nthreads(int nthreads);
-  int nthreads() const;
-
-  int payload() const;
-  const std::string &tag_family() const;
+  void set_nthreads(int nthreads) { td_->nthreads = nthreads; }
+  void set_decimate(int decimate) { td_->quad_decimate = decimate; }
+  void set_sigma(double sigma) { td_->quad_sigma = sigma; }
 
   /**
    * @brief Detect detects apriltags in given image
-   * @param image A grayscale image
+   * @param gray A grayscale image
    * @note corner starts from lower-left and goes counter-clockwise, and detect
    * does not need knowledge of the camera intrinsics
    */
-  ApriltagVec Detect(const cv::Mat &image);
+  void Detect(const cv::Mat &gray);
 
   /**
    * @brief Create creates an instance of ApriltagDetector
    * @param type mit or umich
    * @param tag_family 36h11, 25h9, 16h5
    */
-  static Ptr Create(const DetectorType &detector_type,
-                    const TagFamily &tag_family);
+  //  static SPtr Create(const TagFamily &tag_family);
+  bool AddFamily(const ApriltagFamily &family);
+  bool RemoveFamily(const ApriltagFamily &family);
 
-protected:
-  virtual ApriltagVec DetectImpl(const cv::Mat &image) = 0;
-  virtual void SetBlackBorder(int black_border) = 0;
-  virtual void SetDecimate(int decimate) = 0;
-  virtual void SetNThreads(int nthreads) = 0;
+ private:
+  apriltag::FamilyUPtr MakeFamily(const ApriltagFamily &family) const;
 
-  int decimate_{1};
-  int nthreads_{1};
-  int black_border_{1};
-  int payload_{6};
-  DetectorType detector_type_;
-  TagFamily tag_family_;
-  std::string tag_family_str_;
-};
-
-using ApriltagDetectorPtr = ApriltagDetector::Ptr;
-
-/**
- * @brief The ApriltagDetectorMit class
- */
-class ApriltagDetectorMit : public ApriltagDetector {
-public:
-  explicit ApriltagDetectorMit(const TagFamily &tag_family);
-
-  ApriltagVec DetectImpl(const cv::Mat &image) override;
-
-  void SetBlackBorder(int black_border) override;
-  void SetDecimate(int decimate) override;
-  void SetNThreads(int nthreads) override;
-
-private:
-  apriltag_mit::TagDetectorPtr tag_detector_;
-};
-
-/**
- * @brief The ApriltagDetectorUmich class
- */
-class ApriltagDetectorUmich : public ApriltagDetector {
-public:
-  explicit ApriltagDetectorUmich(const TagFamily &tag_family);
-
-  ApriltagVec DetectImpl(const cv::Mat &image) override;
-
-  void SetBlackBorder(int black_border) override;
-  void SetDecimate(int decimate) override;
-  void SetNThreads(int nthreads) override;
-
-private:
-  apriltag_umich::TagFamilyPtr tag_family_;
-  apriltag_umich::TagDetectorPtr tag_detector_;
+  apriltag::DetectorUPtr td_{apriltag_detector_create()};
+  /// A set of all the families
+  std::map<ApriltagFamily, apriltag::FamilyUPtr> tfs_;
 };
 
 /// Draw a single apriltag on image
-void DrawApriltag(cv::Mat &image, const apriltag_msgs::Apriltag &apriltag,
-                  int thickness = 2, bool draw_corners = true);
+// void DrawApriltag(cv::Mat &image, const apriltag_msgs::Apriltag &apriltag,
+//                  int thickness = 2, bool draw_corners = true);
 
 /// Draw a vector of apriltags on image
-void DrawApriltags(cv::Mat &image, const ApriltagVec &apriltags);
+// void DrawApriltags(cv::Mat &image, const ApriltagVec &apriltags);
 
 /// Convert tag family to tag bits, eg. tf36h11 -> 6
-int TagFamilyToPayload(const TagFamily &tag_family);
+// int TagFamilyToPayload(const TagFamily &tag_family);
 
 /// Convert detector type to string
-std::string DetectorTypeToString(const DetectorType &detector_type);
+// std::string DetectorTypeToString(const DetectorType &detector_type);
 
-/// Disable
-// void RefineApriltags(const cv::Mat &image, ApriltagVec &apriltags,
-//                     int win_size = 5);
-
-} // namespace apriltag_ros
-
-#endif // APRILTAG_ROS_APRILTAG_DETECTOR_H_
+}  // namespace apriltag_ros

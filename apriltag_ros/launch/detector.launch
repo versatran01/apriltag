@@ -1,17 +1,8 @@
 <launch>
-  <arg name="camera" default="camera"/>
-  <arg name="image" default="image_raw"/>
+  <arg name="camera" default="camera/color"/>
+  <arg name="image" default="image_rect_color"/>
 
-  <arg name="border_size" default="2"/>
-
-  <node pkg="apriltag_ros" type="apriltag_detector_node"
-    name="apriltag_detector" output="screen" ns="$(arg camera)">
-    <param name="family" type="int" value="0"/>
-    <param name="type" type="int" value="0"/>
-    <param name="black_border" type="int" value="$(arg border_size)"/>
-
+  <node pkg="apriltag_ros" type="apriltag_detector_node" name="apriltag_detector" output="screen" ns="$(arg camera)">
     <remap from="~image" to="$(arg image)"/>
-    <remap from="~tags" to="tags"/>
-    <remap from="~disp" to="disp"/>
   </node>
 </launch>
