@@ -7,15 +7,12 @@ namespace apriltag_ros {
 
 ApriltagDetectorNode::ApriltagDetectorNode(const ros::NodeHandle &pnh)
     : pnh_(pnh), it_(pnh), cfg_server_(pnh) {
-  ROS_INFO("Inside Ctor");
   cfg_server_.setCallback(
       boost::bind(&ApriltagDetectorNode::ConfigCb, this, _1, _2));
-  ROS_INFO("After set cb");
-
   sub_image_ = it_.subscribe("image", 1, &ApriltagDetectorNode::ImageCb, this);
   pub_apriltags_ =
       pnh_.advertise<apriltag_msgs::ApriltagsStamped>("apriltags", 1);
-  pub_detection_ = it_.advertise("detection", 1);
+  pub_detection_ = it_.advertise("image_detection", 1);
 }
 
 void ApriltagDetectorNode::ImageCb(
