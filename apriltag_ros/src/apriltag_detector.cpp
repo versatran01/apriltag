@@ -31,10 +31,15 @@ int ApriltagDetector::decimate() const { return decimate_; }
 void ApriltagDetector::set_nthreads(int nthreads) { SetNThreads(nthreads); }
 int ApriltagDetector::nthreads() const { return nthreads_; }
 
+void ApriltagDetector::print_profiling_info() const {
+  PrintProfilingInfo();
+}
+
 int ApriltagDetector::payload() const { return payload_; }
 const std::string &ApriltagDetector::tag_family() const {
   return tag_family_str_;
 }
+
 
 ApriltagVec ApriltagDetector::Detect(const cv::Mat &image) {
   if (image.empty()) return {};
@@ -91,6 +96,9 @@ void ApriltagDetectorMit::SetBlackBorder(int black_border) {
 }
 void ApriltagDetectorMit::SetDecimate(int decimate) { decimate_ = 1; }
 void ApriltagDetectorMit::SetNThreads(int nthreads) { nthreads_ = 1; }
+void ApriltagDetectorMit::PrintProfilingInfo() const {
+  // TODO: implement performance analysis for MIT detector
+}
 
 ApriltagVec ApriltagDetectorMit::DetectImpl(const cv::Mat &image) {
   // Detection
@@ -149,6 +157,10 @@ void ApriltagDetectorUmich::SetDecimate(int decimate) {
 void ApriltagDetectorUmich::SetNThreads(int nthreads) {
   tag_detector_->nthreads = nthreads_;
 }
+void ApriltagDetectorUmich::PrintProfilingInfo() const {
+  timeprofile_display(tag_detector_->tp);
+}
+
 
 ApriltagVec ApriltagDetectorUmich::DetectImpl(const cv::Mat &image) {
   umich::ImageU8Ptr image_u8(
