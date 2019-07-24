@@ -10,6 +10,9 @@ a c++ library from http://people.csail.mit.edu/kaess/apriltags/
 
 a c library from http://april.eecs.umich.edu/wiki/index.php/AprilTags
 
+To decide which detector to use, have a look at
+[the performance comparison of UMich vs MIT detectors](docs/performance_comparison.md).
+
 ## apriltag_ros
 
 a ros node for detecting apriltag.
