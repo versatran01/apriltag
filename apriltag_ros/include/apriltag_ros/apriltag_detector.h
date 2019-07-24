@@ -36,6 +36,8 @@ public:
   void set_nthreads(int nthreads);
   int nthreads() const;
 
+  void print_profiling_info() const;
+
   int payload() const;
   const std::string &tag_family() const;
 
@@ -60,6 +62,7 @@ protected:
   virtual void SetBlackBorder(int black_border) = 0;
   virtual void SetDecimate(int decimate) = 0;
   virtual void SetNThreads(int nthreads) = 0;
+  virtual void PrintProfilingInfo() const = 0;
 
   int decimate_{1};
   int nthreads_{1};
@@ -84,6 +87,7 @@ public:
   void SetBlackBorder(int black_border) override;
   void SetDecimate(int decimate) override;
   void SetNThreads(int nthreads) override;
+  void PrintProfilingInfo() const override;
 
 private:
   apriltag_mit::TagDetectorPtr tag_detector_;
@@ -101,6 +105,7 @@ public:
   void SetBlackBorder(int black_border) override;
   void SetDecimate(int decimate) override;
   void SetNThreads(int nthreads) override;
+  void PrintProfilingInfo() const override;
 
 private:
   apriltag_umich::TagFamilyPtr tag_family_;
