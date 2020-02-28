@@ -1,6 +1,6 @@
 [submodule "apriltag/apriltags"]
-	path = apriltag/apriltags
-	url = https://github.com/AprilRobotics/apriltags
+	path = apriltag/apriltag
+	url = https://github.com/AprilRobotics/apriltag
 [submodule "apriltag_imgs"]
 	path = apriltag_imgs
 	url = https://github.com/AprilRobotics/apriltag-imgs
