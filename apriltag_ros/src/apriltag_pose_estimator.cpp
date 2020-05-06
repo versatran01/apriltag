@@ -103,15 +103,31 @@ void ApriltagPoseEstimator::ApriltagsCb(const am::ApriltagArrayStampedConstPtr &
       // Check if empty
       if (img_pts.empty()) continue;
 
-      // Solve for pose
-      // The estiamted r and t brings points from tag frame to camera frame
-      // r = c_r_w, t = c_t_w
       cv::Mat rvec, tvec;
-      auto good = cv::solvePnP(obj_pts, img_pts, cam_model_.fullIntrinsicMatrix(),
-                               cam_model_.distortionCoeffs(), rvec, tvec);
-      if (!good) {
-        ROS_WARN("%s: Pose solver failed.", pnh_.getNamespace().c_str());
-        continue;
+      sensor_msgs::CameraInfo cinfo = cam_model_.cameraInfo();
+      if(cinfo.distortion_model == "fisheye") {
+
+        std::vector<cv::Point2d> undistorted_pts;
+        cv::fisheye::undistortPoints(img_pts, undistorted_pts, cam_model_.fullIntrinsicMatrix(), cam_model_.distortionCoeffs());
+
+        cv::Mat normalized_cam_mat = cv::Mat::eye(3,3,cv::DataType<double>::type);
+        cv::Mat dist_coeffs = cv::Mat::zeros(4,1,cv::DataType<double>::type);
+        auto good = cv::solvePnP(obj_pts, undistorted_pts, normalized_cam_mat, dist_coeffs, rvec, tvec);
+        if (!good) {
+          ROS_WARN("%s: Pose solver failed.", pnh_.getNamespace().c_str());
+          continue;
+        }
+      }
+      else {
+        // Solve for pose
+        // The estiamted r and t brings points from tag frame to camera frame
+        // r = c_r_w, t = c_t_w
+        auto good = cv::solvePnP(obj_pts, img_pts, cam_model_.fullIntrinsicMatrix(),
+                                 cam_model_.distortionCoeffs(), rvec, tvec);
+        if (!good) {
+          ROS_WARN("%s: Pose solver failed.", pnh_.getNamespace().c_str());
+          continue;
+        }
       }
 
       cv::Matx33d r;
