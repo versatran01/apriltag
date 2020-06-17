@@ -5,6 +5,7 @@ set(CMAKE_CXX_STANDARD 11)
 
 find_package(OpenCV REQUIRED)
 find_package(Boost REQUIRED COMPONENTS program_options)
+find_package(Threads REQUIRED)   # required by umich3
 find_package(catkin REQUIRED
              COMPONENTS roscpp
                         dynamic_reconfigure
@@ -15,8 +16,8 @@ find_package(catkin REQUIRED
                         tf2_ros
                         tf2_geometry_msgs
                         apriltag_mit
-                        apriltag_umich
                         apriltag_msgs)
+find_package(apriltag REQUIRED)
 
 generate_dynamic_reconfigure_options(cfg/ApriltagDetectorDyn.cfg)
 
@@ -34,7 +35,6 @@ catkin_package(INCLUDE_DIRS
                tf2_ros
                tf2_geometry_msgs
                apriltag_mit
-               apriltag_umich
                apriltag_msgs)
 
 include_directories(include
@@ -43,7 +43,8 @@ include_directories(include
                     ${OpenCV_INCLUDE_DIRS})
 
 add_library(${PROJECT_NAME} src/apriltag_detector.cpp)
-target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${Boost_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${Boost_LIBRARIES} apriltag)
+
 
 add_executable(apriltag_detector_node src/apriltag_detector_node.cpp)
 target_link_libraries(apriltag_detector_node ${PROJECT_NAME}

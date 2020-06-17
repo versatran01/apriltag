@@ -6,7 +6,7 @@
 
 #include <apriltag_mit/apriltag_mit.h>
 #include <apriltag_msgs/Apriltag.h>
-#include <apriltag_umich/apriltag_umich.h>
+#include <apriltag_ros/apriltag_umich_wrapper.h>
 #include <opencv2/core/core.hpp>
 
 namespace apriltag_ros {
@@ -108,8 +108,8 @@ public:
   void PrintProfilingInfo() const override;
 
 private:
-  apriltag_umich::TagFamilyPtr tag_family_;
-  apriltag_umich::TagDetectorPtr tag_detector_;
+  std::shared_ptr<apriltag_umich3::apriltag_family_t> tag_family_;
+  std::shared_ptr<apriltag_umich3::apriltag_detector_t> tag_detector_;
 };
 
 /// Draw a single apriltag on image

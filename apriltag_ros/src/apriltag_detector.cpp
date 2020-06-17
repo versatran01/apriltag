@@ -3,11 +3,12 @@
 #include <boost/make_shared.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
+#include <ros/ros.h>
 
 namespace apriltag_ros {
 
 namespace mit = apriltag_mit;
-namespace umich = apriltag_umich;
+namespace umich = apriltag_umich3;
 
 /// ================
 /// ApriltagDetector
@@ -130,17 +131,17 @@ ApriltagVec ApriltagDetectorMit::DetectImpl(const cv::Mat &image) {
 /// ApriltagDetectorUmich
 /// =====================
 ApriltagDetectorUmich::ApriltagDetectorUmich(const TagFamily &tag_family)
-    : ApriltagDetector(DetectorType::Umich, tag_family),
-      tag_detector_(apriltag_detector_create()) {
+    : ApriltagDetector(DetectorType::Umich, tag_family) {
+      tag_detector_.reset(umich::apriltag_detector_create());
   switch (tag_family) {
     case TagFamily::tf36h11:
-      tag_family_.reset(tag36h11_create());
+      tag_family_.reset(umich::tag36h11_create());
       break;
     case TagFamily::tf25h9:
-      tag_family_.reset(tag25h9_create());
+      tag_family_.reset(umich::tag25h9_create());
       break;
     case TagFamily::tf16h5:
-      tag_family_.reset(tag16h5_create());
+      tag_family_.reset(umich::tag16h5_create());
       break;
     default:
       throw std::invalid_argument("Invalid tag family");
@@ -149,8 +150,11 @@ ApriltagDetectorUmich::ApriltagDetectorUmich(const TagFamily &tag_family)
 }
 
 void ApriltagDetectorUmich::SetBlackBorder(int black_border) {
-  tag_family_->black_border = black_border;
+  if (black_border != 1) {
+    ROS_WARN_STREAM("black_border no longer supported (must be 1)!");
+  }
 }
+
 void ApriltagDetectorUmich::SetDecimate(int decimate) {
   tag_detector_->quad_decimate = decimate;
 }
@@ -161,6 +165,19 @@ void ApriltagDetectorUmich::PrintProfilingInfo() const {
   timeprofile_display(tag_detector_->tp);
 }
 
+// helper function for grey image conversion
+  
+static umich::image_u8_t *image_u8_create_from_gray(int width, int height, uint8_t *gray) {
+  int stride = width;
+  uint8_t *buf = static_cast<uint8_t *>(calloc(height * stride, sizeof(uint8_t)));
+  umich::image_u8_t tmp = {
+    .width = width, .height = height, .stride = stride, .buf = buf};
+  umich::image_u8_t *im = static_cast<umich::image_u8_t *>(
+    calloc(1, sizeof(umich::image_u8_t)));
+  memcpy(im, &tmp, sizeof(umich::image_u8_t));
+  memcpy(im->buf, gray, im->height * im->stride);
+  return im;
+}
 
 ApriltagVec ApriltagDetectorUmich::DetectImpl(const cv::Mat &image) {
   umich::ImageU8Ptr image_u8(
@@ -176,8 +193,8 @@ ApriltagVec ApriltagDetectorUmich::DetectImpl(const cv::Mat &image) {
   apriltags.reserve(num_detections);
 
   for (int i = 0; i < num_detections; ++i) {
-    apriltag_detection_t *td;
-    zarray_get(detections.get(), i, &td);
+    umich::apriltag_detection_t *td;
+    umich::zarray_get(detections.get(), i, &td);
     apriltag_msgs::Apriltag apriltag;
     apriltag.id = td->id;
     apriltag.bits = payload();
