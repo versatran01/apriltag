@@ -2,6 +2,17 @@
 
 A collection of apriltag libraries and a ros node.
 
+## How to build
+
+Clone this repo into the "src" directory of a ROS workspace, including
+submodules, and build:
+```
+catkin config -DCMAKE_BUILD_TYPE=Release
+cd src
+git clone --recursive https://github.com/versatran01/apriltag.git
+catkin build
+```
+
 ## apriltag_mit
 
 a c++ library from http://people.csail.mit.edu/kaess/apriltags/
@@ -29,3 +40,4 @@ rosrun apriltag_ros apriltag_detect image1.png image2.png -t 0 -b 2
 ## apriltag_msgs
 
 apriltag ros messages
+

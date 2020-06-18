@@ -1,18 +1,12 @@
-#ifndef APRILTAG_UMICH_H_
-#define APRILTAG_UMICH_H_
+#ifndef APRILTAG_ROS_APRILTAG_UMICH_WRAPPER_H_
+#define APRILTAG_ROS_APRILTAG_UMICH_WRAPPER_H_
 
-extern "C" {
-#include "apriltag.h"
-#include "common/image_u8_ext.h"
-#include "common/zarray.h"
-#include "tag16h5.h"
-#include "tag25h9.h"
-#include "tag36h11.h"
-}
-
-#include <memory>
-
-namespace apriltag_umich {
+namespace apriltag_umich3 {
+#include <apriltag.h>
+#include <tag36h11.h>
+#include <tag36h11.h>
+#include <tag25h9.h>
+#include <tag16h5.h>
 
 struct FreeTagFamily {
   void operator()(apriltag_family_t *tf) const {
@@ -49,4 +43,4 @@ using ZarrayPtr = std::unique_ptr<zarray_t, FreeZarray>;
 
 } // namespace apriltag_umich
 
-#endif // APRILTAG_UMICH_H_
+#endif // APRILTAG_ROS_APRILTAG_UMICH_WRAPPER_H_
