@@ -17,7 +17,7 @@ find_package(catkin REQUIRED
                         tf2_geometry_msgs
                         apriltag_mit
                         apriltag_msgs)
-find_package(apriltag REQUIRED)
+find_package(apriltag REQUIRED)  # this is actually the umich package
 
 generate_dynamic_reconfigure_options(cfg/ApriltagDetectorDyn.cfg)
 
