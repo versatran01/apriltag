@@ -17,14 +17,15 @@ find_package(catkin REQUIRED
                         tf2_geometry_msgs
                         apriltag_mit
                         apriltag_msgs)
-find_package(apriltag REQUIRED)  # this is actually the umich package
 
 generate_dynamic_reconfigure_options(cfg/ApriltagDetectorDyn.cfg)
 
 catkin_package(INCLUDE_DIRS
                include
+               apriltag_umich
                LIBRARIES
                ${PROJECT_NAME}
+               apriltag
                CATKIN_DEPENDS
                roscpp
                dynamic_reconfigure
@@ -37,31 +38,31 @@ catkin_package(INCLUDE_DIRS
                apriltag_mit
                apriltag_msgs)
 
+add_subdirectory(apriltag_umich)
+
 include_directories(include
                     ${catkin_INCLUDE_DIRS}
                     ${Boost_INCLUDE_DIRS}
                     ${OpenCV_INCLUDE_DIRS})
 
 add_library(${PROJECT_NAME} src/apriltag_detector.cpp)
-target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${Boost_LIBRARIES} apriltag)
+target_link_libraries(${PROJECT_NAME} PUBLIC ${catkin_LIBRARIES} ${Boost_LIBRARIES} apriltag)
 
 
 add_executable(apriltag_detector_node src/apriltag_detector_node.cpp)
-target_link_libraries(apriltag_detector_node ${PROJECT_NAME}
-                      ${OpenCV_LIBRARIES})
+target_link_libraries(apriltag_detector_node PUBLIC ${PROJECT_NAME} ${OpenCV_LIBRARIES})
 
-add_executable(apriltag_detect src/apriltag_detect.cpp)
-target_link_libraries(apriltag_detect ${PROJECT_NAME} ${OpenCV_LIBRARIES})
+# add_executable(apriltag_detect src/apriltag_detect.cpp)
+# target_link_libraries(apriltag_detect ${PROJECT_NAME} ${OpenCV_LIBRARIES})
 
 add_executable(apriltag_pose_estimator src/apriltag_pose_estimator.cpp)
-target_link_libraries(apriltag_pose_estimator ${PROJECT_NAME}
-                      ${OpenCV_LIBRARIES})
+target_link_libraries(apriltag_pose_estimator ${PROJECT_NAME} ${OpenCV_LIBRARIES})
 
 add_dependencies(${PROJECT_NAME} ${catkin_EXPORTED_TARGETS})
 
 install(TARGETS ${PROJECT_NAME}
                 apriltag_detector_node
-                apriltag_detect
+                # apriltag_detect
                 apriltag_pose_estimator
         ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
         LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
