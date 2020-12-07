@@ -194,7 +194,7 @@ ApriltagVec ApriltagDetectorUmich::DetectImpl(const cv::Mat &image) {
 
   for (int i = 0; i < num_detections; ++i) {
     umich::apriltag_detection_t *td;
-    umich::zarray_get(detections.get(), i, &td);
+    zarray_get(detections.get(), i, &td);
     apriltag_msgs::Apriltag apriltag;
     apriltag.id = td->id;
     apriltag.bits = payload();
