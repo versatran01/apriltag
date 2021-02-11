@@ -1,3 +1,0 @@
-[submodule "apriltag_umich"]
-	path = apriltag_ros/apriltag_umich
-	url = https://github.com/AprilRobotics/apriltag.git
