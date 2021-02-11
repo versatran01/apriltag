@@ -3,7 +3,7 @@
 #include <boost/make_shared.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
-#include <ros/ros.h>
+#include <iostream>
 
 namespace apriltag_ros {
 
@@ -110,7 +110,7 @@ ApriltagVec ApriltagDetectorMit::DetectImpl(const cv::Mat &image) {
   apriltags.reserve(detections.size());
 
   for (const mit::TagDetection &td : detections) {
-    apriltag_msgs::Apriltag apriltag;
+    ApriltagMsg apriltag;
     apriltag.id = td.id;
     apriltag.bits = payload();
     apriltag.border = black_border();
@@ -151,7 +151,7 @@ ApriltagDetectorUmich::ApriltagDetectorUmich(const TagFamily &tag_family)
 
 void ApriltagDetectorUmich::SetBlackBorder(int black_border) {
   if (black_border != 1) {
-    ROS_WARN_STREAM("black_border no longer supported (must be 1)!");
+    std::cerr << "black_border no longer supported (must be 1)!" << std::endl;
   }
 }
 
@@ -195,7 +195,7 @@ ApriltagVec ApriltagDetectorUmich::DetectImpl(const cv::Mat &image) {
   for (int i = 0; i < num_detections; ++i) {
     umich::apriltag_detection_t *td;
     zarray_get(detections.get(), i, &td);
-    apriltag_msgs::Apriltag apriltag;
+    ApriltagMsg apriltag;
     apriltag.id = td->id;
     apriltag.bits = payload();
     apriltag.hamming = td->hamming;
@@ -212,7 +212,7 @@ ApriltagVec ApriltagDetectorUmich::DetectImpl(const cv::Mat &image) {
   return apriltags;
 }
 
-void DrawApriltag(cv::Mat &image, const apriltag_msgs::Apriltag &apriltag,
+void DrawApriltag(cv::Mat &image, const ApriltagMsg &apriltag,
                   int thickness, bool draw_corners) {
   const auto &p = apriltag.corners;
   cv::line(image, cv::Point2i(p[0].x, p[0].y), cv::Point2i(p[1].x, p[1].y),

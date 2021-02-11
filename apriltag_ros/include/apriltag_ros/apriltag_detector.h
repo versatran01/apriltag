@@ -5,13 +5,15 @@
 #include <memory>
 
 #include <apriltag_mit/apriltag_mit.h>
-#include <apriltag_msgs/Apriltag.h>
+#include <apriltag_msgs/msg/apriltag.hpp>
 #include <apriltag_ros/apriltag_umich_wrapper.h>
 #include <opencv2/core/core.hpp>
 
 namespace apriltag_ros {
 
-using ApriltagVec = std::vector<apriltag_msgs::Apriltag>;
+using ApriltagMsg = apriltag_msgs::msg::Apriltag;
+
+using ApriltagVec = std::vector<ApriltagMsg>;
 
 enum class DetectorType { Mit, Umich };
 enum class TagFamily { tf36h11, tf25h9, tf16h5 };
@@ -113,7 +115,7 @@ private:
 };
 
 /// Draw a single apriltag on image
-void DrawApriltag(cv::Mat &image, const apriltag_msgs::Apriltag &apriltag,
+void DrawApriltag(cv::Mat &image, const apriltag_msgs::msg::Apriltag &apriltag,
                   int thickness = 2, bool draw_corners = true);
 
 /// Draw a vector of apriltags on image

@@ -1,75 +1,64 @@
 cmake_minimum_required(VERSION 3.5)
 project(apriltag_ros)
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 14)
 
-find_package(OpenCV REQUIRED)
+find_package(OpenCV REQUIRED core imgproc calib3d)
 find_package(Boost REQUIRED COMPONENTS program_options)
 find_package(Threads REQUIRED)   # required by umich3
-find_package(catkin REQUIRED
-             COMPONENTS roscpp
-                        dynamic_reconfigure
-                        message_generation
-                        image_transport
-                        image_geometry
-                        cv_bridge
-                        tf2_ros
-                        tf2_geometry_msgs
-                        apriltag_mit
-                        apriltag_msgs)
+find_package(Eigen3 REQUIRED)  # required by apriltag_mit
 
-generate_dynamic_reconfigure_options(cfg/ApriltagDetectorDyn.cfg)
-
-catkin_package(INCLUDE_DIRS
-               include
-               apriltag_umich
-               LIBRARIES
-               ${PROJECT_NAME}
-               apriltag
-               CATKIN_DEPENDS
-               roscpp
-               dynamic_reconfigure
-               message_runtime
-               image_transport
-               image_geometry
-               cv_bridge
-               tf2_ros
-               tf2_geometry_msgs
-               apriltag_mit
-               apriltag_msgs)
+find_package(ament_cmake REQUIRED)
+find_package(ament_cmake_ros REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(rclcpp_components REQUIRED)
+find_package(image_transport REQUIRED)
+find_package(cv_bridge REQUIRED)
+find_package(apriltag_msgs REQUIRED)
+find_package(apriltag_mit REQUIRED)
 
 add_subdirectory(apriltag_umich)
 
-include_directories(include
-                    ${catkin_INCLUDE_DIRS}
-                    ${Boost_INCLUDE_DIRS}
-                    ${OpenCV_INCLUDE_DIRS})
+add_library(${PROJECT_NAME} SHARED src/apriltag_detector.cpp)
 
-add_library(${PROJECT_NAME} src/apriltag_detector.cpp)
-target_link_libraries(${PROJECT_NAME} PUBLIC ${catkin_LIBRARIES} ${Boost_LIBRARIES} apriltag)
+# apparently the non-ament packages need to be added like this.
+# Note: apriltag is the name of the umich apriltag package
+target_link_libraries(${PROJECT_NAME} ${Boost_LIBRARIES} apriltag opencv_core)
 
+# specify the dependencies on ament packages
+ament_target_dependencies(${PROJECT_NAME} apriltag_msgs image_transport cv_bridge apriltag_mit)
 
+target_include_directories(${PROJECT_NAME}
+  PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  PRIVATE include)
+
+# component (like ROS1 nodelet) library 
+add_library(apriltag_detector_component SHARED src/apriltag_detector_component.cpp)
+target_link_libraries(apriltag_detector_component ${PROJECT_NAME} opencv_core)
+
+# the actual node uses the same nodelet code
 add_executable(apriltag_detector_node src/apriltag_detector_node.cpp)
-target_link_libraries(apriltag_detector_node PUBLIC ${PROJECT_NAME} ${OpenCV_LIBRARIES})
+target_link_libraries(apriltag_detector_node apriltag_detector_component ${PROJECT_NAME})
 
-# add_executable(apriltag_detect src/apriltag_detect.cpp)
-# target_link_libraries(apriltag_detect ${PROJECT_NAME} ${OpenCV_LIBRARIES})
+# register the component
+rclcpp_components_register_nodes(apriltag_detector_component "apriltag_ros::ApriltagDetectorComponent")
 
-add_executable(apriltag_pose_estimator src/apriltag_pose_estimator.cpp)
-target_link_libraries(apriltag_pose_estimator ${PROJECT_NAME} ${OpenCV_LIBRARIES})
+install(TARGETS
+  ${PROJECT_NAME}
+  apriltag_detector_component
+  EXPORT export_${PROJECT_NAME}
+  DESTINATION lib
+  INCLUDES include)
 
-add_dependencies(${PROJECT_NAME} ${catkin_EXPORTED_TARGETS})
+# must be installed under PROJECT_NAME directory or else not found on launch
+install(TARGETS apriltag_detector_node
+  DESTINATION lib/${PROJECT_NAME}/)
 
-install(TARGETS ${PROJECT_NAME}
-                apriltag_detector_node
-                # apriltag_detect
-                apriltag_pose_estimator
-        ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-        LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-        RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
+install(DIRECTORY
+  launch
+  DESTINATION share/${PROJECT_NAME}/)
+
 install(DIRECTORY include/${PROJECT_NAME}/
-        DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION})
+  DESTINATION include/${PROJECT_NAME})
 
-# if(CATKIN_ENABLE_TESTING) catkin_add_gtest(test_apriltag_detector
-# test/test_apriltag_detector.cpp) target_link_libraries(test_apriltag_detector
-# ${PROJECT_NAME}) endif()
+ament_package()
