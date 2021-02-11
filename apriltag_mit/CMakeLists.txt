@@ -1,14 +1,15 @@
 cmake_minimum_required(VERSION 3.5)
 project(apriltag_mit)
 
-set(USE_ROS TRUE)
+set(USE_ROS1 FALSE)
+set(USE_ROS2 TRUE)
 set(CMAKE_CXX_STANDARD 11)
 
 find_package(Eigen3 REQUIRED)
 find_package(OpenCV REQUIRED)
 include_directories(include ${OpenCV_INCLUDE_DIRS} ${EIGEN3_INCLUDE_DIR})
 
-if(USE_ROS)
+if(USE_ROS1)
   find_package(catkin REQUIRED COMPONENTS roslib)
   catkin_package(DEPENDS
                  OpenCV
@@ -34,6 +35,31 @@ if(USE_ROS)
           RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
   install(DIRECTORY include/${PROJECT_NAME}/
           DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION})
+elseif(USE_ROS2)
+  #
+  # ---------- ROS2 -----------------------
+  #
+  find_package(ament_cmake REQUIRED)
+
+  include_directories(include)
+
+  file(GLOB CC_FILES ${PROJECT_SOURCE_DIR}/src/*.cc)
+  add_library(${PROJECT_NAME} SHARED ${CC_FILES})
+  target_include_directories(${PROJECT_NAME} PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>)
+  target_link_libraries(${PROJECT_NAME} PUBLIC Eigen3::Eigen opencv_core)
+
+  install(TARGETS ${PROJECT_NAME}
+    EXPORT export_${PROJECT_NAME}
+    DESTINATION lib
+    INCLUDES DESTINATION include)
+
+  install(DIRECTORY include/${PROJECT_NAME}/
+    DESTINATION include/${PROJECT_NAME})
+
+  ament_export_targets(export_${PROJECT_NAME})
+  ament_package()
 else()
   message(STATUS "Source:  " ${PROJECT_SOURCE_DIR})
   message(STATUS "Binary:  " ${PROJECT_BINARY_DIR})
