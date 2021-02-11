@@ -1,43 +1,64 @@
-# apriltag
+# Apriltag ROS2
 
-A collection of apriltag libraries and a ros node.
+This repo has a ROS2 wrapper around two apriltag detection libraries:
+- The [MIT C++ detector
+  library](http://people.csail.mit.edu/kaess/apriltags/)
+- The [UMich Apriltag library V3](http://april.eecs.umich.edu/wiki/index.php/AprilTags)
+
+It publishes a debug image and a message with the detected tags.
 
 ## How to build
 
-Clone this repo into the "src" directory of a ROS workspace, including
-submodules, and build:
+Clone this repo into the "src" directory of a ROS workspace:
 ```
-catkin config -DCMAKE_BUILD_TYPE=Release
 cd src
-git clone --recursive https://github.com/versatran01/apriltag.git
-catkin build
+git clone --branch ros2 https://github.com/berndpfrommer/apriltag.git
 ```
 
-## apriltag_mit
-
-a c++ library from http://people.csail.mit.edu/kaess/apriltags/
-
-## apriltag_umich
-
-a c library from http://april.eecs.umich.edu/wiki/index.php/AprilTags
-
-To decide which detector to use, have a look at
-[the performance comparison of UMich vs MIT detectors](docs/performance_comparison.md).
-
-## apriltag_ros
-
-a ros node for detecting apriltag.
-
-Detect apriltags in image topic `~image`
+Fetch the missing workspapces
 ```
-roslaunch apriltag_ros apriltag_detector_node.launch camera:=camera
+cd ..
+wstool init src src/apriltag/apriltag_ros/apriltag_ros.rosinstall 
 ```
 
-Detect apriltags in images
+Build (note: until the cmake files in the umich repo are fixed,
+only building with "Release" will work):
 ```
-rosrun apriltag_ros apriltag_detect image1.png image2.png -t 0 -b 2
+colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release
 ```
-## apriltag_msgs
 
-apriltag ros messages
+## How to run
+
+After compiling, source your ROS2 environment, then overlay the new
+workspace:
+```
+source install/setup.bash
+```
+Run the node (there is also a component launcher if needed):
+```
+ros2 launch apriltag_ros detector_node.launch.py 
+```
+
+## Parameters
+
+Check out the launch file and adjust the following parameters:
+- `detector`: values are 0 for MIT detector (slower, lower detection
+  performance, but can handle 2-bit wide black borders and tolerates
+  black features encroaching on tag as e.g. in calibration boards)
+- `tag_family`: values are 0 for 36h11, 1 for 25h9, 2 for 16h5
+- `black_border_width`: set this to 1 for regular tags, 2 for
+  e.g. calibration boards with double-wide outer black. Only supported
+  for MIT detector.
+- `decimate`: how many decimation pyramids to run.
+
+You also need to change the image remapping from `/image` to whatever
+the correct topic is.
+
+## Troubleshooting
+
+If the tags are not detected,
+- is the border of the tag clean? If not, use the MIT detector.
+- do the tags have double wide black borders? If yes, use MIT detector
+  and set the border width to 2.
+- are any images coming in? Check the debug images (/disp)
 
