@@ -3,7 +3,7 @@ project(apriltag_ros)
 
 set(CMAKE_CXX_STANDARD 14)
 
-find_package(OpenCV REQUIRED core imgproc calib3d)
+find_package(OpenCV REQUIRED COMPONENTS core imgproc calib3d)
 find_package(Boost REQUIRED COMPONENTS program_options)
 find_package(Threads REQUIRED)   # required by umich3
 find_package(Eigen3 REQUIRED)  # required by apriltag_mit
@@ -12,21 +12,26 @@ find_package(ament_cmake REQUIRED)
 find_package(ament_cmake_ros REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
-find_package(image_transport REQUIRED)
-find_package(cv_bridge REQUIRED)
-find_package(apriltag_msgs REQUIRED)
-find_package(apriltag_mit REQUIRED)
 
-add_subdirectory(apriltag_umich)
+set(ament_dependencies
+  "apriltag_mit"
+  "apriltag_umich"
+  "apriltag_msgs"
+  "image_transport"
+  "cv_bridge"
+  "rclcpp"
+  )
+foreach(pkg ${ament_dependencies})
+  find_package(${pkg} REQUIRED)
+endforeach()
 
 add_library(${PROJECT_NAME} SHARED src/apriltag_detector.cpp)
 
-# apparently the non-ament packages need to be added like this.
-# Note: apriltag is the name of the umich apriltag package
-target_link_libraries(${PROJECT_NAME} ${Boost_LIBRARIES} apriltag opencv_core)
+target_link_libraries(${PROJECT_NAME}
+  Boost::program_options opencv_core opencv_imgproc opencv_calib3d)
 
 # specify the dependencies on ament packages
-ament_target_dependencies(${PROJECT_NAME} apriltag_msgs image_transport cv_bridge apriltag_mit)
+ament_target_dependencies(${PROJECT_NAME} ${ament_dependencies})
 
 target_include_directories(${PROJECT_NAME}
   PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -48,7 +53,7 @@ install(TARGETS
   apriltag_detector_component
   EXPORT export_${PROJECT_NAME}
   DESTINATION lib
-  INCLUDES include)
+  INCLUDES DESTINATION include)
 
 # must be installed under PROJECT_NAME directory or else not found on launch
 install(TARGETS apriltag_detector_node
@@ -60,5 +65,8 @@ install(DIRECTORY
 
 install(DIRECTORY include/${PROJECT_NAME}/
   DESTINATION include/${PROJECT_NAME})
+
+ament_export_targets(export_${PROJECT_NAME})
+ament_export_dependencies(${ament_dependencies})
 
 ament_package()

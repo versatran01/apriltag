@@ -15,14 +15,15 @@ cd src
 git clone --branch ros2 https://github.com/berndpfrommer/apriltag.git
 ```
 
-Fetch the missing workspapces
+Fetch the missing workspaces
 ```
 cd ..
-wstool init src src/apriltag/apriltag_ros/apriltag_ros.rosinstall 
+wstool init src src/apriltag/apriltag_umich/apriltag_umich.rosinstall 
 ```
 
 Build (note: until the cmake files in the umich repo are fixed,
-only building with "Release" will work):
+only building with "Release" will work, or you have to hack this line
+there:``set(CMAKE_BUILD_TYPE "Release" CACHE STRING "set the build type")``):
 ```
 colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release
 ```

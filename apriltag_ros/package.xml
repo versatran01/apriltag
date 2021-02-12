@@ -15,6 +15,7 @@
 
   <depend>apriltag_mit</depend>
   <depend>apriltag_msgs</depend>
+  <depend>apriltag_umich</depend>
 
   <build_depend>message_generation</build_depend>
   <exec_depend>message_runtime</exec_depend>

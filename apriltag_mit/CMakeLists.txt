@@ -6,7 +6,7 @@ set(USE_ROS2 TRUE)
 set(CMAKE_CXX_STANDARD 11)
 
 find_package(Eigen3 REQUIRED)
-find_package(OpenCV REQUIRED)
+find_package(OpenCV REQUIRED COMPONENTS core calib3d)
 include_directories(include ${OpenCV_INCLUDE_DIRS} ${EIGEN3_INCLUDE_DIR})
 
 if(USE_ROS1)
@@ -48,7 +48,7 @@ elseif(USE_ROS2)
   target_include_directories(${PROJECT_NAME} PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>)
-  target_link_libraries(${PROJECT_NAME} PUBLIC Eigen3::Eigen opencv_core)
+  target_link_libraries(${PROJECT_NAME} PUBLIC Eigen3::Eigen opencv_core opencv_calib3d)
 
   install(TARGETS ${PROJECT_NAME}
     EXPORT export_${PROJECT_NAME}

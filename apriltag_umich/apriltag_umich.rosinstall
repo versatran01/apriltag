@@ -1,0 +1,1 @@
+- git: {local-name: apriltag/apriltag_umich/apriltag, uri: 'https://github.com/AprilRobotics/apriltag.git', version: 'master'}
