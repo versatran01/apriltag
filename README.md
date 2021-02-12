@@ -1,6 +1,7 @@
 # apriltag
 
 A collection of apriltag libraries and a ros node.
+Note: there is now a [ROS2 (foxy) branch](https://github.com/versatran01/apriltag/tree/ros2).
 
 ## How to build
 
