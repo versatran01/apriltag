@@ -42,3 +42,11 @@ rosrun apriltag_ros apriltag_detect image1.png image2.png -t 0 -b 2
 
 apriltag ros messages
 
+## license
+
+This software and any future contributions to it are licensed under
+the [Apache License 2.0](LICENSE).
+
+Note: Michael Kaess's code under apriltag_mit is covered by a GPL V2
+license.
+
