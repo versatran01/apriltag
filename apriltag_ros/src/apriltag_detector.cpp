@@ -143,6 +143,9 @@ ApriltagDetectorUmich::ApriltagDetectorUmich(const TagFamily &tag_family)
     case TagFamily::tf16h5:
       tag_family_.reset(umich::tag16h5_create());
       break;
+    case TagFamily::ts41h12:
+      tag_family_.reset(umich::tagStandard41h12_create());
+      break;
     default:
       throw std::invalid_argument("Invalid tag family");
   }
@@ -256,6 +259,8 @@ int TagFamilyToPayload(const TagFamily &tag_family) {
       return 5;
     case TagFamily::tf16h5:
       return 4;
+    case TagFamily::ts41h12:
+      return 6; // approximate!
     default:
       throw std::invalid_argument("Invalid tag family");
   }
