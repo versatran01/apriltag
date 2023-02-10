@@ -7,6 +7,7 @@ namespace apriltag_umich3 {
 #include <tag36h11.h>
 #include <tag25h9.h>
 #include <tag16h5.h>
+#include <tagStandard41h12.h>
 
 struct FreeTagFamily {
   void operator()(apriltag_family_t *tf) const {
