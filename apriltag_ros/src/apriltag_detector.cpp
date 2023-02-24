@@ -146,6 +146,9 @@ ApriltagDetectorUmich::ApriltagDetectorUmich(const TagFamily &tag_family)
     case TagFamily::ts41h12:
       tag_family_.reset(umich::tagStandard41h12_create());
       break;
+    case TagFamily::ts52h13:
+      tag_family_.reset(umich::tagStandard52h13_create());
+      break;
     default:
       throw std::invalid_argument("Invalid tag family");
   }
