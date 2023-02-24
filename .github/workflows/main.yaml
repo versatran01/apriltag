@@ -35,8 +35,8 @@ jobs:
           submodules: recursive
       - name: compile from source
         run: git checkout master
-	run: git submodule update --init --recursive
-	run: ./.github/scripts/build.bash
+        run: git submodule update --init --recursive
+        run: ./.github/scripts/build.bash
   build_focal:
     runs-on: ubuntu-20.04
     container:
@@ -50,5 +50,5 @@ jobs:
           submodules: recursive
       - name: compile from source
         run: git checkout master
-	run: git submodule update --init --recursive
-	run: ./.github/scripts/build.bash
+        run: git submodule update --init --recursive
+        run: ./.github/scripts/build.bash
