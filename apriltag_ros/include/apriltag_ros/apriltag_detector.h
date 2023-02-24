@@ -14,7 +14,7 @@ namespace apriltag_ros {
 using ApriltagVec = std::vector<apriltag_msgs::Apriltag>;
 
 enum class DetectorType { Mit, Umich };
-enum class TagFamily { tf36h11, tf25h9, tf16h5, ts41h12 };
+enum class TagFamily { tf36h11, tf25h9, tf16h5, ts41h12, ts52h13 };
 
 /**
  * @brief The ApriltagDetector class
@@ -52,7 +52,7 @@ public:
   /**
    * @brief Create creates an instance of ApriltagDetector
    * @param type mit or umich
-   * @param tag_family 36h11, 25h9, 16h5, 41h12
+   * @param tag_family 36h11, 25h9, 16h5, 41h12, 52h13
    */
   static Ptr Create(const DetectorType &detector_type,
                     const TagFamily &tag_family);
