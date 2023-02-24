@@ -10,6 +10,9 @@ if [[ -f "/opt/ros/melodic/setup.bash" ]]; then
     source /opt/ros/melodic/setup.bash
 fi
 
+pwd
+ls -la
+src_dir=`pwd`
 # make workspace
 mkdir -p ../catkin_ws/src
 cd ../catkin_ws
