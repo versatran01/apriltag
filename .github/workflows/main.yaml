@@ -32,6 +32,7 @@ jobs:
         uses: actions/checkout@v1
         with:
           fetch-depth: 0
+          submodules: recursive
       - name: compile from source
         run: git checkout master && ./.github/scripts/build.bash
   build_focal:
@@ -44,6 +45,7 @@ jobs:
         uses: actions/checkout@v1
         with:
           fetch-depth: 0
+          submodules: recursive
       - name: compile from source
         run: git checkout master && ./.github/scripts/build.bash
   
