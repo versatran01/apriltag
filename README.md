@@ -12,7 +12,7 @@ It publishes a debug image and a message with the detected tags.
 Clone this repo into the "src" directory of a ROS workspace:
 ```
 cd src
-git clone --branch ros2 https://github.com/berndpfrommer/apriltag.git
+git clone --branch ros2 https://github.com/versatran01/apriltag.git
 ```
 
 Fetch the missing workspaces
