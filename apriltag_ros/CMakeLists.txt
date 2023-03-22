@@ -33,8 +33,6 @@ catkin_package(INCLUDE_DIRS
                image_transport
                image_geometry
                cv_bridge
-               tf2_ros
-               tf2_geometry_msgs
                apriltag_mit
                apriltag_msgs)
 
@@ -46,17 +44,17 @@ include_directories(include
                     ${OpenCV_INCLUDE_DIRS})
 
 add_library(${PROJECT_NAME} src/apriltag_detector.cpp)
-target_link_libraries(${PROJECT_NAME} PUBLIC ${catkin_LIBRARIES} ${Boost_LIBRARIES} apriltag)
+target_link_libraries(${PROJECT_NAME} PUBLIC ${apriltag_mit_LIBRARIES} ${apriltag_msgs_LIBRARIES} ${Boost_LIBRARIES} apriltag)
 
 
 add_executable(apriltag_detector_node src/apriltag_detector_node.cpp)
-target_link_libraries(apriltag_detector_node PUBLIC ${PROJECT_NAME} ${OpenCV_LIBRARIES})
+target_link_libraries(apriltag_detector_node PUBLIC ${PROJECT_NAME} ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 
 # add_executable(apriltag_detect src/apriltag_detect.cpp)
 # target_link_libraries(apriltag_detect ${PROJECT_NAME} ${OpenCV_LIBRARIES})
 
 add_executable(apriltag_pose_estimator src/apriltag_pose_estimator.cpp)
-target_link_libraries(apriltag_pose_estimator ${PROJECT_NAME} ${OpenCV_LIBRARIES})
+target_link_libraries(apriltag_pose_estimator ${PROJECT_NAME} ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 
 add_dependencies(${PROJECT_NAME} ${catkin_EXPORTED_TARGETS})
 
