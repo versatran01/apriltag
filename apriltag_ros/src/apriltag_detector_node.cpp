@@ -35,7 +35,21 @@ void ApriltagDetectorNode::ImageCb(const ImageConstPtr &image_msg) {
   // Publish apriltags
   auto apriltag_array_msg = boost::make_shared<ApriltagArrayStamped>();
   apriltag_array_msg->header = image_msg->header;
-  apriltag_array_msg->apriltags = apriltags;
+  // this should be configurable but the idea is if they are adding more apriltags mid season we have more problems to worry about
+  // check if it is within range 
+  constexpr int LEGAL_TAGS[16] = {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16};
+  apriltag_ros::ApriltagVec filtered_tags;
+  for (auto tag : apriltags) {
+    // if tag id is found
+    if (std::find(std::begin(LEGAL_TAGS), std::end(LEGAL_TAGS), tag.id) != std::end(LEGAL_TAGS)) {
+      filtered_tags.push_back(tag);
+      // ROS_INFO_STREAM_THROTTLE(1, "Allowing tag with id " << tag.id  );
+    }
+    else {
+      ROS_WARN_STREAM_THROTTLE("Filtering tag with id " << tag.id);
+    }
+  }
+  apriltag_array_msg->apriltags = filtered_tags;
   pub_tags_.publish(apriltag_array_msg);
 
   // Publish detection image if needed
