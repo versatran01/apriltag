@@ -40,6 +40,7 @@ target_include_directories(${PROJECT_NAME}
 # component (like ROS1 nodelet) library 
 add_library(apriltag_detector_component SHARED src/apriltag_detector_component.cpp)
 target_link_libraries(apriltag_detector_component ${PROJECT_NAME} opencv_core)
+ament_target_dependencies(apriltag_detector_component rclcpp_components)
 
 # the actual node uses the same nodelet code
 add_executable(apriltag_detector_node src/apriltag_detector_node.cpp)
