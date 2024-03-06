@@ -1,1 +1,1 @@
-- git: {local-name: apriltag/apriltag_umich/apriltag, uri: 'https://github.com/AprilRobotics/apriltag.git', version: 'v3.3.0'}
+- git: {local-name: apriltag/apriltag_umich/apriltag, uri: 'https://github.com/AprilRobotics/apriltag.git', version: 'e6cd3c7afdc23814f38a6b537904a41c393fc305'}
