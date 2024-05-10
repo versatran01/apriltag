@@ -1,14 +1,13 @@
 #include "apriltag_ros/apriltag_pose_estimator.h"
-#include <opencv2/core/core.hpp>
-#include <opencv2/calib3d/calib3d.hpp>
 #include <boost/thread/lock_guard.hpp>
 #include <geometry_msgs/msg/transform_stamped.hpp>
+#include <opencv2/calib3d/calib3d.hpp>
+#include <opencv2/core/core.hpp>
 
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2/LinearMath/Matrix3x3.h>
 
 #include <rcpputils/asserts.hpp>
-
 
 namespace apriltag_ros {
 
@@ -41,27 +40,28 @@ cv::Mat QuatFromRvec(const cv::Mat &r) {
   return q;
 }
 
-ApriltagPoseEstimator::ApriltagPoseEstimator(
-    const rclcpp::NodeOptions &options)
+ApriltagPoseEstimator::ApriltagPoseEstimator(const rclcpp::NodeOptions &options)
     : Node("tag_detector", options) {
-
   broadcast_tf_ = declare_parameter("broadcast_tf", false);
 
   using std::placeholders::_1;
   sub_cinfo_ = this->create_subscription<sensor_msgs::msg::CameraInfo>(
-    "camera_info", rclcpp::QoS(10).reliable(), std::bind(&ApriltagPoseEstimator::CinfoCb, this, _1) );
+      "camera_info", rclcpp::QoS(10).reliable(),
+      std::bind(&ApriltagPoseEstimator::CinfoCb, this, _1));
 
-  pub_poses_= this->create_publisher<apriltag_msgs::msg::ApriltagPoseStamped>(
-    "apriltag_poses", rclcpp::QoS(1));
+  pub_poses_ = this->create_publisher<apriltag_msgs::msg::ApriltagPoseStamped>(
+      "apriltag_poses", rclcpp::QoS(1));
   RCLCPP_WARN(this->get_logger(), "%s: Subscribing", this->get_namespace());
-  sub_apriltags_= this->create_subscription<apriltag_msgs::msg::ApriltagArrayStamped>(
-    "apriltags", rclcpp::QoS(1),
-    std::bind(&ApriltagPoseEstimator::ApriltagsCb, this, _1));
+  sub_apriltags_ =
+      this->create_subscription<apriltag_msgs::msg::ApriltagArrayStamped>(
+          "apriltags", rclcpp::QoS(1),
+          std::bind(&ApriltagPoseEstimator::ApriltagsCb, this, _1));
 
   InitApriltagMap();
 }
 
-void ApriltagPoseEstimator::ApriltagsCb(const am::ApriltagArrayStamped &apriltags_msg) {
+void ApriltagPoseEstimator::ApriltagsCb(
+    const am::ApriltagArrayStamped &apriltags_msg) {
   if (!cam_model_.initialized() || map_.empty()) return;
 
   am::ApriltagPoseStamped apriltag_poses;
@@ -99,7 +99,8 @@ void ApriltagPoseEstimator::ApriltagsCb(const am::ApriltagArrayStamped &apriltag
         cv::Mat dist_coeffs = cv::Mat::zeros(4,1,cv::DataType<double>::type);
         auto good = cv::solvePnP(obj_pts, undistorted_pts, normalized_cam_mat, dist_coeffs, rvec, tvec);
         if (!good) {
-          RCLCPP_WARN(this->get_logger(), "%s: Pose solver failed.", this->get_namespace());
+          RCLCPP_WARN(this->get_logger(), "%s: Pose solver failed.",
+                      this->get_namespace());
           continue;
         }
       }
@@ -110,7 +111,8 @@ void ApriltagPoseEstimator::ApriltagsCb(const am::ApriltagArrayStamped &apriltag
         auto good = cv::solvePnP(obj_pts, img_pts, cam_model_.fullIntrinsicMatrix(),
                                  cam_model_.distortionCoeffs(), rvec, tvec);
         if (!good) {
-          RCLCPP_WARN(this->get_logger(), "%s: Pose solver failed.", this->get_namespace());
+          RCLCPP_WARN(this->get_logger(), "%s: Pose solver failed.",
+                      this->get_namespace());
           continue;
         }
       }
@@ -162,8 +164,7 @@ void ApriltagPoseEstimator::ApriltagsCb(const am::ApriltagArrayStamped &apriltag
   // The poses are apriltags expressed in camera frame
   apriltag_poses.header = apriltags_msg.header;
   apriltag_poses.posearray.header = apriltag_poses.header;
-  if(apriltag_poses.apriltags.size()>0)
-    pub_poses_->publish(apriltag_poses);
+  if (apriltag_poses.apriltags.size() > 0) pub_poses_->publish(apriltag_poses);
 }
 
 void ApriltagPoseEstimator::InitApriltagMap() {
@@ -180,25 +181,23 @@ void ApriltagPoseEstimator::InitApriltagMap() {
   std::vector<long int> ids;
   std::vector<double> tag_sizes;
   std::vector<std::string> frame_ids;
-  ids = this->declare_parameter("tag_descriptions.ids",std::vector<int>());
-  tag_sizes = this->declare_parameter("tag_descriptions.sizes",std::vector<double>());
-  frame_ids = this->declare_parameter("tag_descriptions.frame_ids",std::vector<std::string>());
+  ids = this->declare_parameter("tag_descriptions.ids", std::vector<int>());
+  tag_sizes =
+      this->declare_parameter("tag_descriptions.sizes", std::vector<double>());
+  frame_ids = this->declare_parameter("tag_descriptions.frame_ids",
+                                      std::vector<std::string>());
 
   std::map<int, AprilTagDescription> descriptions;
-  if( ids.empty() ){
+  if (ids.empty()) {
     RCLCPP_WARN(this->get_logger(), "No april tags specified");
     return;
-  }
-  else if( ids.size() != tag_sizes.size() || tag_sizes.size()!=frame_ids.size()){
-    RCLCPP_WARN(this->get_logger(), "Mismatched item count in tag_descriptions");
+  } else if (ids.size() != tag_sizes.size() ||
+             tag_sizes.size() != frame_ids.size()) {
+    RCLCPP_WARN(this->get_logger(),
+                "Mismatched item count in tag_descriptions");
     return;
-  }
-  else{
-    try{
-      descriptions = parse_tag_descriptions(ids, tag_sizes, frame_ids);
-    } catch(XmlRpc::XmlRpcException e){
-      RCLCPP_ERROR_STREAM(this->get_logger(),"Error loading tag descriptions: "<<e.getMessage());
-    }
+  } else {
+    descriptions = parse_tag_descriptions(ids, tag_sizes, frame_ids);
   }
 
   std::map<int,AprilTagDescription>::iterator description_itr;
@@ -228,29 +227,31 @@ void ApriltagPoseEstimator::InitApriltagMap() {
     auto des = std::make_pair(tag, description);
     map_.insert(std::pair<int, std::pair<am::Apriltag, AprilTagDescription> >(tag.id, des) );
 
-    RCLCPP_INFO_STREAM(this->get_logger(), "tag is: " << am::to_yaml(tag) );
+    RCLCPP_INFO_STREAM(this->get_logger(), "tag is: " << am::to_yaml(tag));
   }
 
-  RCLCPP_INFO(this->get_logger(),"%s: apritlag map initialized", this->get_namespace());
+  RCLCPP_INFO(this->get_logger(), "%s: apritlag map initialized",
+              this->get_namespace());
 }
 
 std::map<int, AprilTagDescription>
- ApriltagPoseEstimator::parse_tag_descriptions(
-      const std::vector<long int> &ids,
-      const std::vector<double> &tag_sizes,
-      const std::vector<std::string> &frame_ids ){
+ApriltagPoseEstimator::parse_tag_descriptions(
+    const std::vector<long int> &ids, const std::vector<double> &tag_sizes,
+    const std::vector<std::string> &frame_ids) {
   std::map<int, AprilTagDescription> descriptions;
   for (int32_t i = 0; i < ids.size(); ++i) {
     int id = ids[i];
     double size = tag_sizes[i];
     std::string frame_name = frame_ids[i];
-    if( frame_name.empty() ){
+    if (frame_name.empty()) {
       std::stringstream frame_name_stream;
       frame_name_stream << "tag_" << id;
       frame_name = frame_name_stream.str();
     }
     AprilTagDescription description(id, size, frame_name);
-    RCLCPP_INFO_STREAM(this->get_logger(),"Loaded tag config: "<<id<<", size: "<<size<<", frame_name: "<<frame_name);
+    RCLCPP_INFO_STREAM(this->get_logger(),
+                       "Loaded tag config: " << id << ", size: " << size
+                                             << ", frame_name: " << frame_name);
     descriptions.insert(std::make_pair(id, description));
   }
   return descriptions;
@@ -260,8 +261,9 @@ void ApriltagPoseEstimator::CinfoCb(
     const sensor_msgs::msg::CameraInfo &cinfo_msg) {
   if (!cam_model_.initialized()) {
     cam_model_.fromCameraInfo(cinfo_msg);
-    RCLCPP_INFO(this->get_logger(),"%s: camera model initialized", this->get_namespace());
-    sub_cinfo_.reset(); // Stop subscription, ROS2 doesn't have shutdown() yet
+    RCLCPP_INFO(this->get_logger(), "%s: camera model initialized",
+                this->get_namespace());
+    sub_cinfo_.reset();  // Stop subscription, ROS2 doesn't have shutdown() yet
   }
 }
 
