@@ -23,7 +23,6 @@ set(ament_dependencies
   "rclcpp"
   "tf2"
   "tf2_ros"
-  "xmlrpcpp"
   )
 foreach(pkg ${ament_dependencies})
   find_package(${pkg} REQUIRED)
@@ -55,7 +54,7 @@ rclcpp_components_register_nodes(apriltag_detector_component "apriltag_ros::Apri
 
 add_executable(apriltag_pose_estimator src/apriltag_pose_estimator.cpp)
 target_link_libraries(apriltag_pose_estimator ${PROJECT_NAME} opencv_core)
-ament_target_dependencies(apriltag_pose_estimator rclcpp_components tf2_ros image_geometry xmlrpcpp)
+ament_target_dependencies(apriltag_pose_estimator rclcpp_components tf2_ros image_geometry)
 
 install(TARGETS
   ${PROJECT_NAME}

@@ -6,7 +6,6 @@
 
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2/LinearMath/Matrix3x3.h>
-#include <xmlrpcpp/XmlRpcException.h>
 
 #include <rcpputils/asserts.hpp>
 
@@ -178,17 +177,25 @@ void ApriltagPoseEstimator::InitApriltagMap() {
   if(map_tags.empty())
     return;
   */
+  std::vector<long int> ids;
+  std::vector<double> tag_sizes;
+  std::vector<std::string> frame_ids;
+  ids = this->declare_parameter("tag_descriptions.ids",std::vector<int>());
+  tag_sizes = this->declare_parameter("tag_descriptions.sizes",std::vector<double>());
+  frame_ids = this->declare_parameter("tag_descriptions.frame_ids",std::vector<std::string>());
 
   std::map<int, AprilTagDescription> descriptions;
-
-  XmlRpc::XmlRpcValue april_tag_descriptions;
-  if(!this->get_parameter("tag_descriptions", april_tag_descriptions)){
+  if( ids.empty() ){
     RCLCPP_WARN(this->get_logger(), "No april tags specified");
+    return;
+  }
+  else if( ids.size() != tag_sizes.size() || tag_sizes.size()!=frame_ids.size()){
+    RCLCPP_WARN(this->get_logger(), "Mismatched item count in tag_descriptions");
     return;
   }
   else{
     try{
-      descriptions = parse_tag_descriptions(april_tag_descriptions);
+      descriptions = parse_tag_descriptions(ids, tag_sizes, frame_ids);
     } catch(XmlRpc::XmlRpcException e){
       RCLCPP_ERROR_STREAM(this->get_logger(),"Error loading tag descriptions: "<<e.getMessage());
     }
@@ -227,24 +234,17 @@ void ApriltagPoseEstimator::InitApriltagMap() {
   RCLCPP_INFO(this->get_logger(),"%s: apritlag map initialized", this->get_namespace());
 }
 
-std::map<int, AprilTagDescription> ApriltagPoseEstimator::parse_tag_descriptions(XmlRpc::XmlRpcValue& tag_descriptions){
+std::map<int, AprilTagDescription>
+ ApriltagPoseEstimator::parse_tag_descriptions(
+      const std::vector<long int> &ids,
+      const std::vector<double> &tag_sizes,
+      const std::vector<std::string> &frame_ids ){
   std::map<int, AprilTagDescription> descriptions;
-  rcpputils::assert_true(tag_descriptions.getType() == XmlRpc::XmlRpcValue::TypeArray);
-  for (int32_t i = 0; i < tag_descriptions.size(); ++i) {
-    XmlRpc::XmlRpcValue& tag_description = tag_descriptions[i];
-    rcpputils::assert_true(tag_description.getType() == XmlRpc::XmlRpcValue::TypeStruct);
-    rcpputils::assert_true(tag_description["id"].getType() == XmlRpc::XmlRpcValue::TypeInt);
-    rcpputils::assert_true(tag_description["size"].getType() == XmlRpc::XmlRpcValue::TypeDouble);
-
-    int id = (int)tag_description["id"];
-    double size = (double)tag_description["size"];
-
-    std::string frame_name;
-    if(tag_description.hasMember("frame_id")){
-      rcpputils::assert_true(tag_description["frame_id"].getType() == XmlRpc::XmlRpcValue::TypeString);
-      frame_name = (std::string)tag_description["frame_id"];
-    }
-    else{
+  for (int32_t i = 0; i < ids.size(); ++i) {
+    int id = ids[i];
+    double size = tag_sizes[i];
+    std::string frame_name = frame_ids[i];
+    if( frame_name.empty() ){
       std::stringstream frame_name_stream;
       frame_name_stream << "tag_" << id;
       frame_name = frame_name_stream.str();

@@ -10,8 +10,6 @@
 #include <apriltag_msgs/msg/apriltag_pose_stamped.hpp>
 #include <boost/thread/mutex.hpp>
 
-#include <xmlrpcpp/XmlRpcValue.h>
-
 namespace apriltag_ros {
 
 class AprilTagDescription{
@@ -34,7 +32,10 @@ class ApriltagPoseEstimator : public rclcpp::Node {
   void ApriltagsCb(const apriltag_msgs::msg::ApriltagArrayStamped& apriltags_msg);
   void CinfoCb(const sensor_msgs::msg::CameraInfo& cinfo_msg);
   void InitApriltagMap();
-  std::map<int, AprilTagDescription> parse_tag_descriptions(XmlRpc::XmlRpcValue& april_tag_descriptions);
+  std::map<int, AprilTagDescription> parse_tag_descriptions(
+        const std::vector<long int> &ids,
+        const std::vector<double> &tag_sizes,
+        const std::vector<std::string> &frame_ids);
 
   rclcpp::Publisher<apriltag_msgs::msg::ApriltagPoseStamped>::SharedPtr pub_poses_;
   rclcpp::Subscription<apriltag_msgs::msg::ApriltagArrayStamped>::SharedPtr sub_apriltags_;
