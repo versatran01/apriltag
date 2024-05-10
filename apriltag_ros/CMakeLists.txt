@@ -45,20 +45,25 @@ add_library(apriltag_detector_component SHARED src/apriltag_detector_component.c
 target_link_libraries(apriltag_detector_component ${PROJECT_NAME} opencv_core)
 ament_target_dependencies(apriltag_detector_component rclcpp_components)
 
+add_library(apriltag_pose_estimator_component SHARED src/apriltag_pose_estimator_component.cpp)
+target_link_libraries(apriltag_pose_estimator_component ${PROJECT_NAME} opencv_core)
+ament_target_dependencies(apriltag_pose_estimator_component rclcpp_components tf2_ros image_geometry)
+
 # the actual node uses the same nodelet code
 add_executable(apriltag_detector_node src/apriltag_detector_node.cpp)
 target_link_libraries(apriltag_detector_node apriltag_detector_component ${PROJECT_NAME})
 
+add_executable(apriltag_pose_estimator_node src/apriltag_pose_estimator_node.cpp)
+target_link_libraries(apriltag_pose_estimator_node apriltag_pose_estimator_component ${PROJECT_NAME})
+
 # register the component
 rclcpp_components_register_nodes(apriltag_detector_component "apriltag_ros::ApriltagDetectorComponent")
-
-add_executable(apriltag_pose_estimator src/apriltag_pose_estimator.cpp)
-target_link_libraries(apriltag_pose_estimator ${PROJECT_NAME} opencv_core)
-ament_target_dependencies(apriltag_pose_estimator rclcpp_components tf2_ros image_geometry)
+rclcpp_components_register_nodes(apriltag_pose_estimator_component "apriltag_ros::ApriltagPoseEstimatorComponent")
 
 install(TARGETS
   ${PROJECT_NAME}
   apriltag_detector_component
+  apriltag_pose_estimator_component
   EXPORT export_${PROJECT_NAME}
   DESTINATION lib
   INCLUDES DESTINATION include)
@@ -66,7 +71,7 @@ install(TARGETS
 # must be installed under PROJECT_NAME directory or else not found on launch
 install(TARGETS
   apriltag_detector_node
-  apriltag_pose_estimator
+  apriltag_pose_estimator_node
   DESTINATION lib/${PROJECT_NAME}/)
 
 install(DIRECTORY

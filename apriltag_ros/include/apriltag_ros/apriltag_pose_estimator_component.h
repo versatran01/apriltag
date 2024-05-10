@@ -12,12 +12,14 @@
 
 namespace apriltag_ros {
 
-class AprilTagDescription{
+class AprilTagDescription {
  public:
-  AprilTagDescription(int id, double size, std::string &frame_name):id_(id), size_(size), frame_name_(frame_name){}
-  double size(){return size_;}
-  int id(){return id_;}
-  std::string& frame_name(){return frame_name_;}
+  AprilTagDescription(int id, double size, std::string &frame_name)
+      : id_(id), size_(size), frame_name_(frame_name) {}
+  double size() { return size_; }
+  int id() { return id_; }
+  std::string &frame_name() { return frame_name_; }
+
  private:
   int id_;
   double size_;

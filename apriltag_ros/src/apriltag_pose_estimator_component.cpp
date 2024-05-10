@@ -1,11 +1,11 @@
-#include "apriltag_ros/apriltag_pose_estimator.h"
+#include "apriltag_ros/apriltag_pose_estimator_component.h"
 #include <boost/thread/lock_guard.hpp>
 #include <geometry_msgs/msg/transform_stamped.hpp>
 #include <opencv2/calib3d/calib3d.hpp>
 #include <opencv2/core/core.hpp>
 
-#include <tf2/LinearMath/Quaternion.h>
 #include <tf2/LinearMath/Matrix3x3.h>
+#include <tf2/LinearMath/Quaternion.h>
 
 #include <rcpputils/asserts.hpp>
 
@@ -246,7 +246,6 @@ void ApriltagPoseEstimator::ApriltagsCb(
 }
 
 void ApriltagPoseEstimator::InitApriltagMap() {
-
   /*
   // Construct a map of strings
   std::map<std::string,double> map_tags;
@@ -278,14 +277,14 @@ void ApriltagPoseEstimator::InitApriltagMap() {
     descriptions = parse_tag_descriptions(ids, tag_sizes, frame_ids);
   }
 
-  std::map<int,AprilTagDescription>::iterator description_itr;
-  for(description_itr = descriptions.begin(); description_itr != descriptions.end(); description_itr++) {
-
+  std::map<int, AprilTagDescription>::iterator description_itr;
+  for (description_itr = descriptions.begin();
+       description_itr != descriptions.end(); description_itr++) {
     AprilTagDescription description = description_itr->second;
     double tag_size = description.size();
 
     am::Apriltag tag;
-    tag.family = "mit"; //TODO make these params? Or get from detections?
+    tag.family = "mit";  // TODO make these params? Or get from detections?
     tag.border = 1;
     tag.bits = 6;
 
@@ -294,16 +293,29 @@ void ApriltagPoseEstimator::InitApriltagMap() {
     tag.center.y = 0.0;
     tag.center.z = 0.0;
 
-    double s = tag_size/2.0;
+    double s = tag_size / 2.0;
     geometry_msgs::msg::Point pt;
-    pt.x = -s; pt.y = -s; pt.z = 0.0; tag.corners[0] = pt;
-    pt.x =  s; pt.y = -s; pt.z = 0.0; tag.corners[1] = pt;
-    pt.x =  s; pt.y =  s; pt.z = 0.0; tag.corners[2] = pt;
-    pt.x = -s; pt.y =  s; pt.z = 0.0; tag.corners[3] = pt;
+    pt.x = -s;
+    pt.y = -s;
+    pt.z = 0.0;
+    tag.corners[0] = pt;
+    pt.x = s;
+    pt.y = -s;
+    pt.z = 0.0;
+    tag.corners[1] = pt;
+    pt.x = s;
+    pt.y = s;
+    pt.z = 0.0;
+    tag.corners[2] = pt;
+    pt.x = -s;
+    pt.y = s;
+    pt.z = 0.0;
+    tag.corners[3] = pt;
 
-    //TODO Only save the frame_id from description as string?
+    // TODO Only save the frame_id from description as string?
     auto des = std::make_pair(tag, description);
-    map_.insert(std::pair<int, std::pair<am::Apriltag, AprilTagDescription> >(tag.id, des) );
+    map_.insert(std::pair<int, std::pair<am::Apriltag, AprilTagDescription>>(
+        tag.id, des));
 
     RCLCPP_INFO_STREAM(this->get_logger(), "tag is: " << am::to_yaml(tag));
   }
@@ -345,15 +357,4 @@ void ApriltagPoseEstimator::CinfoCb(
   }
 }
 
-}  // namespace arpiltag_ros
-
-int main(int argc, char **argv) {
-  rclcpp::init(argc, argv);
-  auto node = std::make_shared<apriltag_ros::ApriltagPoseEstimator>(
-      rclcpp::NodeOptions());
-  RCLCPP_INFO(node->get_logger(), "apriltag detector started up!");
-  // actually run the node
-  rclcpp::spin(node);  // should not return
-  rclcpp::shutdown();
-  return (0);
-}
+}  // namespace apriltag_ros
