@@ -49,6 +49,8 @@ class ApriltagPoseEstimator : public rclcpp::Node {
       map_;
   std::string frame_id_;
   boost::mutex connect_mutex_;
+  bool enable_all_tags_;
+  std::vector<geometry_msgs::msg::Point> default_tag_corners_;
 };
 
 };  // namespace apriltag_ros

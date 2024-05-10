@@ -18,6 +18,8 @@ def generate_launch_description():
 #                prefix=['xterm -e gdb -ex run --args'],
                 parameters=[{#'tag_family': 0,
                              'broadcast_tf': True,
+                             'enable_all_tags': True,
+                             'default_tag_size': 0.03,
                              'tag_descriptions.ids': [0, 100],
                              'tag_descriptions.sizes': [0.03, 0.163513],
                              'tag_descriptions.frame_ids': ["my_tag",""]

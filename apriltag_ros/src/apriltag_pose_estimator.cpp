@@ -43,6 +43,7 @@ cv::Mat QuatFromRvec(const cv::Mat &r) {
 ApriltagPoseEstimator::ApriltagPoseEstimator(const rclcpp::NodeOptions &options)
     : Node("tag_detector", options) {
   bool broadcast_tf = declare_parameter("broadcast_tf", false);
+  enable_all_tags_ = declare_parameter("enable_all_tags", false);
 
   using std::placeholders::_1;
   sub_cinfo_ = this->create_subscription<sensor_msgs::msg::CameraInfo>(
@@ -61,6 +62,35 @@ ApriltagPoseEstimator::ApriltagPoseEstimator(const rclcpp::NodeOptions &options)
   }
 
   InitApriltagMap();
+
+  if (enable_all_tags_) {
+    double tag_size = declare_parameter("default_tag_size", 0.0);
+    if (tag_size == 0.0) {
+      throw std::runtime_error(
+          "Specify a positive default_tag_size when enable_all_tags is true");
+    }
+    RCLCPP_INFO(this->get_logger(), "Enable all tags tf with size %f",
+                tag_size);
+    double s = tag_size / 2.0;
+    default_tag_corners_.resize(4);
+    geometry_msgs::msg::Point pt;
+    pt.x = -s;
+    pt.y = -s;
+    pt.z = 0.0;
+    default_tag_corners_[0] = pt;
+    pt.x = s;
+    pt.y = -s;
+    pt.z = 0.0;
+    default_tag_corners_[1] = pt;
+    pt.x = s;
+    pt.y = s;
+    pt.z = 0.0;
+    default_tag_corners_[2] = pt;
+    pt.x = -s;
+    pt.y = s;
+    pt.z = 0.0;
+    default_tag_corners_[3] = pt;
+  }
 }
 
 void ApriltagPoseEstimator::ApriltagsCb(
@@ -69,20 +99,25 @@ void ApriltagPoseEstimator::ApriltagsCb(
 
   am::ApriltagPoseStamped apriltag_poses;
 
+  std::vector<std::vector<cv::Point2d>> imgs_pts;
+  std::vector<std::vector<cv::Point3d>> objs_pts;
+  std::vector<am::Apriltag> pub_apriltags;
+  std::vector<std::string> child_frame_ids;
+
   for (const am::Apriltag &apriltag : apriltags_msg.apriltags) {
+    std::vector<cv::Point2d> img_pts;
+    std::vector<cv::Point3d> obj_pts;
+    std::string child_frame_id;
+
     auto search = map_.find(apriltag.id);
     if (search != map_.end()) {
-
       const auto des_pair = search->second;
       const am::Apriltag &map_tag = des_pair.first;
-
-      std::vector<cv::Point2d> img_pts;
       // Add points to img_pts
       for (const auto &c : apriltag.corners) {
         img_pts.emplace_back(c.x, c.y);
       }
 
-      std::vector<cv::Point3d> obj_pts;
       // Add points to obj_pts
       for (const auto &c : map_tag.corners) {
         obj_pts.emplace_back(c.x, c.y, c.z);
@@ -91,76 +126,117 @@ void ApriltagPoseEstimator::ApriltagsCb(
       // Check if empty
       if (img_pts.empty()) continue;
 
-      cv::Mat rvec, tvec;
-      sensor_msgs::msg::CameraInfo cinfo = cam_model_.cameraInfo();
-      if(cinfo.distortion_model == "fisheye") {
+      AprilTagDescription description = des_pair.second;
+      child_frame_id = description.frame_name();
 
-        std::vector<cv::Point2d> undistorted_pts;
-        cv::fisheye::undistortPoints(img_pts, undistorted_pts, cam_model_.fullIntrinsicMatrix(), cam_model_.distortionCoeffs());
-
-        cv::Mat normalized_cam_mat = cv::Mat::eye(3,3,cv::DataType<double>::type);
-        cv::Mat dist_coeffs = cv::Mat::zeros(4,1,cv::DataType<double>::type);
-        auto good = cv::solvePnP(obj_pts, undistorted_pts, normalized_cam_mat, dist_coeffs, rvec, tvec);
-        if (!good) {
-          RCLCPP_WARN(this->get_logger(), "%s: Pose solver failed.",
-                      this->get_namespace());
-          continue;
-        }
-      }
-      else {
-        // Solve for pose
-        // The estiamted r and t brings points from tag frame to camera frame
-        // r = c_r_w, t = c_t_w
-        auto good = cv::solvePnP(obj_pts, img_pts, cam_model_.fullIntrinsicMatrix(),
-                                 cam_model_.distortionCoeffs(), rvec, tvec);
-        if (!good) {
-          RCLCPP_WARN(this->get_logger(), "%s: Pose solver failed.",
-                      this->get_namespace());
-          continue;
-        }
+    } else if (enable_all_tags_) {
+      // Add points to img_pts
+      for (const auto &c : apriltag.corners) {
+        img_pts.emplace_back(c.x, c.y);
       }
 
-      cv::Matx33d r;
-      cv::Rodrigues(rvec, r);
-
-      tf2::Matrix3x3 wRo(r(0,0), r(0,1), r(0,2), r(1,0), r(1,1), r(1,2), r(2,0), r(2,1), r(2,2));
-      tf2::Quaternion tf_quat;
-      wRo.getRotation(tf_quat);
-
-      geometry_msgs::msg::Pose pose_msg;
-      pose_msg.position.x = tvec.at<double>(0);
-      pose_msg.position.y = tvec.at<double>(1);
-      pose_msg.position.z = tvec.at<double>(2);
-      pose_msg.orientation.x = tf_quat.x();
-      pose_msg.orientation.y = tf_quat.y();
-      pose_msg.orientation.z = tf_quat.z();
-      pose_msg.orientation.w = tf_quat.w();
-
-      if (tf2_br_) {
-        AprilTagDescription description = des_pair.second;
-        std::string child_frame_id = description.frame_name();
-        if(child_frame_id.empty())
-          child_frame_id = "tag_" + std::to_string(apriltag.id);
-
-        geometry_msgs::msg::TransformStamped transformStamped;
-        transformStamped.header = apriltags_msg.header;
-        transformStamped.child_frame_id = child_frame_id;
-
-        transformStamped.transform.translation.x = tvec.at<double>(0);
-        transformStamped.transform.translation.y = tvec.at<double>(1);
-        transformStamped.transform.translation.z = tvec.at<double>(2);
-
-        transformStamped.transform.rotation.x = tf_quat.x();
-        transformStamped.transform.rotation.y = tf_quat.y();
-        transformStamped.transform.rotation.z = tf_quat.z();
-        transformStamped.transform.rotation.w = tf_quat.w();
-
-        tf2_br_->sendTransform(transformStamped);
+      // Add points to obj_pts
+      for (const auto &c : default_tag_corners_) {
+        obj_pts.emplace_back(c.x, c.y, c.z);
       }
 
-      apriltag_poses.apriltags.push_back(apriltag);
-      apriltag_poses.posearray.poses.push_back(pose_msg);
+      // Check if empty
+      if (img_pts.empty()) continue;
+
+      child_frame_id = "tag_" + std::to_string(apriltag.id);
+
+    } else {
+      continue;
     }
+
+    imgs_pts.push_back(img_pts);
+    objs_pts.push_back(obj_pts);
+    pub_apriltags.push_back(apriltag);
+    child_frame_ids.push_back(child_frame_id);
+  }
+
+  std::vector<geometry_msgs::msg::TransformStamped> tag_tfs;
+  for (size_t i = 0; i < imgs_pts.size(); i++) {
+    const std::vector<cv::Point2d> &img_pts = imgs_pts[i];
+    const std::vector<cv::Point3d> &obj_pts = objs_pts[i];
+    const am::Apriltag &apriltag = pub_apriltags[i];
+    std::string child_frame_id = child_frame_ids[i];
+
+    cv::Mat rvec, tvec;
+    sensor_msgs::msg::CameraInfo cinfo = cam_model_.cameraInfo();
+    if (cinfo.distortion_model == "fisheye") {
+      std::vector<cv::Point2d> undistorted_pts;
+      cv::fisheye::undistortPoints(img_pts, undistorted_pts,
+                                   cam_model_.fullIntrinsicMatrix(),
+                                   cam_model_.distortionCoeffs());
+
+      cv::Mat normalized_cam_mat =
+          cv::Mat::eye(3, 3, cv::DataType<double>::type);
+      cv::Mat dist_coeffs = cv::Mat::zeros(4, 1, cv::DataType<double>::type);
+      auto good = cv::solvePnP(obj_pts, undistorted_pts, normalized_cam_mat,
+                               dist_coeffs, rvec, tvec);
+      if (!good) {
+        RCLCPP_WARN(this->get_logger(), "%s: Pose solver failed.",
+                    this->get_namespace());
+        continue;
+      }
+    } else {
+      // Solve for pose
+      // The estiamted r and t brings points from tag frame to camera frame
+      // r = c_r_w, t = c_t_w
+      auto good =
+          cv::solvePnP(obj_pts, img_pts, cam_model_.fullIntrinsicMatrix(),
+                       cam_model_.distortionCoeffs(), rvec, tvec);
+      if (!good) {
+        RCLCPP_WARN(this->get_logger(), "%s: Pose solver failed.",
+                    this->get_namespace());
+        continue;
+      }
+    }
+
+    cv::Matx33d r;
+    cv::Rodrigues(rvec, r);
+
+    tf2::Matrix3x3 wRo(r(0, 0), r(0, 1), r(0, 2), r(1, 0), r(1, 1), r(1, 2),
+                       r(2, 0), r(2, 1), r(2, 2));
+    tf2::Quaternion tf_quat;
+    wRo.getRotation(tf_quat);
+
+    geometry_msgs::msg::Pose pose_msg;
+    pose_msg.position.x = tvec.at<double>(0);
+    pose_msg.position.y = tvec.at<double>(1);
+    pose_msg.position.z = tvec.at<double>(2);
+    pose_msg.orientation.x = tf_quat.x();
+    pose_msg.orientation.y = tf_quat.y();
+    pose_msg.orientation.z = tf_quat.z();
+    pose_msg.orientation.w = tf_quat.w();
+
+    if (tf2_br_) {
+      if (child_frame_id.empty())
+        child_frame_id = "tag_" + std::to_string(apriltag.id);
+
+      geometry_msgs::msg::TransformStamped transformStamped;
+      transformStamped.header = apriltags_msg.header;
+      transformStamped.child_frame_id = child_frame_id;
+
+      transformStamped.transform.translation.x = tvec.at<double>(0);
+      transformStamped.transform.translation.y = tvec.at<double>(1);
+      transformStamped.transform.translation.z = tvec.at<double>(2);
+
+      transformStamped.transform.rotation.x = tf_quat.x();
+      transformStamped.transform.rotation.y = tf_quat.y();
+      transformStamped.transform.rotation.z = tf_quat.z();
+      transformStamped.transform.rotation.w = tf_quat.w();
+
+      tag_tfs.push_back(transformStamped);
+    }
+
+    apriltag_poses.apriltags.push_back(apriltag);
+    apriltag_poses.posearray.poses.push_back(pose_msg);
+  }
+
+  if (tf2_br_ && tag_tfs.size() > 0) {
+    tf2_br_->sendTransform(tag_tfs);
   }
 
   // The poses are apriltags expressed in camera frame
