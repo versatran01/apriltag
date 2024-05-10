@@ -46,7 +46,7 @@ ApriltagPoseEstimator::ApriltagPoseEstimator(const rclcpp::NodeOptions &options)
 
   using std::placeholders::_1;
   sub_cinfo_ = this->create_subscription<sensor_msgs::msg::CameraInfo>(
-      "camera_info", rclcpp::QoS(10).reliable(),
+      "camera_info", rclcpp::QoS(1).reliable().transient_local(),
       std::bind(&ApriltagPoseEstimator::CinfoCb, this, _1));
 
   pub_poses_ = this->create_publisher<apriltag_msgs::msg::ApriltagPoseStamped>(
