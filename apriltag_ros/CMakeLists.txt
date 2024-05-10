@@ -19,7 +19,11 @@ set(ament_dependencies
   "apriltag_msgs"
   "image_transport"
   "cv_bridge"
+  "image_geometry"
   "rclcpp"
+  "tf2"
+  "tf2_ros"
+  "xmlrpcpp"
   )
 foreach(pkg ${ament_dependencies})
   find_package(${pkg} REQUIRED)
@@ -49,6 +53,10 @@ target_link_libraries(apriltag_detector_node apriltag_detector_component ${PROJE
 # register the component
 rclcpp_components_register_nodes(apriltag_detector_component "apriltag_ros::ApriltagDetectorComponent")
 
+add_executable(apriltag_pose_estimator src/apriltag_pose_estimator.cpp)
+target_link_libraries(apriltag_pose_estimator ${PROJECT_NAME} opencv_core)
+ament_target_dependencies(apriltag_pose_estimator rclcpp_components tf2_ros image_geometry xmlrpcpp)
+
 install(TARGETS
   ${PROJECT_NAME}
   apriltag_detector_component
@@ -57,7 +65,9 @@ install(TARGETS
   INCLUDES DESTINATION include)
 
 # must be installed under PROJECT_NAME directory or else not found on launch
-install(TARGETS apriltag_detector_node
+install(TARGETS
+  apriltag_detector_node
+  apriltag_pose_estimator
   DESTINATION lib/${PROJECT_NAME}/)
 
 install(DIRECTORY
