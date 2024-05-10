@@ -22,6 +22,6 @@ def generate_launch_description():
                              'tag_descriptions.sizes': [0.03, 0.163513],
                              'tag_descriptions.frame_ids': ["my_tag",""]
                             } ],
-                remappings=[('/camera_info', '/mkd/camera0/camera_info'),
-                            ('/apriltags', '/apriltags')])
+                remappings=[('/camera_info', '/camera0/camera_info'),
+                            ('/apriltags', '/tags')])
     return LaunchDescription([node_name_arg, node])

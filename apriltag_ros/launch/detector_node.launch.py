@@ -20,5 +20,5 @@ def generate_launch_description():
                              'detector': 0,
                              'black_border_width': 2,
                              'decimate': 0}],
-                remappings=[('/image', '/mkd/camera0')])
+                remappings=[('/image', '/camera0/image')])
     return LaunchDescription([node_name_arg, node])

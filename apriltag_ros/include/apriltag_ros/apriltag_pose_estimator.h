@@ -49,7 +49,6 @@ class ApriltagPoseEstimator : public rclcpp::Node {
       map_;
   std::string frame_id_;
   boost::mutex connect_mutex_;
-  bool broadcast_tf_;
 };
 
 };  // namespace apriltag_ros

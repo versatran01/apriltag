@@ -42,7 +42,7 @@ cv::Mat QuatFromRvec(const cv::Mat &r) {
 
 ApriltagPoseEstimator::ApriltagPoseEstimator(const rclcpp::NodeOptions &options)
     : Node("tag_detector", options) {
-  broadcast_tf_ = declare_parameter("broadcast_tf", false);
+  bool broadcast_tf = declare_parameter("broadcast_tf", false);
 
   using std::placeholders::_1;
   sub_cinfo_ = this->create_subscription<sensor_msgs::msg::CameraInfo>(
@@ -56,6 +56,9 @@ ApriltagPoseEstimator::ApriltagPoseEstimator(const rclcpp::NodeOptions &options)
       this->create_subscription<apriltag_msgs::msg::ApriltagArrayStamped>(
           "apriltags", rclcpp::QoS(1),
           std::bind(&ApriltagPoseEstimator::ApriltagsCb, this, _1));
+  if (broadcast_tf) {
+    tf2_br_ = std::make_shared<tf2_ros::TransformBroadcaster>(this);
+  }
 
   InitApriltagMap();
 }
@@ -133,8 +136,7 @@ void ApriltagPoseEstimator::ApriltagsCb(
       pose_msg.orientation.z = tf_quat.z();
       pose_msg.orientation.w = tf_quat.w();
 
-      if(broadcast_tf_) {
-
+      if (tf2_br_) {
         AprilTagDescription description = des_pair.second;
         std::string child_frame_id = description.frame_name();
         if(child_frame_id.empty())
