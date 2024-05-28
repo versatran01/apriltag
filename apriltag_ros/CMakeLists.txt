@@ -58,7 +58,7 @@ target_link_libraries(apriltag_pose_estimator_node apriltag_pose_estimator_compo
 
 # register the component
 rclcpp_components_register_nodes(apriltag_detector_component "apriltag_ros::ApriltagDetectorComponent")
-rclcpp_components_register_nodes(apriltag_pose_estimator_component "apriltag_ros::ApriltagPoseEstimatorComponent")
+rclcpp_components_register_nodes(apriltag_pose_estimator_component "apriltag_ros::ApriltagPoseEstimator")
 
 install(TARGETS
   ${PROJECT_NAME}

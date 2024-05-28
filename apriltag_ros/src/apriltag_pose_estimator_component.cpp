@@ -9,6 +9,8 @@
 
 #include <rcpputils/asserts.hpp>
 
+#include <rclcpp_components/register_node_macro.hpp>
+
 namespace apriltag_ros {
 
 namespace am = apriltag_msgs::msg;
@@ -41,13 +43,13 @@ cv::Mat QuatFromRvec(const cv::Mat &r) {
 }
 
 ApriltagPoseEstimator::ApriltagPoseEstimator(const rclcpp::NodeOptions &options)
-    : Node("tag_detector", options) {
+    : Node("pose_estimator", options) {
   bool broadcast_tf = declare_parameter("broadcast_tf", false);
   enable_all_tags_ = declare_parameter("enable_all_tags", false);
 
   using std::placeholders::_1;
   sub_cinfo_ = this->create_subscription<sensor_msgs::msg::CameraInfo>(
-      "camera_info", rclcpp::QoS(1).reliable().transient_local(),
+      "camera_info", rclcpp::QoS(1).reliable().durability_volatile(),
       std::bind(&ApriltagPoseEstimator::CinfoCb, this, _1));
 
   pub_poses_ = this->create_publisher<apriltag_msgs::msg::ApriltagPoseStamped>(
@@ -358,3 +360,5 @@ void ApriltagPoseEstimator::CinfoCb(
 }
 
 }  // namespace apriltag_ros
+
+RCLCPP_COMPONENTS_REGISTER_NODE(apriltag_ros::ApriltagPoseEstimator)
