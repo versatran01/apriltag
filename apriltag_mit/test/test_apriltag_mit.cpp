@@ -15,7 +15,7 @@ protected:
       : package_name_("apriltag_mit"),
         package_path_(ros::package::getPath(package_name_)),
         image_path_(package_path_ + "/image/tag_sampler.png"),
-        test_image_(cv::imread(image_path_, CV_LOAD_IMAGE_GRAYSCALE)) {}
+        test_image_(cv::imread(image_path_, cv::IMREAD_GRAYSCALE)) {}
 
   std::string package_name_, package_path_, image_path_;
   cv::Mat test_image_;
