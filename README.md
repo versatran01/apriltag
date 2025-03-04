@@ -1,7 +1,8 @@
 # apriltag
 
 A collection of apriltag libraries and a ros node.
-Note: there is now a [ROS2 (foxy) branch](https://github.com/versatran01/apriltag/tree/ros2).
+Note:  The [ROS2 (foxy) branch](https://github.com/versatran01/apriltag/tree/ros2) is no
+longer actively supported. Use instead [this package](https://github.com/ros-misc-utilities/apriltag_detector).
 
 ## How to build
 
@@ -49,4 +50,3 @@ the [Apache License 2.0](LICENSE).
 
 Note: Michael Kaess's code under apriltag_mit is covered by a GPL V2
 license.
-
