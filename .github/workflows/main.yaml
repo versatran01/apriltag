@@ -36,16 +36,16 @@ jobs:
 #         submodules: recursive
 #     - name: compile from source
 #       run: git checkout master && git submodule update --init --recursive && ./.github/scripts/build.bash
-  build_focal:
-    runs-on: ubuntu-20.04
-    container:
-      image: berndpfrommer/focal_ros:1
-    name: build repo from source on focal
-    steps:
-      - name: check out github repo
-        uses: actions/checkout@v1
-        with:
-          fetch-depth: 0
-          submodules: recursive
-      - name: compile from source
-        run: git checkout master && git submodule update --init --recursive && ./.github/scripts/build.bash
+#   build_focal:
+#    runs-on: ubuntu-20.04
+#    container:
+#      image: berndpfrommer/focal_ros:1
+#    name: build repo from source on focal
+#    steps:
+#      - name: check out github repo
+#        uses: actions/checkout@v1
+#        with:
+#          fetch-depth: 0
+#          submodules: recursive
+#      - name: compile from source
+#        run: git checkout master && git submodule update --init --recursive && ./.github/scripts/build.bash
